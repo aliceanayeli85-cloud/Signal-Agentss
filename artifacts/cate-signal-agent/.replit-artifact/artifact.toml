@@ -1,0 +1,29 @@
+kind = "web"
+previewPath = "/"
+title = "CATE Signal Agent"
+description = "A scheduled Solana CATE market signal checker that fetches live market data, scores the token, and logs each signal to SQLite."
+version = "1.0.0"
+id = "artifacts/cate-signal-agent"
+router = "path"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 24030
+
+[services.development]
+run = "pnpm --filter @workspace/cate-signal-agent run dev"
+
+[services.production]
+[services.production.build]
+args = [ "pnpm", "--filter", "@workspace/cate-signal-agent", "run", "build" ]
+
+[services.production.run]
+args = [ "bash", "-lc", "cd signal_agent && python main.py --once" ]
+
+[services.production.run.env]
+PYTHONUNBUFFERED = "1"
+
+[services.env]
+PORT = "24030"
+BASE_PATH = "/"
