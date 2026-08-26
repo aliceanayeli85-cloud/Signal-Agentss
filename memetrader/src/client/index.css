@@ -1,0 +1,66 @@
+@import 'tailwindcss';
+
+/*
+ * Dark trading-terminal palette. Deliberately low-chroma so that the only
+ * saturated colour on screen is information: green/red for direction, amber for
+ * warnings, and the score bars.
+ */
+@theme {
+  --color-term-bg: #0a0d12;
+  --color-term-panel: #11151c;
+  --color-term-panel-2: #161b24;
+  --color-term-border: #232a36;
+  --color-term-border-bright: #333d4e;
+  --color-term-text: #d7dee9;
+  --color-term-muted: #7f8b9e;
+  --color-term-dim: #5a6474;
+  --color-term-up: #2fd07a;
+  --color-term-down: #ff5c5c;
+  --color-term-warn: #ffb020;
+  --color-term-info: #4aa8ff;
+  --color-term-accent: #8b5cf6;
+  --font-mono: 'SFMono-Regular', 'JetBrains Mono', Consolas, 'Liberation Mono', Menlo, monospace;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  background-color: var(--color-term-bg);
+  color: var(--color-term-text);
+  font-family: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+  font-size: 13px;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Numbers must line up in tables; tabular figures are not optional in a terminal. */
+.num {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-track {
+  background: var(--color-term-bg);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--color-term-border);
+  border-radius: 6px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-term-border-bright);
+}
+
+summary {
+  cursor: pointer;
+  list-style: none;
+}
+summary::-webkit-details-marker {
+  display: none;
+}
