@@ -2,6 +2,7 @@ import type { Candle, DataResult, MarketSnapshot, Timeframe } from '../../shared
 import { TtlCache } from '../lib/cache.js';
 import { UpstreamError } from '../lib/errors.js';
 import { fetchJson } from '../lib/http.js';
+import { aggregateCandles } from '../../engine/candles.js';
 import { numberOrNull, ok, stringOrNull, unavailable, type DataProvider, type ScannerTab } from './types.js';
 
 const BASE = 'https://api.exchange.coinbase.com';
@@ -268,26 +269,7 @@ export function parseCoinbaseCandles(rows: unknown[]): Candle[] {
 }
 
 /** Folds `factor` consecutive bars into one. Partial trailing groups are dropped. */
-export function aggregate(candles: Candle[], factor: number): Candle[] {
-  if (factor <= 1) return candles;
-  const out: Candle[] = [];
-  for (let i = 0; i + factor <= candles.length; i += factor) {
-    const group = candles.slice(i, i + factor);
-    const first = group[0];
-    const last = group[group.length - 1];
-    if (!first || !last) continue;
-    const volumes = group.map((c) => c.volume).filter((v): v is number => v !== null);
-    out.push({
-      time: first.time,
-      open: first.open,
-      high: Math.max(...group.map((c) => c.high)),
-      low: Math.min(...group.map((c) => c.low)),
-      close: last.close,
-      volume: volumes.length === group.length ? volumes.reduce((a, b) => a + b, 0) : null,
-    });
-  }
-  return out;
-}
+export const aggregate = aggregateCandles;
 
 function parseAssetId(assetId: string): string | null {
   if (!assetId.startsWith('coinbase:')) return null;

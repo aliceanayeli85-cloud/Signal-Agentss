@@ -131,10 +131,24 @@ describe('validation', () => {
 });
 
 describe('empty state', () => {
-  it('returns an empty watchlist rather than failing', async () => {
-    const { status, body } = await get('/api/watchlist');
+  it('returns an empty default watchlist rather than failing', async () => {
+    const { status, body } = await get('/api/watchlist?list=Default');
     expect(status).toBe(200);
     expect(body.items).toEqual([]);
+  });
+
+  it('seeds the starter token watchlist with contract addresses and no invented metadata', async () => {
+    const { status, body } = await get(`/api/watchlist?list=${encodeURIComponent('MY MEME COINS')}`);
+    expect(status).toBe(200);
+    expect(body.items).toHaveLength(4);
+    for (const item of body.items) {
+      expect(item.tokenAddress).toMatch(/^[A-Za-z0-9]{32,}$/);
+      // Nothing about the token is asserted until it resolves through a
+      // provider: the placeholder symbol is the address itself, never a guess.
+      expect(item.symbol).toBe(item.tokenAddress);
+      expect(item.name).toBeNull();
+      expect(item.assetId).toBe('');
+    }
   });
 
   it('returns zeroed but valid performance with no trades', async () => {

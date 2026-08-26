@@ -1,4 +1,4 @@
-import type { Candle, DataResult, MarketSnapshot, Timeframe } from '../../shared/types.js';
+import type { Candle, DataResult, MarketSnapshot, Timeframe, TokenInfo } from '../../shared/types.js';
 import { TtlCache } from '../lib/cache.js';
 import { UpstreamError } from '../lib/errors.js';
 import { fetchJson } from '../lib/http.js';
@@ -48,8 +48,71 @@ interface PoolEntry {
 }
 
 const cache = new TtlCache<unknown>();
+
+/**
+ * GeckoTerminal's public API allows roughly 30 requests a minute. A watchlist
+ * refresh naturally wants more than that at once, and a burst gets 429s that
+ * look, downstream, exactly like a token having no data.
+ *
+ * This serialises outbound calls with a minimum gap between them. Requests wait
+ * their turn instead of failing - slower, but the difference between "slow" and
+ * "wrong" is the whole point.
+ */
+const MIN_REQUEST_GAP_MS = 2_600;
+let requestChain: Promise<unknown> = Promise.resolve();
+let lastRequestAt = 0;
+
+/**
+ * Once the provider returns 429 it is asking for a pause, not for the same
+ * traffic slightly slower. Every GeckoTerminal call is suppressed for this long
+ * after a rate limit so the penalty window is allowed to clear.
+ */
+const RATE_LIMIT_COOLDOWN_MS = 60_000;
+let rateLimitedUntil = 0;
+
+/**
+ * Last-known-good responses, kept far longer than the fresh TTL.
+ *
+ * When the provider is unreachable this app serves the previous response
+ * *labelled with the time it was actually fetched*, rather than a blank panel.
+ * That is not stale data passed off as live: `stale: true` and the original
+ * `fetchedAt` travel with it, and the UI renders the true age and a STALE badge.
+ */
+const staleCache = new TtlCache<unknown>(20 * 60_000, 400);
+
+function inCooldown(): boolean {
+  return Date.now() < rateLimitedUntil;
+}
+
+function isRateLimit(error: unknown): boolean {
+  return error instanceof UpstreamError && /rate limit/i.test(error.message);
+}
+
+function cooldownReason(): string {
+  const seconds = Math.max(1, Math.ceil((rateLimitedUntil - Date.now()) / 1000));
+  return `GeckoTerminal rate limit reached; pausing requests for another ${seconds}s to let the limit clear.`;
+}
+
+function paced<T>(task: () => Promise<T>): Promise<T> {
+  const next = requestChain.then(async () => {
+    const wait = MIN_REQUEST_GAP_MS - (Date.now() - lastRequestAt);
+    if (wait > 0) await new Promise((resolve) => setTimeout(resolve, wait));
+    lastRequestAt = Date.now();
+    return task();
+  });
+  // Keep the chain alive even when a link rejects, or one failure would stall
+  // every later request behind it.
+  requestChain = next.catch(() => undefined);
+  return next;
+}
 /** OHLCV moves slower than a quote; a separate longer TTL keeps us inside the rate limit. */
-const candleCache = new TtlCache<unknown>(45_000, 200);
+const candleCache = new TtlCache<unknown>(120_000, 400);
+/**
+ * Holder figures carry their own `last_updated` and are recomputed by the
+ * provider on the order of minutes, so refetching them faster than that spends
+ * rate-limit budget for no new information.
+ */
+const tokenInfoCache = new TtlCache<unknown>(600_000, 200);
 
 /**
  * GeckoTerminal adapter.
@@ -138,16 +201,8 @@ export class GeckoTerminalProvider implements DataProvider {
     const capped = Math.min(Math.max(limit, 20), 1000);
     const url = `${BASE}/networks/${encodeURIComponent(parsed.network)}/pools/${encodeURIComponent(parsed.address)}/ohlcv/${mapped.path}?aggregate=${mapped.aggregate}&limit=${capped}&currency=usd`;
 
-    try {
-      const cached = candleCache.get(url);
-      const body = cached
-        ? (cached.value as { data?: { attributes?: { ohlcv_list?: unknown } } })
-        : await fetchJson<{ data?: { attributes?: { ohlcv_list?: unknown } } }>(url, {
-            source: SOURCE,
-            retries: 1,
-          });
-      if (!cached) candleCache.set(url, body);
-
+    type OhlcvBody = { data?: { attributes?: { ohlcv_list?: unknown } } };
+    const toResult = (body: OhlcvBody, fetchedAt: number, stale: boolean): DataResult<Candle[]> => {
       const list = body?.data?.attributes?.ohlcv_list;
       if (!Array.isArray(list) || list.length === 0) {
         return unavailable(
@@ -155,13 +210,103 @@ export class GeckoTerminalProvider implements DataProvider {
           SOURCE,
         );
       }
-
       const candles = parseOhlcv(list);
       if (candles.length === 0) {
         return unavailable('GeckoTerminal returned OHLCV rows that could not be parsed.', SOURCE);
       }
-      return ok(candles, SOURCE);
+      return ok(candles, SOURCE, fetchedAt, stale);
+    };
+
+    const cached = candleCache.get(url);
+    if (cached) return toResult(cached.value as OhlcvBody, cached.storedAt, false);
+
+    const serveStale = (): DataResult<Candle[]> | null => {
+      const fallback = staleCache.get(url);
+      return fallback ? toResult(fallback.value as OhlcvBody, fallback.storedAt, true) : null;
+    };
+
+    if (inCooldown()) {
+      return serveStale() ?? unavailable(cooldownReason(), SOURCE);
+    }
+
+    try {
+      const body = await paced(() =>
+        fetchJson<OhlcvBody>(url, { source: SOURCE, retries: 1 }),
+      );
+      candleCache.set(url, body);
+      staleCache.set(url, body);
+      return toResult(body, Date.now(), false);
     } catch (error) {
+      if (isRateLimit(error)) rateLimitedUntil = Date.now() + RATE_LIMIT_COOLDOWN_MS;
+      return serveStale() ?? toUnavailable(error);
+    }
+  }
+
+  /**
+   * Contract- and holder-level facts for a token.
+   *
+   * This is the only connected source for holder count, top-holder
+   * concentration, creator holding and mint/freeze authority. Anything it omits
+   * stays null and is reported as unavailable - notably `is_honeypot`, which is
+   * frequently "unknown" and must never be read as "not a honeypot".
+   */
+  async tokenInfo(chain: string, tokenAddress: string): Promise<DataResult<TokenInfo>> {
+    const network = normaliseNetwork(chain.trim());
+    const address = tokenAddress.trim();
+    if (!network || !address) {
+      return unavailable('A chain and a token address are both required.', SOURCE);
+    }
+    const url = `${BASE}/networks/${encodeURIComponent(network)}/tokens/${encodeURIComponent(address)}/info`;
+    type InfoBody = { data?: { attributes?: Record<string, unknown> } };
+    const cached = tokenInfoCache.get(url);
+    const fallback = cached ? null : staleCache.get(url);
+
+    if (!cached && !fallback && inCooldown()) {
+      return unavailable(cooldownReason(), SOURCE);
+    }
+
+    try {
+      let body: InfoBody;
+      let fetchedAt = Date.now();
+      let stale = false;
+      if (cached) {
+        body = cached.value as InfoBody;
+        fetchedAt = cached.storedAt;
+      } else if (fallback && inCooldown()) {
+        body = fallback.value as InfoBody;
+        fetchedAt = fallback.storedAt;
+        stale = true;
+      } else {
+        body = await paced(() => fetchJson<InfoBody>(url, { source: SOURCE, retries: 1 }));
+        tokenInfoCache.set(url, body);
+        staleCache.set(url, body);
+      }
+
+      const attributes = body?.data?.attributes;
+      if (!attributes) {
+        return unavailable(
+          `GeckoTerminal has no token info for ${address} on ${network}.`,
+          SOURCE,
+        );
+      }
+
+      return ok(toTokenInfo(attributes, address, network, fetchedAt), SOURCE, fetchedAt, stale);
+    } catch (error) {
+      if (isRateLimit(error)) rateLimitedUntil = Date.now() + RATE_LIMIT_COOLDOWN_MS;
+      const previous = staleCache.get(url);
+      const attributes = previous
+        ? ((previous.value as InfoBody).data?.attributes ?? null)
+        : null;
+      if (previous && attributes) {
+        // Serve the last good copy rather than nothing. It travels with
+        // stale:true and its original fetch time, so the UI shows the real age.
+        return ok(
+          toTokenInfo(attributes, address, network, previous.storedAt),
+          SOURCE,
+          previous.storedAt,
+          true,
+        );
+      }
       return toUnavailable(error);
     }
   }
@@ -169,9 +314,22 @@ export class GeckoTerminalProvider implements DataProvider {
   private async get<T>(url: string): Promise<T> {
     const cached = cache.get(url);
     if (cached) return cached.value as T;
-    const body = await fetchJson<T>(url, { source: SOURCE, retries: 1 });
-    cache.set(url, body);
-    return body;
+    if (inCooldown()) {
+      const fallback = staleCache.get(url);
+      if (fallback) return fallback.value as T;
+      throw new UpstreamError(cooldownReason(), SOURCE);
+    }
+    try {
+      const body = await paced(() => fetchJson<T>(url, { source: SOURCE, retries: 1 }));
+      cache.set(url, body);
+      staleCache.set(url, body);
+      return body;
+    } catch (error) {
+      if (isRateLimit(error)) rateLimitedUntil = Date.now() + RATE_LIMIT_COOLDOWN_MS;
+      const fallback = staleCache.get(url);
+      if (fallback) return fallback.value as T;
+      throw error;
+    }
   }
 }
 
@@ -302,4 +460,46 @@ function toUnavailable<T>(error: unknown): DataResult<T> {
     `${SOURCE} request failed: ${error instanceof Error ? error.message : 'unknown error'}.`,
     SOURCE,
   );
+}
+
+/** Maps a GeckoTerminal token-info attribute bag onto our TokenInfo shape. */
+function toTokenInfo(
+  attributes: Record<string, unknown>,
+  address: string,
+  network: string,
+  fetchedAt: number,
+): TokenInfo {
+  const holders = (attributes.holders ?? null) as {
+    count?: unknown;
+    distribution_percentage?: Record<string, unknown>;
+    last_updated?: unknown;
+  } | null;
+  const distribution = holders?.distribution_percentage ?? {};
+  const updatedRaw = stringOrNull(holders?.last_updated);
+  const updatedAt = updatedRaw ? Date.parse(updatedRaw) : Number.NaN;
+
+  return {
+    address,
+    chain: network,
+    name: stringOrNull(attributes.name),
+    symbol: stringOrNull(attributes.symbol),
+    holderCount: intOrNull(holders?.count),
+    topTenPct: numberOrNull(distribution['top_10']),
+    holderDistribution: {
+      top10: numberOrNull(distribution['top_10']),
+      next10: numberOrNull(distribution['11_20']),
+      next20: numberOrNull(distribution['21_40']),
+      rest: numberOrNull(distribution['rest']),
+    },
+    holdersUpdatedAt: Number.isFinite(updatedAt) ? updatedAt : null,
+    creatorAddress: stringOrNull(attributes.developer_address),
+    creatorHoldingPct: numberOrNull(attributes.developer_holding_percentage),
+    mintAuthority: stringOrNull(attributes.mint_authority),
+    freezeAuthority: stringOrNull(attributes.freeze_authority),
+    honeypot: stringOrNull(attributes.is_honeypot),
+    verified: typeof attributes.gt_verified === 'boolean' ? attributes.gt_verified : null,
+    providerScore: numberOrNull(attributes.gt_score),
+    source: SOURCE,
+    fetchedAt,
+  };
 }

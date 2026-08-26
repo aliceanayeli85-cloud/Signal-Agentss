@@ -67,10 +67,12 @@ export async function fetchJson<T>(url: string, options: FetchJsonOptions): Prom
     } catch (error) {
       lastError = error;
       const isAbort = error instanceof Error && error.name === 'AbortError';
+      // A 429 is the server asking for FEWER requests. Retrying it - especially
+      // on a short backoff - makes the situation worse and burns the budget that
+      // later requests need, so rate limits are surfaced immediately.
+      const isRateLimit = error instanceof UpstreamError && /rate limit/i.test(error.message);
       const retryable =
-        isAbort ||
-        !(error instanceof UpstreamError) ||
-        /rate limit|returned 5/.test(error.message);
+        !isRateLimit && (isAbort || !(error instanceof UpstreamError) || /returned 5/.test(error.message));
 
       if (!retryable || attempt === maxAttempts) break;
       const backoff = 250 * 2 ** (attempt - 1);

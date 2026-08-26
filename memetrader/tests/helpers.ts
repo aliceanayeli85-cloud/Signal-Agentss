@@ -1,4 +1,4 @@
-import type { Candle, MarketSnapshot } from '../src/shared/types.js';
+import type { Candle, MarketSnapshot, TokenInfo } from '../src/shared/types.js';
 
 /** Deterministic candle builder so tests never depend on live data or randomness. */
 export function candle(
@@ -90,6 +90,29 @@ export function snapshot(overrides: Partial<MarketSnapshot> = {}): MarketSnapsho
     priceChangePct: { h24: 5, h6: 2, h1: 1, m5: 0.2 },
     txns: { h1: { buys: 60, sells: 40 }, h24: { buys: 900, sells: 800 } },
     pairCreatedAt: Date.now() - 30 * 24 * 3_600_000,
+    fetchedAt: Date.now(),
+    ...overrides,
+  };
+}
+
+export function tokenInfo(overrides: Partial<TokenInfo> = {}): TokenInfo {
+  return {
+    address: 'TokenMint1111111111111111111111111111111111',
+    chain: 'solana',
+    name: 'Test Token',
+    symbol: 'TEST',
+    holderCount: 50_000,
+    topTenPct: 12,
+    holderDistribution: { top10: 12, next10: 6, next20: 6, rest: 76 },
+    holdersUpdatedAt: Date.now() - 60_000,
+    creatorAddress: 'Creator111111111111111111111111111111111111',
+    creatorHoldingPct: 0,
+    mintAuthority: 'no',
+    freezeAuthority: 'no',
+    honeypot: 'unknown',
+    verified: false,
+    providerScore: 70,
+    source: 'test',
     fetchedAt: Date.now(),
     ...overrides,
   };

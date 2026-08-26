@@ -4,6 +4,7 @@ import type {
   DataResult,
   MarketSnapshot,
   Timeframe,
+  TokenInfo,
 } from '../../shared/types.js';
 
 export type ScannerTab =
@@ -39,10 +40,29 @@ export interface DataProvider {
   candles(assetId: string, timeframe: Timeframe, limit: number): Promise<DataResult<Candle[]>>;
   /** Timeframes this provider can actually serve for the given asset class. */
   supportedTimeframes(): Timeframe[];
+
+  /**
+   * Optional: resolve a token CONTRACT address to the tradable pair that best
+   * represents it. A token typically has many pairs across several DEXs; the
+   * deepest one is the one a chart and a stop actually mean something on.
+   */
+  resolveToken?(chain: string, tokenAddress: string): Promise<DataResult<MarketSnapshot>>;
+
+  /**
+   * Optional: contract- and holder-level facts about a token. Providers that do
+   * not publish these simply omit the method, and callers report the fields as
+   * unavailable rather than estimating them.
+   */
+  tokenInfo?(chain: string, tokenAddress: string): Promise<DataResult<TokenInfo>>;
 }
 
-export function ok<T>(data: T, source: string, fetchedAt = Date.now()): DataResult<T> {
-  return { status: 'ok', data, fetchedAt, source };
+export function ok<T>(
+  data: T,
+  source: string,
+  fetchedAt = Date.now(),
+  stale = false,
+): DataResult<T> {
+  return { status: 'ok', data, fetchedAt, source, stale };
 }
 
 export function unavailable<T>(reason: string, source: string): DataResult<T> {

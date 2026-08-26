@@ -6,6 +6,7 @@ import { env } from './lib/env.js';
 import { RiskLimitError, statusOf, UpstreamError, ValidationError } from './lib/errors.js';
 import { logger } from './lib/logger.js';
 import { EXECUTION_STATUS, providerStatuses } from './providers/registry.js';
+import { refresherStatus } from './services/refresher.js';
 import { alertsRouter } from './routes/alerts.js';
 import { backtestRouter } from './routes/backtest.js';
 import { deskRouter } from './routes/desk.js';
@@ -33,6 +34,7 @@ export function createApp(): express.Express {
       execution: EXECUTION_STATUS,
       ai: { configured: env.anthropicApiKey !== null, model: env.anthropicModel },
       dataFreshness: { cacheTtlMs: env.cacheTtlMs, staleAfterMs: env.staleAfterMs },
+      refresher: refresherStatus(),
     });
   });
 

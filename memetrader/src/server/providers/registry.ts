@@ -4,6 +4,7 @@ import type {
   DataResult,
   MarketSnapshot,
   Timeframe,
+  TokenInfo,
 } from '../../shared/types.js';
 import { env } from '../lib/env.js';
 import { CoinbaseProvider } from './coinbase.js';
@@ -91,6 +92,63 @@ export async function getSnapshot(assetId: string): Promise<DataResult<MarketSna
     if (fallback.status === 'ok') return fallback;
   }
   return result;
+}
+
+/**
+ * Resolves a token CONTRACT address to a tradable pair snapshot.
+ *
+ * The watchlist stores contract addresses because that is what a user actually
+ * has; everything downstream needs a pair. Resolution is a provider call every
+ * time rather than a stored mapping, because the deepest pair for a token
+ * genuinely changes as liquidity migrates between DEXs.
+ */
+export async function resolveTokenAddress(
+  chain: string,
+  tokenAddress: string,
+): Promise<DataResult<MarketSnapshot>> {
+  if (!dexscreener.resolveToken) {
+    return unavailable('No configured provider can resolve a token contract address.', 'registry');
+  }
+  const result = await dexscreener.resolveToken(chain, tokenAddress);
+  if (result.status === 'ok') return result;
+
+  // GeckoTerminal indexes some pools DexScreener's token endpoint does not
+  // return, so a miss on one is not a miss on the chain.
+  //
+  // Its search is a fuzzy TEXT search, though: querying a contract address can
+  // return a pool merely whose NAME contains those characters. Every candidate
+  // is therefore checked against the requested mint, and anything that does not
+  // match exactly is discarded. Without this, a mistyped address silently
+  // resolves to an unrelated token and the whole screen describes the wrong
+  // market.
+  const wanted = tokenAddress.trim().toLowerCase();
+  const fallback = await geckoterminal.search(tokenAddress);
+  if (fallback.status === 'ok') {
+    const match = fallback.data
+      .filter(
+        (snapshot) =>
+          snapshot.chain !== null &&
+          snapshot.baseTokenAddress !== null &&
+          snapshot.baseTokenAddress.toLowerCase() === wanted,
+      )
+      .sort((a, b) => (b.liquidityUsd ?? 0) - (a.liquidityUsd ?? 0))[0];
+    if (match) return { status: 'ok', data: match, fetchedAt: Date.now(), source: 'GeckoTerminal' };
+  }
+  return result;
+}
+
+/** Contract- and holder-level facts, or an explicit reason they are unavailable. */
+export async function getTokenInfo(
+  chain: string,
+  tokenAddress: string,
+): Promise<DataResult<TokenInfo>> {
+  if (!geckoterminal.tokenInfo) {
+    return unavailable(
+      'No configured provider publishes holder or contract data.',
+      'registry',
+    );
+  }
+  return geckoterminal.tokenInfo(chain, tokenAddress);
 }
 
 export interface ScanResult {

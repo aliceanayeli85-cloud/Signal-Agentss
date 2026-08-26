@@ -197,4 +197,50 @@ export const MIGRATIONS: Migration[] = [
       CREATE UNIQUE INDEX IF NOT EXISTS watchlist_asset_idx ON watchlists (asset_id);
     `,
   },
+  {
+    version: 2,
+    name: 'named-watchlists-and-token-addresses',
+    sql: `
+      -- A watchlist entry can now be identified by a token CONTRACT address
+      -- rather than a pair: the pair a token trades best on migrates between
+      -- DEXs, but its mint address does not.
+      ALTER TABLE watchlists ADD COLUMN list_name TEXT NOT NULL DEFAULT 'Default';
+      ALTER TABLE watchlists ADD COLUMN token_address TEXT;
+      ALTER TABLE watchlists ADD COLUMN name TEXT;
+      ALTER TABLE watchlists ADD COLUMN pinned INTEGER NOT NULL DEFAULT 0;
+
+      -- The old single-column index cannot express "unique within a list", and
+      -- would also collide across token rows that have not resolved to a pair
+      -- yet. Two partial indexes give each row type its own identity.
+      DROP INDEX IF EXISTS watchlist_asset_idx;
+      CREATE UNIQUE INDEX IF NOT EXISTS watchlist_token_idx
+        ON watchlists (list_name, token_address) WHERE token_address IS NOT NULL;
+      CREATE UNIQUE INDEX IF NOT EXISTS watchlist_pair_idx
+        ON watchlists (list_name, asset_id) WHERE token_address IS NULL;
+      CREATE INDEX IF NOT EXISTS watchlist_list_idx ON watchlists (list_name);
+    `,
+  },
+  {
+    version: 3,
+    name: 'candle-store',
+    sql: `
+      -- OHLCV is the one thing the connected providers rate-limit hard, so bars
+      -- are stored once and reused. This also means the app accumulates its own
+      -- price history over time instead of being limited to what one request
+      -- returns.
+      CREATE TABLE IF NOT EXISTS candles (
+        asset_id TEXT NOT NULL,
+        timeframe TEXT NOT NULL,
+        bar_time INTEGER NOT NULL,
+        open REAL NOT NULL,
+        high REAL NOT NULL,
+        low REAL NOT NULL,
+        close REAL NOT NULL,
+        volume REAL,
+        updated_at INTEGER NOT NULL,
+        PRIMARY KEY (asset_id, timeframe, bar_time)
+      );
+      CREATE INDEX IF NOT EXISTS candles_lookup_idx ON candles (asset_id, timeframe, bar_time);
+    `,
+  },
 ];

@@ -120,10 +120,18 @@ export interface ScoreFactor {
   label: string;
   /** Points contributed toward the score. */
   points: number;
-  /** Maximum points this factor can contribute. */
+  /** The category's full weight, e.g. 20 for market structure. */
   max: number;
+  /**
+   * How much of `max` could actually be scored with the data available. A
+   * category with a sub-check that had no data contributes less than its full
+   * weight to BOTH the earned points and the denominator.
+   */
+  evaluatedMax: number;
   detail: string;
-  /** False when the input data required for this factor was not available. */
+  /** The individual checks behind the points, shown verbatim in the UI. */
+  subReasons: string[];
+  /** False when nothing in this category could be evaluated. */
   evaluated: boolean;
 }
 
@@ -151,6 +159,8 @@ export interface RiskAssessment {
   /** 0-100 where 100 is the most hazardous. NOT a probability of loss. */
   score: number;
   evaluatedMax: number;
+  /** Total hazard points across all factors, whether or not they had data. */
+  totalMax: number;
   band: 'low' | 'moderate' | 'elevated' | 'high' | 'extreme';
   factors: RiskFactor[];
   warnings: string[];
@@ -455,8 +465,14 @@ export interface HistoricalSetupStats {
 
 export interface WatchlistItem {
   id: number;
+  /** Resolved pair id; empty string until a token address has been resolved. */
   assetId: string;
   symbol: string;
+  name: string | null;
+  /** Token contract address for token-identified rows, null for pair rows. */
+  tokenAddress: string | null;
+  listName: string;
+  pinned: number;
   assetClass: AssetClass;
   chain: string | null;
   pairAddress: string | null;
@@ -516,9 +532,20 @@ export interface FomoAssessment {
 export interface AiAnalysis {
   available: true;
   model: string;
+  /** Plain description of the current market structure. */
+  whatIsHappening: string;
+  /** Why the volume, momentum, liquidity and structure readings matter here. */
+  whyItMatters: string;
   bullCase: { summary: string; requirements: string[] };
   bearCase: { summary: string; invalidations: string[] };
   neutralCase: { summary: string; implications: string[] };
+  /** Conditions that would make this a bad trade regardless of direction. */
+  noTradeConditions: string[];
+  /**
+   * Populated only when the app has enough matching observations of its own.
+   * Never a forecast - a count of what already happened under these rules.
+   */
+  historicalEvidence: HistoricalSetupStats | null;
   setupQuality: number;
   /** Evidence-completeness rating. Explicitly NOT a calibrated probability. */
   evidenceConfidence: 'low' | 'medium' | 'high';
@@ -535,3 +562,166 @@ export interface AiUnavailable {
 }
 
 export type AiAnalysisResult = AiAnalysis | AiUnavailable;
+
+// ---------------------------------------------------------------------------
+// Token-level on-chain data (watchlist / token detail)
+// ---------------------------------------------------------------------------
+
+/**
+ * Contract- and holder-level facts about a token, as reported by a provider.
+ *
+ * Every field is nullable and carries no default. `mintAuthority` and
+ * `freezeAuthority` are tri-state strings straight from the provider ("yes" /
+ * "no" / "unknown") rather than booleans, because "unknown" is a real answer and
+ * collapsing it into `false` would assert something the provider did not.
+ */
+export interface TokenInfo {
+  address: string;
+  chain: string;
+  name: string | null;
+  symbol: string | null;
+  holderCount: number | null;
+  /** Percentage of supply held by the top 10 wallets. */
+  topTenPct: number | null;
+  holderDistribution: { top10: number | null; next10: number | null; next20: number | null; rest: number | null };
+  /** When the provider last recomputed holder figures. Holder data is not live. */
+  holdersUpdatedAt: number | null;
+  creatorAddress: string | null;
+  creatorHoldingPct: number | null;
+  mintAuthority: string | null;
+  freezeAuthority: string | null;
+  honeypot: string | null;
+  verified: boolean | null;
+  /** Provider's own aggregate quality score. Not this app's risk score. */
+  providerScore: number | null;
+  source: string;
+  fetchedAt: number;
+}
+
+export type LiquidityTrendLabel =
+  | 'increasing'
+  | 'stable'
+  | 'falling'
+  | 'rapid-loss'
+  | 'insufficient-history';
+
+/**
+ * Liquidity direction over time, derived from snapshots THIS APP recorded.
+ * No provider exposes a liquidity time series on the endpoints used here, so
+ * until the app has observed a market more than once the trend is
+ * `insufficient-history` rather than a guess.
+ */
+export interface LiquidityTrend {
+  label: LiquidityTrendLabel;
+  changePct: number | null;
+  observations: number;
+  firstObservedAt: number | null;
+  lastObservedAt: number | null;
+  currentUsd: number | null;
+  detail: string;
+  /** True when liquidity is falling fast enough that entering is discouraged. */
+  highRisk: boolean;
+}
+
+export type VolumeFlag = 'bullish-confirmation' | 'warning' | 'neutral' | 'unavailable';
+
+export interface VolumeAnalysis {
+  relativeVolume: number | null;
+  /** Current bar volume against the bar before it. */
+  acceleration: number | null;
+  trend: 'expanding' | 'steady' | 'contracting' | 'unavailable';
+  /** Positive when price and volume move together, negative when they diverge. */
+  priceVolumeDivergence: number | null;
+  flag: VolumeFlag;
+  headline: string;
+  reasons: string[];
+}
+
+export interface MomentumReading {
+  timeframe: Timeframe;
+  /**
+   * `insufficient-data` means the market genuinely has too little history.
+   * `unavailable` means the fetch failed. Conflating them would make a
+   * rate-limited request look like a brand-new token.
+   */
+  status: 'ok' | 'insufficient-data' | 'unavailable';
+  changePct: number | null;
+  barsUsed: number;
+  reason?: string;
+}
+
+export interface MomentumAnalysis {
+  readings: MomentumReading[];
+  /** Net direction across the timeframes that had enough data. */
+  bias: Bias;
+  evaluated: number;
+  detail: string;
+}
+
+/**
+ * The single status shown on a token card. `BUY` is deliberately not one of the
+ * options: the app describes conditions, the person decides.
+ */
+export type TradeStatus =
+  | 'WATCH'
+  | 'SETUP FORMING'
+  | 'ENTRY CONDITIONS MET'
+  | 'WAIT FOR RETEST'
+  | 'HIGH RISK'
+  | 'INVALIDATED'
+  | 'NO TRADE'
+  | 'DATA UNAVAILABLE';
+
+export interface TradeStatusResult {
+  status: TradeStatus;
+  reasons: string[];
+}
+
+export interface ChasingWarning {
+  triggered: boolean;
+  movePct: number | null;
+  window: string | null;
+  headline: string;
+  message: string;
+}
+
+/** Everything one watchlist token card and its detail page need. */
+export interface TokenReport {
+  requestedAddress: string;
+  chain: string;
+  resolved: boolean;
+  /** Populated only when the address could not be resolved to a tradable pair. */
+  unavailableReason: string | null;
+  assetId: string | null;
+  pairAddress: string | null;
+  dex: string | null;
+  snapshot: MarketSnapshot | null;
+  tokenInfo: TokenInfo | null;
+  tokenInfoReason: string | null;
+  timeframe: Timeframe;
+  candles: Candle[];
+  candleSource: string;
+  candleReason: string | null;
+  /** True when the chart was served from the last good response, not a live fetch. */
+  candleStale: boolean;
+  /** When the served chart data was actually fetched from the provider. */
+  candleFetchedAt: number | null;
+  tokenInfoStale: boolean;
+  structure: StructureAnalysis | null;
+  momentum: MomentumAnalysis;
+  volume: VolumeAnalysis;
+  liquidity: LiquidityTrend;
+  alignment: TimeframeAlignment;
+  detections: SetupDetection[];
+  setupScore: SetupScore | null;
+  risk: RiskAssessment | null;
+  plan: TradePlanResult;
+  annotations: ChartAnnotation[];
+  indicators: AnalysisReport['indicators'];
+  tradeStatus: TradeStatusResult;
+  chasing: ChasingWarning;
+  buySellRatio: number | null;
+  pairAgeHours: number | null;
+  dataNotes: string[];
+  generatedAt: number;
+}

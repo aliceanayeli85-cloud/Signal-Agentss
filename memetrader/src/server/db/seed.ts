@@ -3,6 +3,7 @@ import { DEFAULT_SETTINGS } from '../../engine/discipline.js';
 import { STRATEGIES } from '../../engine/setups/index.js';
 import type { Db } from './index.js';
 import { settings, strategies } from './schema.js';
+import { seedMyMemeCoins } from './seed-watchlist.js';
 
 /**
  * Seeds only structural rows: the single settings record and the strategy
@@ -16,6 +17,8 @@ export function seedDefaults(db: Db): void {
     .values({ id: 1, ...DEFAULT_SETTINGS, updatedAt: now })
     .onConflictDoNothing()
     .run();
+
+  seedMyMemeCoins(db);
 
   for (const strategy of STRATEGIES) {
     db.insert(strategies)

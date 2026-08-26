@@ -72,7 +72,7 @@ These are structural properties of the code, not policy statements:
 | Source | Serves | Key required | Notes |
 | --- | --- | --- | --- |
 | [DexScreener](https://docs.dexscreener.com/api/reference) | On-chain pair metadata: price, liquidity, FDV, market cap, windowed volume, buy/sell counts, pair age | No | Publishes **no OHLCV**, so charts for on-chain pairs come from GeckoTerminal. |
-| [GeckoTerminal](https://www.geckoterminal.com/dex-api) | On-chain **OHLCV** (1m–1d) and trending pools | No | Rate limited to roughly 30 requests/minute. The app caches aggressively because of this. |
+| [GeckoTerminal](https://www.geckoterminal.com/dex-api) | On-chain **OHLCV** (1m–1d), trending pools, and token holder/contract data (holder count, top-10 concentration, creator holding, mint and freeze authority) | No | Rate limited hard. Charts are collected by a background refresher into a local store rather than fetched per page load — see [Rate limits](#rate-limits-and-the-candle-store). |
 | [Coinbase Exchange](https://docs.cdp.coinbase.com/exchange/reference) | Centralised crypto quotes and candles | No | 4h bars are aggregated locally from 1h, because Coinbase offers no 4h granularity. Reports no liquidity or transaction counts, so the risk engine excludes those factors rather than guessing them. |
 | [Alpha Vantage](https://www.alphavantage.co/documentation/) | Stocks / ETFs | **Yes** — `ALPHA_VANTAGE_API_KEY` | Free tier is ~25 requests/day. |
 | [Polygon.io](https://polygon.io/docs/stocks) | Stocks / ETFs | **Yes** — `POLYGON_API_KEY` | Free tier is delayed and rate limited. |
@@ -82,6 +82,58 @@ Binance is deliberately **not** used: it returns HTTP 451 from many regions, and
 silently fails for half its users is worse than not having one.
 
 ---
+
+## MY MEME COINS — the token watchlist
+
+The **My Coins** tab holds a permanent watchlist identified by **token contract
+address**, not by trading pair. Four Solana addresses are seeded on first boot; more
+can be added by pasting a mint address.
+
+Nothing about a token is assumed. Each address is resolved through the providers on
+every load — to the pair with the deepest liquidity, since that is the only one where
+the quoted price, the levels and a stop mean anything. An address that resolves to no
+pool where it is the **base** token is rejected as `DATA UNAVAILABLE`; a fuzzy name
+match on a different token is never accepted.
+
+Each card shows name, symbol, contract address, price, market cap, FDV, liquidity, 5m /
+1h / 24h volume, 5m / 1h / 6h / 24h price change, buys, sells, buy/sell ratio, pair age,
+holder count, top-10 concentration, creator holding, mint and freeze authority, liquidity
+status, volume verdict, structure, the momentum ladder, and how old the data is. Every
+one of those renders a dash or `Unavailable` when the provider did not return it.
+
+Clicking a card opens a detail page with the price chart, volume chart, liquidity trend,
+market structure, technical indicators, setup analysis, risk analysis, entry plan, a paper
+trade ticket, that token's own trade history, a backtest over its stored bars, and the AI
+explanation.
+
+### Trade status
+
+Every token carries exactly one status: `WATCH`, `SETUP FORMING`, `ENTRY CONDITIONS MET`,
+`WAIT FOR RETEST`, `HIGH RISK`, `INVALIDATED`, `NO TRADE`, or `DATA UNAVAILABLE`.
+
+There is no `BUY`. Hazard is evaluated before opportunity, so a technically perfect setup
+on a pool that is draining returns `HIGH RISK`, not an entry.
+
+### Liquidity tracked over time
+
+No provider publishes a liquidity time series, so the app builds one: the background
+refresher records a snapshot of each watchlist token continuously, and the trend is
+computed from what it observed. A market the app has seen fewer than three times reports
+`insufficient-history` — not `stable`. When liquidity falls fast enough the token is
+flagged `HIGH RISK — LIQUIDITY DETERIORATION` and entry is not recommended.
+
+### Volume verdicts
+
+Relative volume, acceleration, trend and price/volume divergence produce one of two
+flags: **BULLISH CONFIRMATION** when a price advance is backed by real participation, or
+**WARNING** when price rises while volume deteriorates. A warning never hides behind a
+valid setup — it is added to the status reasons alongside it.
+
+### Chasing warning
+
+When a token has already run hard (20% in 5m, 35% in 1h, 80% in 6h, 150% in 24h) the
+ticket shows `CHASING WARNING`. It does **not** block the paper trade; it requires an
+acknowledgement, and the trade is recorded as flagged.
 
 ## What the app does
 
@@ -118,21 +170,32 @@ handed only the bars up to and including the decision bar — the same code path
 which is what makes the two consistent.
 
 ### Setup score (0–100)
-A checklist total across trend structure, timeframe alignment, volume confirmation, level quality,
-momentum, breakout quality, retest quality, liquidity quality, risk/reward and volatility.
 
-A factor whose input data is missing is excluded from **both** the earned points and the
-denominator, and the UI reports how much of the checklist could be evaluated. The panel shows every
-factor, its points and why — including the ones that could not be scored.
+| Category | Weight |
+| --- | --- |
+| Market structure | 20 |
+| Volume | 20 |
+| Momentum | 15 |
+| Liquidity | 15 |
+| Support / resistance | 10 |
+| Risk / reward | 10 |
+| Multi-timeframe alignment | 10 |
+
+A sub-check whose data is missing reduces that category's scorable maximum rather than scoring
+zero, and the published score is earned ÷ scorable, scaled to 100. The panel lists every category,
+the points it earned, the scorable maximum, and the individual reason behind each point — including
+the checks that could not be run.
 
 ### Risk engine (0–100, higher is worse)
 Liquidity depth, pair age, volatility, volume trend and collapse, buy/sell imbalance (only when the
 transaction count is large enough for the ratio to mean anything), price extension, price movement
 relative to liquidity, and FDV overhang.
 
-Holder concentration and liquidity-over-time are always reported as **unavailable**, because no
-connected source provides them. When only a small fraction of the checklist could be evaluated the
-panel says a low score means *"few measured hazards"*, not *"safe"*.
+It also scores liquidity trend, holder concentration, creator holding and contract authorities.
+Those come from GeckoTerminal's token endpoint; an `unknown` mint or freeze authority scores as
+*unknown*, never as revoked — absence of evidence is not evidence. When only a small fraction of the
+checklist could be evaluated the panel says a low score means *"few measured hazards"*, not
+*"safe"*. There is no LP-lock check and no audit; nothing here means a token is safe.
 
 ### Trade plan and position sizing
 Entry, stop, invalidation level with the reason it invalidates, TP1/TP2/TP3 preferring real
@@ -193,10 +256,16 @@ it does publish as an observed historical frequency.
 
 ### AI analysis (optional)
 When `ANTHROPIC_API_KEY` is set, the computed report — structure, levels, indicators, scores,
-warnings and data gaps — is sent to Claude with a required output structure: bull case with what
-would need to happen, bear case with what would invalidate it, neutral case, setup quality 0–100,
-and an evidence-completeness confidence that rates the **data**, not the odds. The model is
-instructed never to state a probability and never to recommend an action.
+holder and contract data, volume and liquidity verdicts, warnings and data gaps — is sent to Claude
+with a required output structure: **what is happening**, **why it matters**, bull case with what
+would need to happen, bear case with what would invalidate it, neutral case, **no-trade
+conditions**, setup quality 0–100, and an evidence-completeness confidence that rates the **data**,
+not the odds.
+
+**Historical evidence** is computed by the app from its own closed paper trades and handed to the
+model as fact — the model is never asked to produce a win rate, and none is published below 30
+matching observations. The model is instructed never to state a probability and never to recommend
+an action.
 
 ### Education mode
 Every technical term in the UI carries an inline explainer, and Settings holds the full glossary:
@@ -205,6 +274,31 @@ confirmation means, what look-ahead bias is, and why a historical frequency is n
 
 ---
 
+## Rate limits and the candle store
+
+The on-chain OHLCV provider rate-limits aggressively — in practice a handful of requests in a few
+seconds is enough to be throttled. A watchlist of four tokens across a timeframe ladder needs far
+more than that, so fetching charts during a page load meant the last tokens in the list always
+showed `DATA UNAVAILABLE`. Accurate, but useless.
+
+So charts are not fetched during page loads. A **background refresher** requests one series at a
+time, roughly every nine seconds, and writes the bars into a local SQLite store. Pages read from
+that store and display the true age of the newest bar. The consequences are worth stating plainly:
+
+- **Market data is always live.** Price, liquidity, market cap, volume, price changes and
+  transaction counts come from DexScreener on every request; that provider is far more permissive.
+- **Charts warm up.** On a fresh database the first load shows market data with no chart; the store
+  fills within a couple of minutes and stays current after that.
+- **Stored bars are real provider data.** Nothing is derived or interpolated. The newest bar is
+  still forming, so re-fetching overwrites it in place rather than duplicating it.
+- **Higher timeframes are aggregated, never invented.** 1h and 4h are folded up from stored 15m
+  bars; 5m from 1m. Aggregation only ever combines whole bars upward — a finer timeframe is never
+  synthesised from a coarser one.
+- **A rate limit is never silently absorbed.** The provider layer backs off, serves the last good
+  response labelled `stale: true` with its original fetch time, and the UI shows the real age.
+
+`GET /api/health` reports the refresher's state — requests made, bars stored, last error.
+
 ## Project structure
 
 ```
@@ -212,7 +306,12 @@ src/
   shared/          Types, education glossary and journal questions used by both sides
   engine/          Pure, testable analysis — no I/O, no network, no database
     indicators.ts        ATR, RSI, VWAP, EMA, relative volume, safe division
+    candles.ts           Bar aggregation and upward timeframe derivation
     structure.ts         Swings, levels, supply/demand zones, liquidity sweeps
+    volume.ts            Acceleration, trend, divergence, confirmation/warning flags
+    liquidity.ts         Liquidity trend from recorded observations
+    momentum.ts          The 1m-1D momentum ladder
+    trade-status.ts      The eight-state status machine and chasing warning
     setups/              The five strategies, behind one interface
     setup-score.ts       Checklist scoring with evaluated/unevaluated factors
     risk-engine.ts       Meme-coin hazard scoring
@@ -225,7 +324,8 @@ src/
     stats.ts             Historical frequency (never a forecast)
   server/
     providers/     One adapter per data source behind a shared interface
-    services/      Analysis orchestration, AI layer, recording
+    services/      Analysis orchestration, token reports, candle store,
+                   background refresher, AI layer, recording
     routes/        REST API
     db/            Drizzle schema and versioned SQL migrations
     lib/           env, logger, errors, HTTP with retries, TTL cache, validation
@@ -243,8 +343,11 @@ makes it directly testable and what lets the live desk and the backtester share 
 ## Database
 
 SQLite via Drizzle ORM, created at `./data/memetrader.db` and migrated automatically on boot.
-Tables: `settings`, `assets`, `market_data`, `strategies`, `setups`, `paper_trades`,
+Tables: `settings`, `assets`, `market_data`, `candles`, `strategies`, `setups`, `paper_trades`,
 `trade_journal`, `backtests`, `performance`, `alerts`, `watchlists`, `schema_migrations`.
+
+`market_data` accumulates the liquidity observations the trend is computed from, and `candles`
+holds the local OHLCV store. Both grow as you use the app — that is the point.
 
 All timestamps are Unix milliseconds in UTC. Records are preserved — closing a trade updates it in
 place. Only structural rows are seeded (the settings record and the strategy catalogue); no market
@@ -258,27 +361,34 @@ data, trades or results are ever seeded.
 npm test
 ```
 
-165 tests covering position sizing, R multiple and P&L, indicators, setup scoring, the risk engine,
-trade plans, the backtest engine, performance and statistics, the FOMO detector and daily limits,
-provider parsers, HTTP failure handling, the cache, the database layer and the REST API.
+207 tests covering position sizing, R multiple and P&L, indicators, candle aggregation, setup
+scoring, the risk engine, trade plans, the backtest engine, performance and statistics, the FOMO
+detector, the chasing warning, daily limits, volume analysis, the liquidity trend, the momentum
+ladder, the trade-status machine, token-address resolution safety, the candle store, provider
+parsers, HTTP failure handling, the cache, the database layer and the REST API.
 
 Edge cases under test include: API failure, rate limiting, malformed and non-JSON responses,
 missing market data, zero liquidity, zero volume, invalid stops, invalid position sizes, division by
 zero, empty watchlists, unwritable databases, duplicate trades, out-of-order timestamps, duplicate
-bar timestamps, extreme price values, backtest look-ahead, and the intrabar stop/target ambiguity.
+bar timestamps, extreme price values, backtest look-ahead, the intrabar stop/target ambiguity, a
+token address that resolves to no pool, and a fuzzy search match on the wrong token.
 
 ---
 
 ## Known limitations
 
-- **Rate limits shape the experience.** GeckoTerminal allows ~30 requests/minute and a full
-  analysis costs up to five (one per timeframe in the ladder). Responses are cached for 20 seconds
-  by default; rapid switching between markets can still hit the limit, which surfaces as an
-  explicit rate-limit message rather than stale data.
+- **Rate limits shape the experience.** See [Rate limits](#rate-limits-and-the-candle-store). Price,
+  liquidity, volume and transaction figures are live on every load; charts fill in over a couple of
+  minutes on first run and stay current after that.
+- **The 1-minute and 5-minute momentum readings are detail-page only.** A 1m series cannot be
+  aggregated from coarser bars, so fetching it for every card on every refresh would blow the rate
+  limit. Cards show `n/a` for those two with the reason on hover; the detail page fetches them.
 - **Premarket levels are unavailable.** No connected provider separates extended-hours bars, so
   Day Trade mode reports premarket high/low as unavailable instead of reusing the session open.
-- **Holder concentration and liquidity history are unavailable.** Both would need an on-chain data
-  source this app is not connected to.
+- **Holder figures are not live.** They carry the provider's own `last_updated` timestamp, which the
+  UI displays. They are recomputed on the order of minutes, not per block.
+- **There is no honeypot or LP-lock check.** The provider's honeypot field is usually `unknown`, and
+  the app reports it as unavailable rather than as "not a honeypot".
 - **Stock coverage is key-gated and thin.** Neither stock adapter implements a market-wide screener,
   so the Stocks tab works by symbol lookup rather than a live scan.
 - **The scanner pool is not the whole market.** DexScreener has no public "top gainers" endpoint, so
@@ -298,6 +408,10 @@ bar timestamps, extreme price values, backtest look-ahead, and the intrabar stop
 
 **Record every detected setup's forward outcome automatically, so the statistics engine has a real
 sample.**
+
+This is now more tractable than it was: the background refresher already visits every watchlist
+token on a loop, and the candle store already holds the bars a resolution would read.
+
 
 The app currently persists setups as they are detected (`setups` table) and computes historical
 frequencies from *closed paper trades* — which means the sample only grows as fast as you manually

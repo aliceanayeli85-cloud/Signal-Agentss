@@ -60,17 +60,21 @@ export function PriceChart({ candles, annotations, unavailableReason, height = 4
   const hasVolume = useMemo(() => candles.some((c) => c.volume !== null && c.volume > 0), [candles]);
 
   /**
-   * Meme coins routinely move two or three orders of magnitude within one series.
-   * On a linear scale that squashes almost all of the history into a flat line at
-   * the bottom, and the axis extrapolates below zero - which reads as negative
-   * prices. A logarithmic scale is the honest rendering for those, so it is
-   * chosen from the data rather than left to the user to notice.
+   * Meme coins routinely move an order of magnitude or more within one series.
+   * A linear scale squashes almost all of that history into a flat line at the
+   * bottom, and its tick marks extrapolate through the bottom margin down to
+   * zero or below - which reads as negative prices.
+   *
+   * The threshold is deliberately low. With a 12% bottom margin the axis starts
+   * extrapolating past zero once the high/low ratio exceeds roughly 8, so
+   * switching at 6 keeps every linear chart's axis strictly positive.
    */
+  const LOG_SCALE_RATIO = 6;
   const logScale = useMemo(() => {
     const lows = candles.map((c) => c.low).filter((v) => Number.isFinite(v) && v > 0);
     const highs = candles.map((c) => c.high).filter((v) => Number.isFinite(v) && v > 0);
     if (lows.length === 0 || highs.length === 0) return false;
-    return Math.max(...highs) / Math.min(...lows) > 20;
+    return Math.max(...highs) / Math.min(...lows) > LOG_SCALE_RATIO;
   }, [candles]);
 
   useEffect(() => {
@@ -89,7 +93,11 @@ export function PriceChart({ candles, annotations, unavailableReason, height = 4
         vertLines: { color: '#161b24' },
         horzLines: { color: '#161b24' },
       },
-      rightPriceScale: { borderColor: '#232a36', scaleMargins: { top: 0.08, bottom: 0.22 } },
+      // The bottom margin reserves room for the volume overlay. Keep it small:
+      // on a linear axis the tick marks extrapolate through that margin, and a
+      // wide margin pushes the lowest ticks to zero or below, which reads as
+      // negative prices.
+      rightPriceScale: { borderColor: '#232a36', scaleMargins: { top: 0.08, bottom: 0.12 } },
       timeScale: { borderColor: '#232a36', timeVisible: true, secondsVisible: false },
       crosshair: { mode: 1 },
       localization: {
@@ -121,7 +129,7 @@ export function PriceChart({ candles, annotations, unavailableReason, height = 4
     // axis labels - they render alongside the price labels and read as negative
     // prices.
     chart.priceScale('volume').applyOptions({
-      scaleMargins: { top: 0.84, bottom: 0 },
+      scaleMargins: { top: 0.9, bottom: 0 },
       visible: false,
     });
 

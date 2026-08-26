@@ -3,6 +3,7 @@ import { closeDb, initDb } from './db/index.js';
 import { seedDefaults } from './db/seed.js';
 import { env } from './lib/env.js';
 import { logger } from './lib/logger.js';
+import { startRefresher, stopRefresher } from './services/refresher.js';
 
 function bootstrap(): void {
   if (env.liveTradingEnabled) {
@@ -22,6 +23,9 @@ function bootstrap(): void {
     process.exit(1);
   }
 
+  // Keeps the local candle store warm without blocking any request.
+  startRefresher();
+
   const app = createApp();
   const server = app.listen(env.port, env.host, () => {
     logger.info('MemeTrader OS API listening', {
@@ -37,6 +41,7 @@ function bootstrap(): void {
 
   const shutdown = (signal: string) => {
     logger.info('shutting down', { signal });
+    stopRefresher();
     server.close(() => {
       closeDb();
       process.exit(0);

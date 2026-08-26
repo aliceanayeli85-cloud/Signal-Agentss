@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useApi } from './lib/useApi.js';
 import { Badge } from './components/primitives.js';
+import { MyCoins } from './pages/MyCoins.js';
 import { MemeDesk } from './pages/MemeDesk.js';
 import { DayTradeDesk } from './pages/DayTradeDesk.js';
 import { SwingDesk } from './pages/SwingDesk.js';
@@ -11,6 +12,7 @@ import { PerformancePage } from './pages/PerformancePage.js';
 import { SettingsPage } from './pages/SettingsPage.js';
 
 const TABS = [
+  { id: 'mycoins', label: 'My Coins' },
   { id: 'meme', label: 'Meme' },
   { id: 'day', label: 'Day Trade' },
   { id: 'swing', label: 'Swing' },
@@ -31,7 +33,7 @@ interface HealthResponse {
 
 function currentTab(): TabId {
   const hash = window.location.hash.replace('#/', '');
-  return (TABS.find((tab) => tab.id === hash)?.id ?? 'meme') as TabId;
+  return (TABS.find((tab) => tab.id === hash)?.id ?? 'mycoins') as TabId;
 }
 
 export function App() {
@@ -98,6 +100,7 @@ export function App() {
       ) : null}
 
       <main className="min-h-0 flex-1 overflow-hidden">
+        {tab === 'mycoins' ? <MyCoins /> : null}
         {tab === 'meme' ? <MemeDesk /> : null}
         {tab === 'day' ? <DayTradeDesk /> : null}
         {tab === 'swing' ? <SwingDesk /> : null}

@@ -1,5 +1,5 @@
 import { sql } from 'drizzle-orm';
-import { index, integer, real, sqliteTable, text, uniqueIndex } from 'drizzle-orm/sqlite-core';
+import { index, integer, primaryKey, real, sqliteTable, text, uniqueIndex } from 'drizzle-orm/sqlite-core';
 
 /**
  * Schema notes:
@@ -209,17 +209,52 @@ export const watchlists = sqliteTable(
   'watchlists',
   {
     id: integer('id').primaryKey({ autoIncrement: true }),
+    /** Resolved pair id. Empty until a token address has been resolved. */
     assetId: text('asset_id').notNull(),
     symbol: text('symbol').notNull(),
+    name: text('name'),
     assetClass: text('asset_class').notNull(),
     chain: text('chain'),
     pairAddress: text('pair_address'),
+    /** Token CONTRACT address for token-identified rows; null for pair rows. */
+    tokenAddress: text('token_address'),
+    listName: text('list_name').notNull().default('Default'),
+    pinned: integer('pinned').notNull().default(0),
     timeframe: text('timeframe').notNull(),
     status: text('status').notNull().default('WATCH'),
     note: text('note'),
     createdAt: integer('created_at').notNull(),
   },
-  (table) => [uniqueIndex('watchlist_asset_idx').on(table.assetId)],
+  (table) => [
+    uniqueIndex('watchlist_token_idx').on(table.listName, table.tokenAddress),
+    uniqueIndex('watchlist_pair_idx').on(table.listName, table.assetId),
+    index('watchlist_list_idx').on(table.listName),
+  ],
+);
+
+/**
+ * Stored OHLCV. The primary key is (asset, timeframe, bar time) so re-fetching
+ * an overlapping window updates the bars it already has instead of duplicating
+ * them - which matters because the most recent bar is still forming and its
+ * high, low and close legitimately change between fetches.
+ */
+export const candles = sqliteTable(
+  'candles',
+  {
+    assetId: text('asset_id').notNull(),
+    timeframe: text('timeframe').notNull(),
+    barTime: integer('bar_time').notNull(),
+    open: real('open').notNull(),
+    high: real('high').notNull(),
+    low: real('low').notNull(),
+    close: real('close').notNull(),
+    volume: real('volume'),
+    updatedAt: integer('updated_at').notNull(),
+  },
+  (table) => [
+    primaryKey({ columns: [table.assetId, table.timeframe, table.barTime] }),
+    index('candles_lookup_idx').on(table.assetId, table.timeframe, table.barTime),
+  ],
 );
 
 /** Schema version bookkeeping for the hand-rolled migrator. */

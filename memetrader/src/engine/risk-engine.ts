@@ -1,9 +1,20 @@
-import type { Candle, MarketSnapshot, RiskAssessment, RiskFactor } from '../shared/types.js';
+import type {
+  Candle,
+  LiquidityTrend,
+  MarketSnapshot,
+  RiskAssessment,
+  RiskFactor,
+  TokenInfo,
+} from '../shared/types.js';
 import { atrPercent, isFiniteNumber, mean, safeDivide } from './indicators.js';
 
 export interface RiskInput {
   snapshot: MarketSnapshot | null;
   candles: Candle[];
+  /** Contract- and holder-level facts, when a provider supplied them. */
+  tokenInfo?: TokenInfo | null;
+  /** Observed liquidity direction, when the app has recorded enough history. */
+  liquidityTrend?: LiquidityTrend | null;
   /** Wall-clock now, injectable so tests are deterministic. */
   now?: number;
 }
@@ -323,29 +334,181 @@ export function assessRisk(input: RiskInput): RiskAssessment {
   }
 
   // Liquidity trend ----------------------------------------------------------
-  // DexScreener does not expose a liquidity time series on the endpoints this app
-  // uses, so a falling-liquidity check cannot be evaluated rather than guessed.
-  factors.push({
-    key: 'liquidity-trend',
-    label: 'Liquidity trend (rug watch)',
-    points: 0,
-    max: 10,
-    detail:
-      'Historical liquidity is not exposed by the connected data sources, so a falling-liquidity check cannot be run.',
-    evaluated: false,
-  });
-  unavailable.push('Liquidity trend over time');
+  // No provider exposes a liquidity time series on the endpoints this app uses,
+  // so the trend comes from snapshots the app itself recorded. Until it has
+  // enough of them there is no trend to score.
+  {
+    const max = 10;
+    const trend = input.liquidityTrend ?? null;
+    if (!trend || trend.label === 'insufficient-history') {
+      factors.push({
+        key: 'liquidity-trend',
+        label: 'Liquidity trend (rug watch)',
+        points: 0,
+        max,
+        detail:
+          trend?.detail ??
+          'No liquidity history has been recorded for this market yet, so a falling-liquidity check cannot be run.',
+        evaluated: false,
+      });
+      unavailable.push('Liquidity trend over time');
+    } else {
+      const points =
+        trend.label === 'rapid-loss' ? max : trend.label === 'falling' ? max * 0.6 : 0;
+      factors.push({
+        key: 'liquidity-trend',
+        label: 'Liquidity trend (rug watch)',
+        points,
+        max,
+        detail: trend.detail,
+        evaluated: true,
+      });
+      if (trend.label === 'rapid-loss') {
+        // `detail` already carries the HIGH RISK headline and the do-not-enter
+        // line, so prefixing it again would read as a stutter.
+        warnings.push(trend.detail);
+      } else if (trend.label === 'falling') {
+        warnings.push(`RAPID LIQUIDITY LOSS WATCH: ${trend.detail}`);
+      }
+    }
+  }
 
   // Holder concentration -----------------------------------------------------
-  factors.push({
-    key: 'holders',
-    label: 'Holder concentration',
-    points: 0,
-    max: 10,
-    detail: 'Holder concentration data unavailable. This app has no on-chain holder data source connected.',
-    evaluated: false,
-  });
-  unavailable.push('Holder concentration data unavailable');
+  {
+    const max = 10;
+    const info = input.tokenInfo ?? null;
+    const topTen = info?.topTenPct ?? null;
+    if (topTen === null) {
+      factors.push({
+        key: 'holders',
+        label: 'Holder concentration',
+        points: 0,
+        max,
+        detail:
+          'Holder concentration data unavailable for this token from the connected sources.',
+        evaluated: false,
+      });
+      unavailable.push('Holder concentration data unavailable');
+    } else {
+      const points = topTen > 60 ? max : topTen > 40 ? max * 0.7 : topTen > 25 ? max * 0.4 : 0;
+      const holderCount = info?.holderCount ?? null;
+      factors.push({
+        key: 'holders',
+        label: 'Holder concentration',
+        points,
+        max,
+        detail: `Top 10 wallets hold ${topTen.toFixed(1)}% of supply${holderCount !== null ? ` across ${holderCount.toLocaleString('en-US')} holders` : ''}.`,
+        evaluated: true,
+      });
+      if (topTen > 40) {
+        warnings.push(
+          `CONCENTRATED OWNERSHIP: the top 10 wallets hold ${topTen.toFixed(1)}% of supply. One of them selling can end the move regardless of the chart.`,
+        );
+      }
+      if (holderCount !== null && holderCount < 500) {
+        warnings.push(
+          `Only ${holderCount.toLocaleString('en-US')} holders. There is very little distribution behind this price.`,
+        );
+      }
+    }
+  }
+
+  // Creator holding ----------------------------------------------------------
+  {
+    const max = 8;
+    const creator = input.tokenInfo?.creatorHoldingPct ?? null;
+    if (creator === null) {
+      factors.push({
+        key: 'creator-holding',
+        label: 'Creator holding',
+        points: 0,
+        max,
+        detail: 'Creator holding data unavailable for this token.',
+        evaluated: false,
+      });
+      unavailable.push('Creator holding');
+    } else {
+      const points = creator > 20 ? max : creator > 10 ? max * 0.7 : creator > 3 ? max * 0.4 : 0;
+      factors.push({
+        key: 'creator-holding',
+        label: 'Creator holding',
+        points,
+        max,
+        detail: `The deployer wallet holds ${creator.toFixed(2)}% of supply.`,
+        evaluated: true,
+      });
+      if (creator > 10) {
+        warnings.push(
+          `CREATOR HOLDS ${creator.toFixed(1)}% of supply. That is a single wallet able to sell into any rally.`,
+        );
+      }
+    }
+  }
+
+  // Contract authorities -----------------------------------------------------
+  {
+    const max = 10;
+    const info = input.tokenInfo ?? null;
+    const mint = info?.mintAuthority ?? null;
+    const freeze = info?.freezeAuthority ?? null;
+    if (mint === null && freeze === null) {
+      factors.push({
+        key: 'contract',
+        label: 'Contract authorities',
+        points: 0,
+        max,
+        detail: 'Mint and freeze authority data unavailable for this token.',
+        evaluated: false,
+      });
+      unavailable.push('Contract mint/freeze authority');
+    } else {
+      let points = 0;
+      const notes: string[] = [];
+      // "unknown" is not "no". An unrevoked authority scores full risk; an
+      // unknown one scores partial, because absence of evidence is not evidence.
+      if (mint === 'yes') {
+        points += max * 0.5;
+        notes.push('mint authority is NOT revoked - more supply can be created');
+        warnings.push(
+          'MINT AUTHORITY NOT REVOKED: the deployer can still create new supply, diluting every holder.',
+        );
+      } else if (mint === 'no') {
+        notes.push('mint authority revoked');
+      } else {
+        points += max * 0.25;
+        notes.push('mint authority unknown');
+      }
+      if (freeze === 'yes') {
+        points += max * 0.5;
+        notes.push('freeze authority is NOT revoked - transfers can be blocked');
+        warnings.push(
+          'FREEZE AUTHORITY NOT REVOKED: the deployer can freeze token accounts, which can prevent you selling.',
+        );
+      } else if (freeze === 'no') {
+        notes.push('freeze authority revoked');
+      } else {
+        points += max * 0.25;
+        notes.push('freeze authority unknown');
+      }
+      factors.push({
+        key: 'contract',
+        label: 'Contract authorities',
+        points,
+        max,
+        detail: notes.join('; ') + '.',
+        evaluated: true,
+      });
+    }
+
+    const honeypot = info?.honeypot ?? null;
+    if (honeypot === 'yes') {
+      warnings.push(
+        'The data source flags this token as a possible honeypot. Treat that as a hard stop, not a discount.',
+      );
+    } else if (honeypot === null || honeypot === 'unknown') {
+      unavailable.push('Honeypot check (provider reported unknown)');
+    }
+  }
 
   // FDV / market cap gap -----------------------------------------------------
   {
@@ -383,28 +546,32 @@ export function assessRisk(input: RiskInput): RiskAssessment {
 
   const evaluated = factors.filter((f) => f.evaluated);
   const evaluatedMax = evaluated.reduce((acc, f) => acc + f.max, 0);
+  const totalMax = factors.reduce((acc, f) => acc + f.max, 0);
   const earned = evaluated.reduce((acc, f) => acc + f.points, 0);
   const score = evaluatedMax > 0 ? Math.round((earned / evaluatedMax) * 100) : 0;
 
   if (evaluatedMax === 0) {
     warnings.push('No risk factor could be evaluated with the data available. Treat this market as unassessed.');
-  } else if (evaluatedMax < 45) {
+  } else if (evaluatedMax < totalMax * 0.45) {
     // A low score computed from a third of the checklist is not "low risk", it is
     // "mostly unmeasured", and the UI must not let those read the same.
     warnings.push(
-      `Only ${evaluatedMax} of 108 hazard points could be evaluated for this market - ${unavailable.length} factor(s) had no data. A low score here means "few measured hazards", not "safe".`,
+      `Only ${evaluatedMax} of ${totalMax} hazard points could be evaluated for this market - ${unavailable.length} factor(s) had no data. A low score here means "few measured hazards", not "safe".`,
     );
   }
 
   if (snapshot && snapshot.assetClass === 'meme') {
     warnings.push(
-      'This app cannot verify contract safety. It has no honeypot, mint-authority or LP-lock data source connected, so nothing here should be read as a token being safe.',
+      input.tokenInfo
+        ? 'Mint/freeze authority and holder figures come from the data provider and are not a security audit. There is no LP-lock check here, and nothing on this screen should be read as a token being safe.'
+        : 'This app could not retrieve contract or holder data for this token, so nothing here should be read as a token being safe.',
     );
   }
 
   return {
     score,
     evaluatedMax,
+    totalMax,
     band: band(score, evaluatedMax),
     factors,
     warnings,

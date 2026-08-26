@@ -40,8 +40,8 @@ export function SetupScorePanel({ score }: { score: SetupScore | null }) {
           />
         </div>
         <p className="mt-1.5 text-[11px] text-term-dim">
-          Counts satisfied conditions out of the {score.evaluatedMax} checklist points that could be
-          evaluated with available data. This is not a prediction and not a probability.
+          Counts satisfied conditions out of the {score.evaluatedMax} of 100 checklist points that
+          could be evaluated with available data. This is not a prediction and not a probability.
         </p>
       </div>
 
@@ -68,22 +68,34 @@ export function SetupScorePanel({ score }: { score: SetupScore | null }) {
           Full factor breakdown ({score.factors.filter((f) => f.evaluated).length} evaluated,{' '}
           {score.factors.filter((f) => !f.evaluated).length} not evaluated)
         </summary>
-        <div className="space-y-2 border-t border-term-border p-2.5">
+        <div className="space-y-2.5 border-t border-term-border p-2.5">
           {score.factors.map((factor) => (
             <div key={factor.key}>
               <div className="flex items-baseline justify-between gap-2">
                 <span className="text-[11px] font-medium text-term-text">{factor.label}</span>
                 <span className="num text-[11px] text-term-muted">
-                  {factor.evaluated ? `${factor.points.toFixed(1)} / ${factor.max}` : 'NOT EVALUATED'}
+                  {factor.evaluated
+                    ? `${factor.points.toFixed(1)} / ${factor.max}${factor.evaluatedMax < factor.max ? ` (${factor.evaluatedMax} scorable)` : ''}`
+                    : `NOT EVALUATED / ${factor.max}`}
                 </span>
               </div>
               <div className="mt-0.5 h-1 w-full overflow-hidden rounded bg-term-border">
                 <div
                   className={factor.evaluated ? 'h-full bg-term-info' : 'h-full bg-term-dim/30'}
-                  style={{ width: factor.evaluated ? `${(factor.points / factor.max) * 100}%` : '100%' }}
+                  style={{
+                    width: factor.evaluated ? `${(factor.points / Math.max(1, factor.max)) * 100}%` : '100%',
+                  }}
                 />
               </div>
-              <p className="mt-1 text-[10px] leading-relaxed text-term-dim">{factor.detail}</p>
+              {/* The individual checks are the point of the panel: the score is
+                  only meaningful if you can see what produced each point. */}
+              <ul className="mt-1 space-y-0.5">
+                {factor.subReasons.map((reason) => (
+                  <li key={reason} className="text-[10px] leading-relaxed text-term-dim">
+                    · {reason}
+                  </li>
+                ))}
+              </ul>
             </div>
           ))}
         </div>
@@ -124,8 +136,8 @@ export function RiskPanel({ risk }: { risk: RiskAssessment | null }) {
           />
         </div>
         <p className="mt-1.5 text-[11px] text-term-dim">
-          Higher means more hazardous. Computed from the {risk.evaluatedMax} of 108 hazard points that
-          had data. This is not a probability of loss, and it is not a scam detector.
+          Higher means more hazardous. Computed from the {risk.evaluatedMax} of {risk.totalMax} hazard
+          points that had data. This is not a probability of loss, and it is not a scam detector.
         </p>
       </div>
 
@@ -345,9 +357,60 @@ export function AiPanel({ analysis, loading }: { analysis: AiAnalysisResult | nu
       </div>
       <p className="text-[11px] leading-relaxed text-term-dim">{analysis.evidenceConfidenceReason}</p>
 
+      <div className="rounded border border-term-border bg-term-panel-2 p-2.5">
+        <div className="mb-1 text-[10px] font-bold uppercase tracking-widest text-term-info">
+          What is happening
+        </div>
+        <p className="text-[11px] leading-relaxed text-term-text">{analysis.whatIsHappening}</p>
+      </div>
+      <div className="rounded border border-term-border bg-term-panel-2 p-2.5">
+        <div className="mb-1 text-[10px] font-bold uppercase tracking-widest text-term-info">
+          Why it matters
+        </div>
+        <p className="text-[11px] leading-relaxed text-term-text">{analysis.whyItMatters}</p>
+      </div>
+
       <Case title="Bull case" tone="up" summary={analysis.bullCase.summary} items={analysis.bullCase.requirements} itemsLabel="What would need to happen" />
       <Case title="Bear case" tone="down" summary={analysis.bearCase.summary} items={analysis.bearCase.invalidations} itemsLabel="What would invalidate it" />
       <Case title="Neutral case" tone="neutral" summary={analysis.neutralCase.summary} items={analysis.neutralCase.implications} itemsLabel="If it stays range-bound" />
+
+      {analysis.noTradeConditions.length > 0 ? (
+        <div className="rounded border border-term-down/40 bg-term-down/5 p-2.5">
+          <div className="mb-1 text-[10px] font-bold uppercase tracking-widest text-term-down">
+            No-trade conditions
+          </div>
+          <ul className="space-y-1">
+            {analysis.noTradeConditions.map((item) => (
+              <li key={item} className="text-[11px] leading-relaxed text-term-muted">· {item}</li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
+
+      <div className="rounded border border-term-border bg-term-panel-2 p-2.5">
+        <div className="mb-1 flex items-center gap-1 text-[10px] font-bold uppercase tracking-widest text-term-dim">
+          Historical evidence
+          <Explain termKey="expectancy_vs_probability" />
+        </div>
+        {analysis.historicalEvidence ? (
+          <>
+            <p className="text-[11px] leading-relaxed text-term-info">
+              {analysis.historicalEvidence.statement}
+            </p>
+            <p className="mt-1 text-[10px] text-term-dim">
+              Average {analysis.historicalEvidence.averageR?.toFixed(2) ?? '—'}R · median{' '}
+              {analysis.historicalEvidence.medianR?.toFixed(2) ?? '—'}R · worst observed{' '}
+              {analysis.historicalEvidence.worstR?.toFixed(2) ?? '—'}R across{' '}
+              {analysis.historicalEvidence.matchingSetups} observations.
+            </p>
+          </>
+        ) : (
+          <p className="text-[11px] leading-relaxed text-term-warn">
+            Not enough matching recorded observations yet, so no historical frequency is published.
+            This fills in as you record and close paper trades under the same rules.
+          </p>
+        )}
+      </div>
 
       {analysis.keyRisks.length > 0 ? <WarningList warnings={analysis.keyRisks} /> : null}
       {analysis.missingData.length > 0 ? (

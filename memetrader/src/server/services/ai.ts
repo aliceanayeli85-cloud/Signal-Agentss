@@ -9,7 +9,12 @@ import { zodOutputFormat } from '@anthropic-ai/sdk/helpers/zod';
 // The SDK's zod helper is built against the `zod/v4` entry point; importing from
 // the same entry keeps the schema types identical to what it expects.
 import * as z from 'zod/v4';
-import type { AiAnalysisResult, AnalysisReport } from '../../shared/types.js';
+import type {
+  AiAnalysisResult,
+  AnalysisReport,
+  HistoricalSetupStats,
+  TokenReport,
+} from '../../shared/types.js';
 import { env } from '../lib/env.js';
 import { logger } from '../lib/logger.js';
 
@@ -19,6 +24,9 @@ import { logger } from '../lib/logger.js';
  * argue all three cases and to name what would invalidate its own reasoning.
  */
 const AnalysisSchema = z.object({
+  what_is_happening: z.string(),
+  why_it_matters: z.string(),
+  no_trade_conditions: z.array(z.string()),
   bull_case: z.object({
     summary: z.string(),
     requirements: z.array(z.string()),
@@ -41,7 +49,10 @@ const AnalysisSchema = z.object({
 const SYSTEM_PROMPT = `You are a market-structure analyst inside a trading research tool. You are given structured, machine-computed measurements of one market - not raw opinion, not news, not sentiment.
 
 Your job is to interpret those measurements. You must:
+- Answer WHAT IS HAPPENING: describe the current market structure in plain language, using the classification and levels supplied.
+- Answer WHY IT MATTERS: explain what the volume, momentum, liquidity and structure readings mean together for someone deciding whether to trade this.
 - Argue the bull case, the bear case, and the range-bound case, every time. Never present only the direction the numbers currently favour.
+- List NO-TRADE CONDITIONS: the specific things about this market that would make taking a position a bad idea - thin liquidity, a pair too new to have structure, concentrated ownership, deteriorating volume, an already-extended move, missing data. Be concrete and use the supplied figures.
 - State what would have to HAPPEN for the bull case, and what would INVALIDATE the setup for the bear case. Be specific, and use the price levels supplied.
 - Rate setup quality 0-100 based only on how many of the supplied conditions are satisfied.
 - Rate evidence_confidence by the COMPLETENESS AND QUALITY OF THE SUPPLIED DATA, never by how likely you think a price move is. "high" means the important fields were present and the sample of bars was adequate. If liquidity, volume, or pair age were missing, confidence cannot be high.
@@ -51,8 +62,9 @@ Hard rules:
 - Never state or imply a probability that price will go up or down. You have no calibrated model of that.
 - Never say "buy", "sell", or give a recommendation. Describe conditions and invalidations; the human decides.
 - Never invent a number. If a figure is not in the input, say it is unavailable.
-- Never claim a token is safe or is a scam. You have no contract-verification data.
-- Refer only to the levels, structure and figures supplied to you.`;
+- Never claim a token is safe or is a scam. Mint/freeze authority figures come from a data provider, not an audit.
+- Refer only to the levels, structure and figures supplied to you.
+- If a HISTORICAL EVIDENCE section is present, you may reference it using the exact phrasing "current conditions match N historical setups, which produced X average R". If it is absent or marked insufficient, say that there is not yet enough recorded history to compare against - do NOT estimate one.`;
 
 let client: Anthropic | null = null;
 
@@ -79,7 +91,10 @@ const DISCLAIMER =
  * to Claude and requires a structured response. The model never sees raw prices
  * without the derived context, and it is never asked to predict direction.
  */
-export async function analyseWithAi(report: AnalysisReport): Promise<AiAnalysisResult> {
+export async function analyseWithAi(
+  report: AnalysisReport | TokenReport,
+  historicalEvidence: HistoricalSetupStats | null = null,
+): Promise<AiAnalysisResult> {
   const anthropic = getClient();
   if (!anthropic) {
     return { available: false, reason: AI_UNAVAILABLE_REASON };
@@ -101,7 +116,7 @@ export async function analyseWithAi(report: AnalysisReport): Promise<AiAnalysisR
         effort: 'medium',
         format: zodOutputFormat(AnalysisSchema),
       },
-      messages: [{ role: 'user', content: buildPrompt(report) }],
+      messages: [{ role: 'user', content: buildPrompt(report, historicalEvidence) }],
     });
 
     if (response.stop_reason === 'refusal') {
@@ -126,12 +141,17 @@ export async function analyseWithAi(report: AnalysisReport): Promise<AiAnalysisR
     return {
       available: true,
       model: response.model,
+      whatIsHappening: parsed.what_is_happening,
+      whyItMatters: parsed.why_it_matters,
       bullCase: { summary: parsed.bull_case.summary, requirements: parsed.bull_case.requirements },
       bearCase: { summary: parsed.bear_case.summary, invalidations: parsed.bear_case.invalidations },
       neutralCase: {
         summary: parsed.neutral_case.summary,
         implications: parsed.neutral_case.implications,
       },
+      noTradeConditions: parsed.no_trade_conditions,
+      // Returned from the app's own recorded observations, never from the model.
+      historicalEvidence: historicalEvidence?.sufficient ? historicalEvidence : null,
       setupQuality: quality,
       evidenceConfidence: parsed.evidence_confidence,
       evidenceConfidenceReason: parsed.evidence_confidence_reason,
@@ -168,7 +188,10 @@ export async function analyseWithAi(report: AnalysisReport): Promise<AiAnalysisR
  * providers did not return is written out as "unavailable" so the model cannot
  * mistake a missing field for a zero.
  */
-function buildPrompt(report: AnalysisReport): string {
+function buildPrompt(
+  report: AnalysisReport | TokenReport,
+  historicalEvidence: HistoricalSetupStats | null,
+): string {
   const s = report.snapshot;
   const i = report.indicators;
   const lines: string[] = [];
@@ -203,19 +226,24 @@ function buildPrompt(report: AnalysisReport): string {
   lines.push('');
 
   lines.push('MARKET STRUCTURE');
-  lines.push(`- Classification: ${report.structure.label} (bias: ${report.structure.bias})`);
-  for (const note of report.structure.notes) lines.push(`- ${note}`);
-  const levels = report.structure.levels.slice(0, 8);
-  if (levels.length > 0) {
-    lines.push('- Levels:');
-    for (const level of levels) {
-      lines.push(`  * ${level.kind} at ${level.price.toPrecision(6)} (${level.touches} touches)`);
-    }
+  // A token report can legitimately have no structure at all when the pair is
+  // too new to classify; the model must be told that rather than shown blanks.
+  const structure = report.structure;
+  if (!structure) {
+    lines.push('- Unavailable: not enough price history to classify structure.');
   } else {
-    lines.push('- Levels: none identified');
-  }
-  if (report.structure.sweeps.length > 0) {
-    for (const sweep of report.structure.sweeps.slice(-3)) {
+    lines.push(`- Classification: ${structure.label} (bias: ${structure.bias})`);
+    for (const note of structure.notes) lines.push(`- ${note}`);
+    const levels = structure.levels.slice(0, 8);
+    if (levels.length > 0) {
+      lines.push('- Levels:');
+      for (const level of levels) {
+        lines.push(`  * ${level.kind} at ${level.price.toPrecision(6)} (${level.touches} touches)`);
+      }
+    } else {
+      lines.push('- Levels: none identified');
+    }
+    for (const sweep of structure.sweeps.slice(-3)) {
       lines.push(`- Liquidity sweep ${sweep.direction} at ${sweep.price.toPrecision(6)}`);
     }
   }
@@ -260,7 +288,9 @@ function buildPrompt(report: AnalysisReport): string {
   lines.push('');
 
   if (report.setupScore) {
-    lines.push(`SETUP SCORE: ${report.setupScore.score}/100 (${report.setupScore.evaluatedMax}/110 checklist points evaluable)`);
+    lines.push(
+      `SETUP SCORE: ${report.setupScore.score}/100 (${report.setupScore.evaluatedMax} of 100 checklist points evaluable)`,
+    );
     for (const factor of report.setupScore.factors) {
       lines.push(
         factor.evaluated
@@ -272,7 +302,9 @@ function buildPrompt(report: AnalysisReport): string {
   }
 
   if (report.risk) {
-    lines.push(`RISK SCORE: ${report.risk.score}/100 (${report.risk.band}); ${report.risk.evaluatedMax}/108 hazard points evaluable`);
+    lines.push(
+      `RISK SCORE: ${report.risk.score}/100 (${report.risk.band}); ${report.risk.evaluatedMax} of ${report.risk.totalMax} hazard points evaluable`,
+    );
     for (const factor of report.risk.factors) {
       lines.push(
         factor.evaluated
@@ -286,6 +318,51 @@ function buildPrompt(report: AnalysisReport): string {
     }
     lines.push('');
   }
+
+  // Token-level sections, present only for a watchlist token report.
+  if ('tokenInfo' in report) {
+    const info = report.tokenInfo;
+    lines.push('HOLDER AND CONTRACT DATA');
+    if (!info) {
+      lines.push(`- Unavailable: ${report.tokenInfoReason ?? 'no provider returned it'}`);
+    } else {
+      lines.push(`- Holders: ${info.holderCount ?? 'unavailable'}`);
+      lines.push(`- Top 10 wallets hold: ${info.topTenPct !== null ? `${info.topTenPct.toFixed(2)}%` : 'unavailable'}`);
+      lines.push(`- Creator holding: ${info.creatorHoldingPct !== null ? `${info.creatorHoldingPct.toFixed(2)}%` : 'unavailable'}`);
+      lines.push(`- Mint authority: ${info.mintAuthority ?? 'unavailable'}; freeze authority: ${info.freezeAuthority ?? 'unavailable'}`);
+      lines.push(`- Provider honeypot flag: ${info.honeypot ?? 'unavailable'} (this is not an audit)`);
+    }
+    lines.push('');
+    lines.push('VOLUME ANALYSIS');
+    lines.push(`- ${report.volume.headline}`);
+    for (const reason of report.volume.reasons) lines.push(`  * ${reason}`);
+    lines.push('');
+    lines.push('LIQUIDITY TREND');
+    lines.push(`- ${report.liquidity.label}: ${report.liquidity.detail}`);
+    lines.push('');
+    lines.push('MOMENTUM LADDER');
+    for (const reading of report.momentum.readings) {
+      lines.push(
+        reading.status === 'ok'
+          ? `- ${reading.timeframe}: ${(reading.changePct ?? 0) > 0 ? '+' : ''}${(reading.changePct ?? 0).toFixed(2)}% over ${reading.barsUsed} bars`
+          : `- ${reading.timeframe}: ${reading.status} (${reading.reason ?? 'no detail'})`,
+      );
+    }
+    lines.push('');
+  }
+
+  lines.push('HISTORICAL EVIDENCE');
+  if (historicalEvidence && historicalEvidence.sufficient) {
+    lines.push(`- ${historicalEvidence.statement}`);
+    lines.push(`- Matching observations: ${historicalEvidence.matchingSetups}`);
+    lines.push(`- Average outcome: ${historicalEvidence.averageR?.toFixed(3) ?? 'unavailable'}R; median ${historicalEvidence.medianR?.toFixed(3) ?? 'unavailable'}R`);
+    lines.push(`- Worst observed: ${historicalEvidence.worstR?.toFixed(2) ?? 'unavailable'}R`);
+  } else {
+    lines.push(
+      `- INSUFFICIENT: ${historicalEvidence?.statement ?? 'no matching recorded observations yet'}. Do not estimate a win rate.`,
+    );
+  }
+  lines.push('');
 
   if (report.dataNotes.length > 0) {
     lines.push('DATA GAPS');

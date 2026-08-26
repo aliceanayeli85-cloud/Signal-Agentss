@@ -6,7 +6,7 @@ import { analyseTimeframes } from '../src/engine/mtf.js';
 import { buildTradePlan } from '../src/engine/trade-plan.js';
 import { detectLatest } from '../src/engine/setups/index.js';
 import type { SetupDetection } from '../src/shared/types.js';
-import { ramp, snapshot } from './helpers.js';
+import { ramp, snapshot, tokenInfo } from './helpers.js';
 
 function detection(overrides: Partial<SetupDetection> = {}): SetupDetection {
   return {
@@ -38,11 +38,13 @@ describe('setup scoring', () => {
     const volumeFactor = score.factors.find((f) => f.key === 'volume');
     expect(volumeFactor?.evaluated).toBe(false);
     expect(volumeFactor?.points).toBe(0);
+    expect(volumeFactor?.max).toBe(20);
     // A factor that could not be evaluated must not shrink the score, so the
-    // denominator excludes it too.
-    expect(score.evaluatedMax).toBeLessThan(110);
+    // denominator excludes it too. Categories can also be PARTIALLY evaluated,
+    // which is why the denominator sums evaluatedMax rather than max.
+    expect(score.evaluatedMax).toBeLessThan(100);
     expect(score.evaluatedMax).toBe(
-      score.factors.filter((f) => f.evaluated).reduce((acc, f) => acc + f.max, 0),
+      score.factors.reduce((acc, f) => acc + f.evaluatedMax, 0),
     );
     expect(score.warnings.some((w) => /Volume confirmation could not be checked/i.test(w))).toBe(true);
   });
@@ -153,12 +155,88 @@ describe('risk engine', () => {
     expect(risk.warnings.some((w) => /not "safe"/i.test(w))).toBe(true);
   });
 
-  it('never claims a token is safe', () => {
-    const risk = assessRisk({ snapshot: snapshot(), candles: ramp(120, 1, 0.001) });
-    expect(risk.warnings.some((w) => /cannot verify contract safety/i.test(w))).toBe(true);
-    for (const warning of risk.warnings) {
+  it('never claims a token is safe, with or without contract data', () => {
+    const withoutInfo = assessRisk({ snapshot: snapshot(), candles: ramp(120, 1, 0.001) });
+    expect(
+      withoutInfo.warnings.some((w) => /could not retrieve contract or holder data/i.test(w)),
+    ).toBe(true);
+
+    const withInfo = assessRisk({
+      snapshot: snapshot(),
+      candles: ramp(120, 1, 0.001),
+      tokenInfo: tokenInfo(),
+    });
+    expect(withInfo.warnings.some((w) => /not a security audit/i.test(w))).toBe(true);
+
+    for (const warning of [...withoutInfo.warnings, ...withInfo.warnings]) {
       expect(warning).not.toMatch(/\bis safe\b/i);
     }
+  });
+
+  it('scores holder concentration, creator holding and contract authorities when supplied', () => {
+    const risk = assessRisk({
+      snapshot: snapshot(),
+      candles: ramp(120, 1, 0.001),
+      tokenInfo: tokenInfo({
+        holderCount: 78,
+        topTenPct: 74.9,
+        creatorHoldingPct: 12.5,
+        mintAuthority: 'yes',
+        freezeAuthority: 'yes',
+      }),
+    });
+
+    const holders = risk.factors.find((f) => f.key === 'holders');
+    expect(holders?.evaluated).toBe(true);
+    expect(holders?.points).toBe(holders?.max);
+
+    expect(risk.warnings.some((w) => /CONCENTRATED OWNERSHIP/i.test(w))).toBe(true);
+    expect(risk.warnings.some((w) => /CREATOR HOLDS/i.test(w))).toBe(true);
+    expect(risk.warnings.some((w) => /MINT AUTHORITY NOT REVOKED/i.test(w))).toBe(true);
+    expect(risk.warnings.some((w) => /FREEZE AUTHORITY NOT REVOKED/i.test(w))).toBe(true);
+    expect(risk.unavailable).not.toContain('Holder concentration data unavailable');
+  });
+
+  it('treats an unknown authority as unknown, never as revoked', () => {
+    const unknown = assessRisk({
+      snapshot: snapshot(),
+      candles: ramp(120, 1, 0.001),
+      tokenInfo: tokenInfo({ mintAuthority: 'unknown', freezeAuthority: 'unknown' }),
+    });
+    const revoked = assessRisk({
+      snapshot: snapshot(),
+      candles: ramp(120, 1, 0.001),
+      tokenInfo: tokenInfo({ mintAuthority: 'no', freezeAuthority: 'no' }),
+    });
+    const unknownFactor = unknown.factors.find((f) => f.key === 'contract');
+    const revokedFactor = revoked.factors.find((f) => f.key === 'contract');
+    expect(unknownFactor?.points ?? 0).toBeGreaterThan(revokedFactor?.points ?? 0);
+    expect(unknownFactor?.detail).toMatch(/unknown/i);
+  });
+
+  it('scores a rapid liquidity loss as a hazard and warns about it', () => {
+    const risk = assessRisk({
+      snapshot: snapshot(),
+      candles: ramp(120, 1, 0.001),
+      liquidityTrend: {
+        label: 'rapid-loss',
+        changePct: -60,
+        observations: 6,
+        firstObservedAt: 1,
+        lastObservedAt: 2,
+        currentUsd: 4000,
+        detail: 'HIGH RISK — LIQUIDITY DETERIORATION: the pool has fallen 60%.',
+        highRisk: true,
+      },
+    });
+    const factor = risk.factors.find((f) => f.key === 'liquidity-trend');
+    expect(factor?.evaluated).toBe(true);
+    expect(factor?.points).toBe(factor?.max);
+    // The trend's own detail already carries the headline; it must be surfaced
+    // exactly once, not re-prefixed.
+    const matches = risk.warnings.filter((w) => /LIQUIDITY DETERIORATION/i.test(w));
+    expect(matches).toHaveLength(1);
+    expect(matches[0]).toBe('HIGH RISK — LIQUIDITY DETERIORATION: the pool has fallen 60%.');
   });
 
   it('returns a valid assessment with no snapshot at all', () => {

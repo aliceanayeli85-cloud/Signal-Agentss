@@ -119,6 +119,50 @@ export class DexScreenerProvider implements DataProvider {
     }
   }
 
+  /**
+   * Resolves a token CONTRACT address to its deepest-liquidity pair.
+   *
+   * A meme token usually trades in several pools at once (pumpswap, raydium,
+   * meteora...) at slightly different prices. Picking the deepest is not a
+   * cosmetic choice: it is the only one where the quoted price, the levels and a
+   * stop are backed by enough liquidity to mean anything.
+   */
+  async resolveToken(chain: string, tokenAddress: string): Promise<DataResult<MarketSnapshot>> {
+    const cleanChain = chain.trim();
+    const cleanAddress = tokenAddress.trim();
+    if (!cleanChain || !cleanAddress) {
+      return unavailable('A chain and a token address are both required.', SOURCE);
+    }
+    try {
+      const body = await this.get<DexPair[] | { pairs?: DexPair[] }>(
+        `${BASE}/token-pairs/v1/${encodeURIComponent(cleanChain)}/${encodeURIComponent(cleanAddress)}`,
+      );
+      const pairs = Array.isArray(body) ? body : Array.isArray(body?.pairs) ? body.pairs : [];
+      const candidates = pairs
+        .map((pair) => toSnapshot(pair))
+        .filter(isUsable)
+        // Only pairs whose BASE token is the one asked for. A pair where the
+        // address is the quote side would chart the wrong asset entirely.
+        .filter(
+          (snapshot) =>
+            snapshot.baseTokenAddress !== null &&
+            snapshot.baseTokenAddress.toLowerCase() === cleanAddress.toLowerCase(),
+        )
+        .sort((a, b) => (b.liquidityUsd ?? 0) - (a.liquidityUsd ?? 0));
+
+      const best = candidates[0];
+      if (!best) {
+        return unavailable(
+          `DexScreener returned no tradable pair on ${cleanChain} where ${cleanAddress} is the base token.`,
+          SOURCE,
+        );
+      }
+      return ok(best, SOURCE);
+    } catch (error) {
+      return toUnavailable(error);
+    }
+  }
+
   async candles(): Promise<DataResult<Candle[]>> {
     return unavailable(
       "DexScreener's public API does not expose OHLCV history. Chart data for on-chain pairs comes from GeckoTerminal instead.",

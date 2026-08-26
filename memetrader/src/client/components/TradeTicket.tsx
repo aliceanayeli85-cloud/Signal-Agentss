@@ -6,6 +6,7 @@ import type {
   LimitState,
   PositionSizingResult,
   Timeframe,
+  TokenReport,
 } from '../../shared/types.js';
 import { RISK_PRESETS } from '../../engine/position-size.js';
 import { ApiError, api } from '../lib/api.js';
@@ -35,6 +36,7 @@ interface PreflightResponse {
  */
 export function TradeTicket({
   report,
+  tokenReport = null,
   assetId,
   symbol,
   assetClass,
@@ -42,6 +44,8 @@ export function TradeTicket({
   onRecorded,
 }: {
   report: AnalysisReport | null;
+  /** Supplied by the token detail page; carries the chasing warning and scores. */
+  tokenReport?: TokenReport | null;
   assetId: string;
   symbol: string;
   assetClass: AssetClass;
@@ -49,6 +53,11 @@ export function TradeTicket({
   onRecorded: (tradeId: number) => void;
 }) {
   const limits = useApi<LimitsResponse>('/api/trading/limits');
+  // Both report shapes carry plan, detections, setupScore and risk; the token
+  // report additionally carries the chasing warning.
+  const source = report ?? tokenReport;
+  const chasing = tokenReport?.chasing ?? null;
+  const [chaseAcknowledged, setChaseAcknowledged] = useState(false);
   const [riskPct, setRiskPct] = useState<number>(1);
   const [accountSize, setAccountSize] = useState<string>('');
   const [entry, setEntry] = useState('');
@@ -70,10 +79,10 @@ export function TradeTicket({
 
   // Prefill from the computed plan so the ticket matches what the analysis says.
   useEffect(() => {
-    if (report?.plan.available) {
-      setEntry(String(report.plan.entry));
-      setStop(String(report.plan.stop));
-      setTarget(String(report.plan.targets.tp2));
+    if (source?.plan.available) {
+      setEntry(String(source.plan.entry));
+      setStop(String(source.plan.stop));
+      setTarget(String(source.plan.targets.tp2));
     } else {
       setEntry('');
       setStop('');
@@ -82,11 +91,12 @@ export function TradeTicket({
     setSizing(null);
     setPreflight(null);
     setAcknowledged(false);
+    setChaseAcknowledged(false);
     setMessage(null);
     setError(null);
-  }, [report?.plan, assetId, timeframe]);
+  }, [source?.plan, assetId, timeframe]);
 
-  const highVolatility = assetClass === 'meme' || (report?.risk?.score ?? 0) >= 50;
+  const highVolatility = assetClass === 'meme' || (source?.risk?.score ?? 0) >= 50;
 
   const runSizing = async () => {
     setError(null);
@@ -97,7 +107,7 @@ export function TradeTicket({
         entry: Number(entry),
         stop: Number(stop),
         target: target ? Number(target) : null,
-        direction: report?.plan.available ? report.plan.direction : undefined,
+        direction: source?.plan.available ? source.plan.direction : undefined,
         highVolatility,
       });
       setSizing(result);
@@ -134,23 +144,21 @@ export function TradeTicket({
         symbol,
         assetClass,
         timeframe,
-        strategy: report?.detections[0]?.strategy ?? null,
-        direction: report?.plan.available ? report.plan.direction : 'long',
+        strategy: source?.detections[0]?.strategy ?? null,
+        direction: source?.plan.available ? source.plan.direction : 'long',
         entry: Number(entry),
         stop: Number(stop),
-        tp1: report?.plan.available ? report.plan.targets.tp1 : null,
-        tp2: report?.plan.available ? report.plan.targets.tp2 : null,
-        tp3: report?.plan.available ? report.plan.targets.tp3 : null,
+        tp1: source?.plan.available ? source.plan.targets.tp1 : null,
+        tp2: source?.plan.available ? source.plan.targets.tp2 : null,
+        tp3: source?.plan.available ? source.plan.targets.tp3 : null,
         positionSize: sizing.positionSize,
         accountSize: Number(accountSize),
         riskPct,
         riskAmount: sizing.maxDollarRisk,
-        setupScore: report?.setupScore?.score ?? null,
-        riskScore: report?.risk?.score ?? null,
-        marketConditions: report
-          ? `${report.structure.label}; alignment ${report.alignment.alignment}; ${report.detections.length} setup(s) detected`
-          : null,
-        fomoAcknowledged: acknowledged,
+        setupScore: source?.setupScore?.score ?? null,
+        riskScore: source?.risk?.score ?? null,
+        marketConditions: buildConditions(),
+        fomoAcknowledged: acknowledged || chaseAcknowledged,
       });
       setMessage(`Paper trade #${trade.id} recorded. Complete the pre-trade journal next.`);
       onRecorded(trade.id);
@@ -162,9 +170,31 @@ export function TradeTicket({
     }
   };
 
+  /** Everything true at the moment of entry, recorded with the trade. */
+  const buildConditions = (): string | null => {
+    if (!source) return null;
+    const parts = [
+      `structure ${source.structure?.label ?? 'unavailable'}`,
+      `alignment ${source.alignment.alignment}`,
+      `${source.detections.length} setup(s) detected`,
+    ];
+    if (tokenReport) {
+      parts.push(
+        `status ${tokenReport.tradeStatus.status}`,
+        `volume ${tokenReport.volume.flag}`,
+        `liquidity ${tokenReport.liquidity.label}`,
+      );
+      if (tokenReport.chasing.triggered) parts.push('chasing warning acknowledged');
+    }
+    return parts.join('; ');
+  };
+
   const locked = limits.data?.locked === true;
   const needsAck = preflight?.requiresConfirmation === true && !acknowledged;
-  const canRecord = sizing?.available === true && preflight !== null && !needsAck && !locked && !busy;
+  // The chasing warning does NOT block the trade - it requires acknowledgement.
+  const needsChaseAck = chasing?.triggered === true && !chaseAcknowledged;
+  const canRecord =
+    sizing?.available === true && preflight !== null && !needsAck && !needsChaseAck && !locked && !busy;
 
   return (
     <div className="space-y-3">
@@ -182,6 +212,27 @@ export function TradeTicket({
             New paper entries are blocked. This can be overridden only from Settings, in simulation
             mode, and every trade taken while the override is on is recorded as such.
           </p>
+        </div>
+      ) : null}
+
+      {chasing?.triggered ? (
+        <div className="rounded border border-term-warn bg-term-warn/10 p-3">
+          <div className="mb-1.5 text-xs font-bold uppercase tracking-widest text-term-warn">
+            {chasing.headline}
+          </div>
+          <p className="mb-2 text-[11px] leading-relaxed text-term-warn">{chasing.message}</p>
+          <label className="flex cursor-pointer items-start gap-2 text-[11px] text-term-text">
+            <input
+              type="checkbox"
+              checked={chaseAcknowledged}
+              onChange={(event) => setChaseAcknowledged(event.target.checked)}
+              className="mt-0.5"
+            />
+            <span>
+              I have seen how far this has already moved and am proceeding anyway. Record the trade as
+              flagged.
+            </span>
+          </label>
         </div>
       ) : null}
 
