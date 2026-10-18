@@ -2,7 +2,7 @@
 
 A local, free Amazon FBA product research and profitability calculator.
 
-**Status: Stage 2. Calculation engine plus a local web page. Inputs are not saved yet: refreshing the page clears them.**
+**Status: Stage 3. Calculator, local web page, and saving and comparing products.**
 
 ## Rules this project follows
 
@@ -41,6 +41,22 @@ The app runs only on your computer; nothing is sent anywhere.
 
 Click **Load fictional sample** to try it with made-up numbers (labeled *Estimated*).
 
+## Saving products
+
+Give the current inputs a product name and choose **Save as new product**. Saved products appear in
+the **Saved products** table, recalculated from their saved inputs. Use **Open** to edit one, then
+**Save changes**, or **Save as new product** to keep both versions. **Delete** asks before removing.
+
+Where products are saved depends on how you open the app. The page always says which one applies:
+
+| How you open it | Where products are saved |
+| --- | --- |
+| Your private claude.ai page | Privately in your Claude account. Only you can see them, on any device you sign in on. |
+| `npm start` on your computer | In that browser on that computer only. |
+| Anywhere saving is blocked | Nowhere. A warning says products will be lost when the page closes. |
+
+Your unsaved typing is also kept in the browser, so a refresh doesn't lose it.
+
 ## Commands
 
 Run these from inside the `fba-desk` folder:
@@ -51,6 +67,7 @@ Run these from inside the `fba-desk` folder:
 | `npm start` | Builds the app and serves it at http://127.0.0.1:4180. |
 | `npm run dev` | Development mode at http://127.0.0.1:5180 (reloads on code changes). |
 | `npm run build` | Typechecks and builds the production files into `dist/`. |
+| `npm run build:artifact` | Builds one self-contained page for the private claude.ai page (`dist-artifact/index.html`). |
 | `npm test` | Runs all automated tests. |
 | `npm run typecheck` | Checks the code for type errors. |
 
@@ -81,6 +98,11 @@ report.warnings; // plain-English warnings, always including a disclaimer
 - **`npm test` says the Node version is unsupported.** Install Node.js 22.12 or newer.
 - **`Port 4180 is already in use` (or 5180).** The app is already running in another terminal. Use
   that one, or stop it with `Ctrl+C` and try again.
+- **"N saved item(s) could not be read".** Some saved data was damaged and is hidden rather than
+  crashing the app. In the local version, if the whole list was unreadable, a copy is kept under the
+  browser storage key `fba-desk:products:v1:damaged-backup` before anything new is saved.
+- **Products saved locally don't appear on my phone.** Local saving stays in that one browser. Use the
+  private claude.ai page to see products across devices.
 - **The page is blank.** Make sure you opened the address printed in the terminal, and that
   JavaScript is enabled in your browser.
 
@@ -89,10 +111,19 @@ report.warnings; // plain-English warnings, always including a disclaimer
 ```
 index.html      the web page shell
 src/ui/
-  main.ts       builds the form and results on the page
+  main.ts       builds the form, results and saved-products table
+  compare.ts    recalculates saved products for the comparison table
   form-state.ts form values, the fictional sample, conversion to engine inputs
   format.ts     number and label formatting
   styles.css    page styles (light and dark mode)
+src/storage/
+  product.ts         saved-product format and validation
+  browser-store.ts   saving in this browser (local version)
+  claude-store.ts    saving privately in your Claude account (claude.ai page)
+  select.ts          picks where to save
+  draft.ts           keeps unsaved typing across refreshes
+src/build/
+  artifact-html.ts   packs the built page into one file for claude.ai
 src/engine/
   types.ts      data types: inputs, labels, metrics, report
   fields.ts     every input field, with its label and help text

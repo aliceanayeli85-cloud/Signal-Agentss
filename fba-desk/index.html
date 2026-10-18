@@ -16,34 +16,87 @@
     </header>
 
     <main class="layout">
-      <section class="panel inputs-panel" aria-labelledby="inputs-title">
-        <div class="panel-head">
-          <h2 id="inputs-title">Inputs</h2>
-          <div class="actions">
-            <button type="button" id="load-sample">Load fictional sample</button>
-            <button type="button" id="clear-all" class="secondary">Clear all</button>
+      <div class="workspace">
+        <section class="panel inputs-panel" aria-labelledby="inputs-title">
+          <div class="panel-head">
+            <h2 id="inputs-title">Inputs</h2>
+            <div class="actions">
+              <button type="button" id="load-sample">Load fictional sample</button>
+              <button type="button" id="clear-all" class="secondary">Clear all</button>
+            </div>
           </div>
-        </div>
-        <div id="clear-confirm" class="confirm" role="alert" hidden>
-          <span>Clear all inputs? This cannot be undone.</span>
-          <div class="actions">
-            <button type="button" id="clear-yes" class="danger">Clear inputs</button>
-            <button type="button" id="clear-no" class="secondary">Cancel</button>
+          <div id="clear-confirm" class="confirm" role="alert" hidden>
+            <span>Clear the form? Saved products are not affected.</span>
+            <div class="actions">
+              <button type="button" id="clear-yes" class="danger">Clear inputs</button>
+              <button type="button" id="clear-no" class="secondary">Cancel</button>
+            </div>
           </div>
-        </div>
-        <p class="hint">
-          For each value, choose a label: <strong>Verified</strong> (checked against a source such as your
-          Seller Central fee preview or a supplier invoice), <strong>User-provided</strong> (your number, not
-          checked), <strong>Estimated</strong> (a guess), or leave the value blank for <strong>Unknown</strong>.
-        </p>
-        <form id="fields" class="fields" autocomplete="off"></form>
-      </section>
+          <div class="product-meta">
+            <p id="editing-label" class="editing" hidden></p>
+            <div class="meta-field">
+              <label for="product-name">Product name</label>
+              <input id="product-name" type="text" maxlength="100" autocomplete="off" />
+            </div>
+            <div class="meta-field">
+              <label for="product-notes">Notes (optional)</label>
+              <textarea id="product-notes" maxlength="2000" rows="2"></textarea>
+            </div>
+            <div class="actions">
+              <button type="button" id="save-new">Save as new product</button>
+              <button type="button" id="save-update" class="secondary" hidden>Save changes</button>
+            </div>
+            <p id="save-status" class="save-status" role="status"></p>
+          </div>
+          <p class="hint">
+            For each value, choose a label: <strong>Verified</strong> (checked against a source such as your
+            Seller Central fee preview or a supplier invoice), <strong>User-provided</strong> (your number, not
+            checked), <strong>Estimated</strong> (a guess), or leave the value blank for <strong>Unknown</strong>.
+          </p>
+          <form id="fields" class="fields" autocomplete="off"></form>
+        </section>
 
-      <section class="panel results-panel" aria-labelledby="results-title" aria-live="polite">
-        <h2 id="results-title">Results</h2>
-        <p id="summary" class="summary"></p>
-        <ul id="warnings" class="warnings"></ul>
-        <div id="results"></div>
+        <section class="panel results-panel" aria-labelledby="results-title" aria-live="polite">
+          <h2 id="results-title">Results</h2>
+          <p id="summary" class="summary"></p>
+          <ul id="warnings" class="warnings"></ul>
+          <div id="results"></div>
+        </section>
+      </div>
+
+      <section class="panel products-panel" aria-labelledby="products-title">
+        <h2 id="products-title">Saved products</h2>
+        <p id="storage-notice" class="storage-notice">Checking where products can be saved…</p>
+        <div id="products-confirm" class="confirm" role="alert" hidden>
+          <span id="products-confirm-text"></span>
+          <div class="actions">
+            <button type="button" id="products-confirm-yes" class="danger"></button>
+            <button type="button" id="products-confirm-no" class="secondary">Cancel</button>
+          </div>
+        </div>
+        <p id="products-empty" class="hint">
+          No saved products yet. Fill in the inputs, give the product a name, and choose Save as new product.
+        </p>
+        <p id="products-caption" class="table-caption" hidden>
+          Figures are recalculated from each product's saved inputs. A dash means the result could not be
+          calculated.
+        </p>
+        <div class="table-wrap">
+          <table id="products-table" aria-describedby="products-caption" hidden>
+            <thead>
+              <tr>
+                <th scope="col">Product</th>
+                <th scope="col" class="num">Contribution / unit</th>
+                <th scope="col" class="num">Margin</th>
+                <th scope="col" class="num">ROI</th>
+                <th scope="col" class="num">Net / month</th>
+                <th scope="col">Data quality</th>
+                <th scope="col"><span class="visually-hidden">Actions</span></th>
+              </tr>
+            </thead>
+            <tbody id="products-body"></tbody>
+          </table>
+        </div>
       </section>
     </main>
 

@@ -90,10 +90,14 @@ h1 {
   margin: 0 0 12px;
 }
 
-.layout {
+.layout,
+.workspace {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
   gap: 16px;
+}
+
+.layout {
   padding-block: 8px 32px;
   padding-left: max(16px, env(safe-area-inset-left, 0px));
   padding-right: max(16px, env(safe-area-inset-right, 0px));
@@ -102,7 +106,8 @@ h1 {
 }
 
 @media (min-width: 900px) {
-  .layout {
+  /* Only the workspace has two columns, so the sticky results panel can't slide over saved products. */
+  .workspace {
     grid-template-columns: minmax(0, 5fr) minmax(0, 6fr);
     align-items: start;
   }
@@ -340,4 +345,205 @@ summary:focus-visible {
 .metric summary {
   cursor: pointer;
   color: var(--accent);
+}
+
+.product-meta {
+  display: grid;
+  gap: 10px;
+  margin: 8px 0 16px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--border);
+}
+
+.meta-field label {
+  display: block;
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.meta-field input,
+.meta-field textarea {
+  width: 100%;
+  font: inherit;
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--panel);
+  color: var(--text);
+  resize: vertical;
+}
+
+.meta-field input[aria-invalid='true'] {
+  border-color: var(--error);
+  border-width: 2px;
+}
+
+.meta-field input:focus-visible,
+.meta-field textarea:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.editing {
+  margin: 0;
+  font-weight: 600;
+}
+
+.save-status {
+  margin: 0;
+  font-weight: 600;
+}
+
+.save-status:empty {
+  display: none;
+}
+
+.save-status.is-error {
+  color: var(--error);
+}
+
+button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.products-panel {
+  min-width: 0;
+}
+
+
+.storage-notice {
+  margin: 0 0 12px;
+  color: var(--muted);
+}
+
+.storage-notice.is-warning {
+  padding: 10px 12px;
+  border: 1px solid var(--warn-border);
+  background: var(--warn-bg);
+  border-radius: 6px;
+  color: var(--text);
+  font-weight: 600;
+}
+
+/* position: relative keeps absolutely positioned children (e.g. .visually-hidden) inside the scroll box. */
+.table-wrap {
+  position: relative;
+  overflow-x: auto;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-variant-numeric: tabular-nums;
+}
+
+.table-caption {
+  margin: 0 0 8px;
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+/* The table scrolls sideways on phones; keep the name column readable instead of squeezing it. */
+th:first-child,
+td:first-child {
+  min-width: 11rem;
+}
+
+th,
+td {
+  text-align: left;
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--border);
+  vertical-align: top;
+}
+
+th {
+  font-size: 0.85rem;
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+td.num,
+th.num {
+  text-align: right;
+  white-space: nowrap;
+}
+
+tr.is-editing td {
+  background: var(--unknown-bg);
+}
+
+.product-name {
+  font-weight: 600;
+  overflow-wrap: break-word;
+}
+
+.saved-at {
+  display: block;
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+
+.row-actions {
+  display: flex;
+  gap: 6px;
+  white-space: nowrap;
+}
+
+.row-actions button {
+  padding: 4px 10px;
+  font-size: 0.9rem;
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+/* Narrow screens: each saved product becomes a card with labeled values. */
+@media (max-width: 640px) {
+  #products-table thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+  }
+  #products-table,
+  #products-table tbody,
+  #products-table tr,
+  #products-table td {
+    display: block;
+    width: 100%;
+  }
+  #products-table tr {
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    margin-bottom: 10px;
+    padding: 6px 0;
+  }
+  #products-table td {
+    border-bottom: 0;
+    padding: 4px 12px;
+    min-width: 0;
+  }
+  #products-table td[data-label] {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    text-align: right;
+  }
+  #products-table td[data-label]::before {
+    content: attr(data-label);
+    color: var(--muted);
+    text-align: left;
+  }
+  #products-table .row-actions {
+    padding-top: 6px;
+  }
 }
