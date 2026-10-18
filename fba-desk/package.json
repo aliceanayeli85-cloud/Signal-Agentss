@@ -1,0 +1,21 @@
+{
+  "name": "fba-research-desk",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Local Amazon FBA product research and profitability calculator. All fees are user-entered; nothing is invented.",
+  "engines": {
+    "node": ">=22.12"
+  },
+  "scripts": {
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "typescript": "~5.9.3",
+    "vite": "8.3.2",
+    "vitest": "5.0.3"
+  }
+}
