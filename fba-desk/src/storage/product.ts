@@ -1,4 +1,4 @@
-import { FIELDS, PROVENANCE_ORDER, type Provenance } from '../engine';
+import { FIELDS, PROVENANCE_ORDER, RULES, emptyRulesForm, type Provenance, type RulesForm } from '../engine';
 import { DEFAULT_SOURCE, type FormState } from '../ui/form-state';
 
 export const SCHEMA_VERSION = 1;
@@ -97,6 +97,19 @@ export function sortNewestFirst(products: SavedProduct[]): SavedProduct[] {
   return [...products].sort((a, b) => Date.parse(b.savedAt) - Date.parse(a.savedAt));
 }
 
+/** Validates screening rules read from storage. Returns null if malformed. */
+export function parseStoredRules(raw: unknown): RulesForm | null {
+  if (!isRecord(raw)) return null;
+  const form = emptyRulesForm();
+  for (const rule of RULES) {
+    const value = raw[rule.key];
+    if (value === undefined) continue;
+    if (typeof value !== 'string' || value.length > MAX_VALUE_LENGTH) return null;
+    form[rule.key] = value;
+  }
+  return form;
+}
+
 export interface ListResult {
   products: SavedProduct[];
   /** Number of stored entries that were unreadable and left out. */
@@ -110,4 +123,7 @@ export interface ProductStore {
   list(): Promise<ListResult>;
   save(product: SavedProduct): Promise<void>;
   remove(id: string): Promise<void>;
+  /** The user's screening rules, or null if none were saved yet. */
+  loadRules(): Promise<RulesForm | null>;
+  saveRules(rules: RulesForm): Promise<void>;
 }

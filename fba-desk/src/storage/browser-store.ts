@@ -1,6 +1,8 @@
+import type { RulesForm } from '../engine';
 import {
   StorageError,
   parseSavedProduct,
+  parseStoredRules,
   sortNewestFirst,
   toStored,
   type ListResult,
@@ -12,6 +14,7 @@ export type KeyValueStorage = Pick<Storage, 'getItem' | 'setItem' | 'removeItem'
 
 export const PRODUCTS_KEY = 'fba-desk:products:v1';
 export const BACKUP_KEY = `${PRODUCTS_KEY}:damaged-backup`;
+export const RULES_KEY = 'fba-desk:rules:v1';
 
 /** Returns the browser's localStorage if it can actually be written, otherwise null. */
 export function usableLocalStorage(candidate: KeyValueStorage | undefined): KeyValueStorage | null {
@@ -91,6 +94,29 @@ export class BrowserProductStore implements ProductStore {
     if (damaged) return;
     this.writeAll(entries.filter((e) => parseSavedProduct(e)?.id !== id));
   }
+
+  async loadRules(): Promise<RulesForm | null> {
+    let raw: string | null;
+    try {
+      raw = this.storage.getItem(RULES_KEY);
+    } catch {
+      throw new StorageError('This browser is blocking saved data. Check that site data is allowed.');
+    }
+    if (raw === null) return null;
+    try {
+      return parseStoredRules(JSON.parse(raw));
+    } catch {
+      return null;
+    }
+  }
+
+  async saveRules(rules: RulesForm): Promise<void> {
+    try {
+      this.storage.setItem(RULES_KEY, JSON.stringify(rules));
+    } catch {
+      throw new StorageError('Could not save your rules: browser storage is full or blocked.');
+    }
+  }
 }
 
 /** Fallback when nothing persistent is available: products last until the page is closed. */
@@ -109,5 +135,15 @@ export class MemoryProductStore implements ProductStore {
 
   async remove(id: string): Promise<void> {
     this.items.delete(id);
+  }
+
+  private rules: RulesForm | null = null;
+
+  async loadRules(): Promise<RulesForm | null> {
+    return this.rules ? { ...this.rules } : null;
+  }
+
+  async saveRules(rules: RulesForm): Promise<void> {
+    this.rules = { ...rules };
   }
 }

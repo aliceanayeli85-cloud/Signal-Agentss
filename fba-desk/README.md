@@ -2,7 +2,7 @@
 
 A local, free Amazon FBA product research and profitability calculator.
 
-**Status: Stage 3. Calculator, local web page, and saving and comparing products.**
+**Status: Stage 4. Calculator, saving and comparing products, and a research assistant that screens items against your own rules.**
 
 ## Rules this project follows
 
@@ -40,6 +40,27 @@ Then open **http://127.0.0.1:4180** in your browser. Press `Ctrl+C` in the termi
 The app runs only on your computer; nothing is sent anywhere.
 
 Click **Load fictional sample** to try it with made-up numbers (labeled *Estimated*).
+
+## Finding and screening products
+
+The app does not find products by itself or know which ones sell. That needs Amazon sales data, which
+is only available through a seller account or paid tools, and the app never makes it up. Instead it
+helps you research ideas yourself and sorts them by your own rules:
+
+1. **How to find product ideas (free)**, in the Saved products section: general tips for finding ideas.
+2. **How to find this**, under each input: where to look that number up for free.
+3. **Progress line**: how many inputs are filled in and how many are marked verified.
+4. **Your rules**: your own minimums for contribution profit, margin, ROI and net profit per month.
+   Leave any blank to skip it. They're saved when you leave a box.
+5. **Verdict** for the current product, and a **Your rules** column for saved products:
+   - *Meets your rules*, with "(unverified inputs)" when it relies on estimates.
+   - *Fails your rules*, saying which rule and by how much.
+   - *Not enough data*, when a needed input is unknown.
+6. **Sort: Best first** ranks saved products: meets, then not enough data, then fails, with higher
+   profit per unit first within each group.
+
+"Meets your rules" is not a guarantee that a product is profitable. It means the numbers you entered
+pass the limits you set.
 
 ## Saving products
 
@@ -112,7 +133,7 @@ report.warnings; // plain-English warnings, always including a disclaimer
 index.html      the web page shell
 src/ui/
   main.ts       builds the form, results and saved-products table
-  compare.ts    recalculates saved products for the comparison table
+  compare.ts    recalculates and ranks saved products for the comparison table
   form-state.ts form values, the fictional sample, conversion to engine inputs
   format.ts     number and label formatting
   styles.css    page styles (light and dark mode)
@@ -129,5 +150,6 @@ src/engine/
   fields.ts     every input field, with its label and help text
   parse.ts      input validation and cent rounding
   calculate.ts  formulas, warnings and the calculateProfitability() entry point
+  screening.ts  your rules: checks results against your minimums and ranks products
 tests/          automated tests (fictional sample data only)
 ```

@@ -1,11 +1,17 @@
 import {
   FIELDS,
   PROVENANCE_ORDER,
+  RULES,
   calculateProfitability,
+  emptyRulesForm,
+  evaluateRules,
+  parseRulesForm,
   type CalculationReport,
   type FieldKey,
   type Metric,
   type Provenance,
+  type RuleKey,
+  type RulesForm,
 } from '../engine';
 import { usableLocalStorage, type KeyValueStorage } from '../storage/browser-store';
 import { loadDraft, saveDraft } from '../storage/draft';
@@ -18,9 +24,9 @@ import {
   type SavedProduct,
 } from '../storage/product';
 import { selectProductStore, type ClaudeRuntime } from '../storage/select';
-import { DATA_QUALITY_LABEL, buildComparison } from './compare';
+import { DATA_QUALITY_LABEL, buildComparison, verdictLabel, type SortMode } from './compare';
 import { emptyForm, sampleForm, toProductInputs, type FormState } from './form-state';
-import { ASSUMPTION_SUMMARY, SOURCE_LABEL, STATUS_LABEL, formatMetricValue } from './format';
+import { ASSUMPTION_SUMMARY, SOURCE_LABEL, STATUS_LABEL, formatMetricValue, formatNumber } from './format';
 
 // All user-controlled text is written with textContent, never innerHTML.
 
@@ -55,10 +61,15 @@ let savedSnapshot = '';
 let store: ProductStore | null = null;
 let products: SavedProduct[] = [];
 let busy = false;
+let rulesForm: RulesForm = emptyRulesForm();
+let sortMode: SortMode = 'best';
+const SORT_KEY = 'fba-desk:sort:v1';
 
 const valueInputs = {} as Record<FieldKey, HTMLInputElement>;
 const sourceSelects = {} as Record<FieldKey, HTMLSelectElement>;
 const errorSlots = {} as Record<FieldKey, HTMLElement>;
+const ruleInputs = {} as Record<RuleKey, HTMLInputElement>;
+const ruleErrors = {} as Record<RuleKey, HTMLElement>;
 /** "Show calculation" panels the user opened, kept open across re-renders. */
 const openDetails = new Set<string>();
 
@@ -141,6 +152,10 @@ function buildForm(container: HTMLElement): void {
         el('label', { text: field.label + (field.kind === 'percent' ? ' (%)' : ''), attrs: { for: inputId } }),
         el('div', { className: 'field-controls' }, [input, select]),
         el('p', { className: 'field-help', text: field.help, attrs: { id: `help-${field.key}` } }),
+        el('details', { className: 'lookup' }, [
+          el('summary', { text: 'How to find this' }),
+          el('p', { text: field.lookup }),
+        ]),
         error,
       ]),
     );
@@ -180,7 +195,8 @@ function calculationDetails(key: string, children: Node[]): HTMLDetailsElement {
 
 function metricCard(metric: Metric, report: CalculationReport): HTMLElement {
   const details: Node[] = [el('p', { className: 'formula', text: `Formula: ${metric.formula}` })];
-  if (metric.workedFormula) details.push(el('p', { className: 'worked', text: `With your numbers: ${metric.workedFormula}` }));
+  if (metric.workedFormula)
+    details.push(el('p', { className: 'worked', text: `With your numbers: ${metric.workedFormula}` }));
   if (metric.basis && metric.status !== 'invalid') {
     details.push(el('p', { className: 'basis', text: `Weakest input label: ${SOURCE_LABEL[metric.basis]}` }));
   }
@@ -236,10 +252,56 @@ function renderResults(report: CalculationReport): void {
   );
 }
 
+function currentRules() {
+  return parseRulesForm(rulesForm);
+}
+
+function renderProgress(report: CalculationReport): void {
+  const inputs = Object.values(report.inputs);
+  const filled = inputs.filter((i) => i.value !== null).length;
+  const verified = inputs.filter((i) => i.source === 'verified').length;
+  mustGet('progress').textContent = `${filled} of ${inputs.length} inputs filled · ${verified} verified`;
+}
+
+function renderVerdict(report: CalculationReport): void {
+  const box = mustGet('verdict');
+  const result = evaluateRules(report.metrics, currentRules().rules);
+  box.className = `verdict verdict-${result.verdict}`;
+  if (result.verdict === 'no-rules') {
+    box.replaceChildren(
+      el('p', { className: 'verdict-head', text: 'Your rules: none set yet' }),
+      el('p', { text: 'Add your minimums under Your rules to screen this product.' }),
+    );
+    return;
+  }
+  const lines = result.checks.map((c) => {
+    const needs = `needs at least ${formatNumber(c.threshold, c.unit)}`;
+    if (c.value === null)
+      return el('li', { text: `${c.label}: can't check yet (missing or invalid inputs), ${needs}` });
+    const value = formatNumber(c.value, c.unit);
+    if (c.status === 'pass') return el('li', { text: `${c.label}: ${value}, ${needs}. Pass.` });
+    return el('li', {
+      text: `${c.label}: ${value}, ${needs}. Short by ${formatNumber(c.threshold - c.value, c.unit)}.`,
+    });
+  });
+  const children: Node[] = [
+    el('p', { className: 'verdict-head', text: `Your rules: ${verdictLabel(result)}` }),
+    el('ul', {}, lines),
+  ];
+  if (result.unverified) {
+    children.push(
+      el('p', { text: 'This relies on estimated or unverified inputs. Verify them before relying on it.' }),
+    );
+  }
+  box.replaceChildren(...children);
+}
+
 function update(): void {
   const report = calculateProfitability(toProductInputs(state));
   renderFieldStatus(report);
   renderResults(report);
+  renderProgress(report);
+  renderVerdict(report);
   renderEditingState();
   scheduleDraftSave();
 }
@@ -286,16 +348,25 @@ function askProducts(message: string, confirmLabel: string, onConfirm: () => voi
 }
 
 function renderProducts(): void {
-  const rows = buildComparison(products);
+  const rows = buildComparison(products, currentRules().rules, sortMode);
   mustGet('products-empty').hidden = rows.length > 0;
+  mustGet('table-tools').hidden = rows.length === 0;
   mustGet('products-table').hidden = rows.length === 0;
   mustGet('products-caption').hidden = rows.length === 0;
   const dateFormat = new Intl.DateTimeFormat(undefined, { dateStyle: 'medium', timeStyle: 'short' });
 
   mustGet('products-body').replaceChildren(
     ...rows.map((row) => {
-      const open = el('button', { text: 'Open', className: 'secondary', attrs: { type: 'button', 'data-open': row.id } });
-      const remove = el('button', { text: 'Delete', className: 'secondary', attrs: { type: 'button', 'data-delete': row.id } });
+      const open = el('button', {
+        text: 'Open',
+        className: 'secondary',
+        attrs: { type: 'button', 'data-open': row.id },
+      });
+      const remove = el('button', {
+        text: 'Delete',
+        className: 'secondary',
+        attrs: { type: 'button', 'data-delete': row.id },
+      });
       open.addEventListener('click', () => requestOpen(row.id));
       remove.addEventListener('click', () => requestDelete(row.id));
       // data-label is shown beside each value when the table is stacked as cards on narrow screens.
@@ -306,6 +377,11 @@ function renderProducts(): void {
           el('span', { className: 'product-name', text: row.name }),
           el('span', { className: 'saved-at', text: `Saved ${dateFormat.format(new Date(row.savedAt))}` }),
         ]),
+        el('td', {
+          className: `verdict-cell verdict-${row.screening.verdict}`,
+          text: verdictLabel(row.screening),
+          attrs: { 'data-label': 'Your rules' },
+        }),
         metricCell(row.contributionProfitPerUnit, 'Contribution / unit'),
         metricCell(row.contributionMarginPercent, 'Margin'),
         metricCell(row.roiPercent, 'ROI'),
@@ -412,12 +488,101 @@ function requestDelete(id: string): void {
   });
 }
 
+// --- Screening rules ---
+
+function syncRuleControls(): void {
+  for (const rule of RULES) ruleInputs[rule.key].value = rulesForm[rule.key];
+}
+
+function renderRuleErrors(): void {
+  const { errors } = currentRules();
+  for (const rule of RULES) {
+    ruleErrors[rule.key].textContent = errors[rule.key] ?? '';
+    ruleInputs[rule.key].setAttribute('aria-invalid', errors[rule.key] ? 'true' : 'false');
+  }
+}
+
+function setRulesStatus(message: string, isError = false): void {
+  const status = mustGet('rules-status');
+  status.textContent = message;
+  status.classList.toggle('is-error', isError);
+}
+
+async function persistRules(): Promise<void> {
+  if (!store) return;
+  if (Object.keys(currentRules().errors).length > 0) {
+    setRulesStatus('Fix the highlighted rule before it can be saved.', true);
+    return;
+  }
+  try {
+    await store.saveRules(rulesForm);
+    setRulesStatus('Rules saved.');
+  } catch (error) {
+    setRulesStatus(errorMessage(error), true);
+  }
+}
+
+function buildRulesForm(container: HTMLFormElement): void {
+  container.addEventListener('submit', (e) => e.preventDefault());
+  for (const rule of RULES) {
+    const id = `rule-${rule.key}`;
+    const input = el('input', {
+      attrs: {
+        id,
+        type: 'text',
+        inputmode: 'decimal',
+        autocomplete: 'off',
+        maxlength: '50',
+        placeholder: 'not used',
+        'aria-describedby': `${id}-err`,
+      },
+    });
+    const error = el('p', { className: 'field-error', attrs: { id: `${id}-err`, role: 'alert' } });
+    input.addEventListener('input', () => {
+      rulesForm[rule.key] = input.value;
+      setRulesStatus('');
+      renderRuleErrors();
+      update();
+      renderProducts();
+    });
+    input.addEventListener('change', () => void persistRules());
+    ruleInputs[rule.key] = input;
+    ruleErrors[rule.key] = error;
+    container.append(
+      el('div', {}, [
+        el('label', { text: rule.label + (rule.unit === 'percent' ? ' (%)' : ''), attrs: { for: id } }),
+        input,
+        error,
+      ]),
+    );
+  }
+}
+
 // --- Startup ---
 
 function init(): void {
   const form = mustGet<HTMLFormElement>('fields');
   form.addEventListener('submit', (e) => e.preventDefault());
   buildForm(form);
+  buildRulesForm(mustGet<HTMLFormElement>('rules'));
+
+  try {
+    const savedSort = draftStorage?.getItem(SORT_KEY);
+    if (savedSort === 'best' || savedSort === 'newest') sortMode = savedSort;
+  } catch {
+    // Sort preference is a convenience; ignore storage errors.
+  }
+  const sortSelect = mustGet<HTMLSelectElement>('sort-products');
+  sortSelect.value = sortMode;
+  sortSelect.addEventListener('change', () => {
+    sortMode = sortSelect.value === 'newest' ? 'newest' : 'best';
+    try {
+      draftStorage?.setItem(SORT_KEY, sortMode);
+    } catch {
+      // Ignored on purpose.
+    }
+    renderProducts();
+  });
 
   mustGet<HTMLInputElement>('product-name').addEventListener('input', (e) => {
     productName = (e.target as HTMLInputElement).value;
@@ -488,6 +653,17 @@ function init(): void {
   const claude = (window as unknown as { claude?: ClaudeRuntime }).claude;
   void selectProductStore({ claude, localStorage: draftStorage ?? undefined }).then(async (selected) => {
     store = selected;
+    try {
+      const savedRules = await selected.loadRules();
+      if (savedRules) {
+        rulesForm = savedRules;
+        syncRuleControls();
+        renderRuleErrors();
+        update();
+      }
+    } catch (error) {
+      setRulesStatus(errorMessage(error), true);
+    }
     await refreshProducts();
     // A restored draft counts as unsaved only if it differs from the saved product it came from.
     const original = editingId ? products.find((p) => p.id === editingId) : undefined;

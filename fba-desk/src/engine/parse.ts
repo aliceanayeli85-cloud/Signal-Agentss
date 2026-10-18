@@ -1,5 +1,8 @@
 import type { FieldKind } from './types';
 
+/** 'percent-uncapped' is a percentage that may exceed 100 (e.g. a minimum ROI). */
+export type AmountKind = FieldKind | 'percent-uncapped';
+
 /** Upper bound to catch typos (e.g. an extra row of zeros). */
 export const MAX_AMOUNT = 1_000_000_000;
 
@@ -11,7 +14,7 @@ const NUMBER_PATTERN = /^-?(\d+\.?\d*|\.\d+)$/;
  * Parses one user-entered value. Blank (empty string, null, undefined) means "no value"
  * and returns { ok: true, value: null } — it is never converted to zero.
  */
-export function parseAmount(raw: string | number | null | undefined, kind: FieldKind): ParseResult {
+export function parseAmount(raw: string | number | null | undefined, kind: AmountKind): ParseResult {
   if (raw === null || raw === undefined) return { ok: true, value: null };
 
   let value: number;
@@ -22,7 +25,7 @@ export function parseAmount(raw: string | number | null | undefined, kind: Field
     let text = raw.trim();
     if (text === '') return { ok: true, value: null };
     if (kind === 'money' && text.startsWith('$')) text = text.slice(1).trim();
-    if (kind === 'percent' && text.endsWith('%')) text = text.slice(0, -1).trim();
+    if ((kind === 'percent' || kind === 'percent-uncapped') && text.endsWith('%')) text = text.slice(0, -1).trim();
     if (text.includes(',')) {
       return { ok: false, message: 'use a period for decimals and no thousands separators (e.g. 1234.56)' };
     }

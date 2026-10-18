@@ -1,6 +1,9 @@
+import type { RulesForm } from '../engine';
 import {
+  SCHEMA_VERSION,
   StorageError,
   parseSavedProduct,
+  parseStoredRules,
   sortNewestFirst,
   toStored,
   type ListResult,
@@ -10,6 +13,7 @@ import {
 
 /** The subset of the claude.ai `db` capability this app uses. */
 export interface MinimalDocRef {
+  get(): Promise<{ exists: boolean; data(): Record<string, unknown> | undefined }>;
   set(data: Record<string, unknown>): Promise<void>;
   delete(): Promise<void>;
   collection(path: string): MinimalCollection;
@@ -26,7 +30,7 @@ function codeOf(error: unknown): string {
   return typeof error === 'object' && error !== null && 'code' in error ? String(error.code) : 'unavailable';
 }
 
-function toStorageError(error: unknown, action: 'load' | 'save' | 'delete'): StorageError {
+function toStorageError(error: unknown, action: 'load' | 'save' | 'delete' | 'save your rules'): StorageError {
   switch (codeOf(error)) {
     case 'quota_exceeded':
       return new StorageError('Your saved-products storage is full. Delete some products and try again.');
@@ -60,10 +64,31 @@ async function withRetry<T>(op: () => Promise<T>): Promise<T> {
 export class ClaudeProductStore implements ProductStore {
   readonly description = 'Saved privately to your Claude account. Only you can see these.';
   readonly persistent = true;
+  /** One private document per viewer holding settings such as screening rules. */
+  private readonly settings: MinimalDocRef;
   private readonly products: MinimalCollection;
 
   constructor(db: MinimalDb, viewerId: string) {
-    this.products = db.doc(`data/users/${viewerId}/fba`).collection('products');
+    this.settings = db.doc(`data/users/${viewerId}/fba`);
+    this.products = this.settings.collection('products');
+  }
+
+  async loadRules(): Promise<RulesForm | null> {
+    let snapshot;
+    try {
+      snapshot = await withRetry(() => this.settings.get());
+    } catch (error) {
+      throw toStorageError(error, 'load');
+    }
+    return snapshot.exists ? parseStoredRules(snapshot.data()?.rules) : null;
+  }
+
+  async saveRules(rules: RulesForm): Promise<void> {
+    try {
+      await withRetry(() => this.settings.set({ schemaVersion: SCHEMA_VERSION, rules: { ...rules } }));
+    } catch (error) {
+      throw toStorageError(error, 'save your rules');
+    }
   }
 
   async list(): Promise<ListResult> {

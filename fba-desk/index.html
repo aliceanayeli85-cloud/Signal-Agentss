@@ -48,6 +48,7 @@
             </div>
             <p id="save-status" class="save-status" role="status"></p>
           </div>
+          <p id="progress" class="progress"></p>
           <p class="hint">
             For each value, choose a label: <strong>Verified</strong> (checked against a source such as your
             Seller Central fee preview or a supplier invoice), <strong>User-provided</strong> (your number, not
@@ -59,13 +60,42 @@
         <section class="panel results-panel" aria-labelledby="results-title" aria-live="polite">
           <h2 id="results-title">Results</h2>
           <p id="summary" class="summary"></p>
+          <div id="verdict" class="verdict"></div>
           <ul id="warnings" class="warnings"></ul>
           <div id="results"></div>
         </section>
       </div>
 
+      <section class="panel rules-panel" aria-labelledby="rules-title">
+        <h2 id="rules-title">Your rules</h2>
+        <p class="hint">
+          Set the minimum results a product must reach. Leave a rule blank to skip it. The app has no built-in
+          targets; these are your own. Rules are saved when you leave a box.
+        </p>
+        <form id="rules" class="rules-grid" autocomplete="off"></form>
+        <p id="rules-status" class="save-status" role="status"></p>
+      </section>
+
       <section class="panel products-panel" aria-labelledby="products-title">
         <h2 id="products-title">Saved products</h2>
+        <details class="ideas">
+          <summary>How to find product ideas (free)</summary>
+          <ol>
+            <li>Browse Amazon's Best Sellers and Movers &amp; Shakers lists in categories you understand.</li>
+            <li>Note items whose price looks high enough to leave room for fees, then add them here as ideas.</li>
+            <li>
+              Read the top listings: many sellers with thousands of reviews means strong competition. Repeated
+              complaints in reviews can point to a better version you could offer.
+            </li>
+            <li>Look up supplier prices for similar items and ask for written quotes.</li>
+            <li>
+              Until you know the rules, avoid categories that need Amazon's approval, hazardous items, and oversized
+              items. Amazon's seller help pages explain which ones these are.
+            </li>
+            <li>Fill in each idea with the "How to find this" tips, save it, and let your rules sort the list.</li>
+          </ol>
+          <p class="hint">General tips only. This app does not recommend specific products.</p>
+        </details>
         <p id="storage-notice" class="storage-notice">Checking where products can be saved…</p>
         <div id="products-confirm" class="confirm" role="alert" hidden>
           <span id="products-confirm-text"></span>
@@ -81,11 +111,19 @@
           Figures are recalculated from each product's saved inputs. A dash means the result could not be
           calculated.
         </p>
+        <div id="table-tools" class="table-tools" hidden>
+          <label for="sort-products">Sort</label>
+          <select id="sort-products">
+            <option value="best">Best first (your rules)</option>
+            <option value="newest">Newest first</option>
+          </select>
+        </div>
         <div class="table-wrap">
           <table id="products-table" aria-describedby="products-caption" hidden>
             <thead>
               <tr>
                 <th scope="col">Product</th>
+                <th scope="col">Your rules</th>
                 <th scope="col" class="num">Contribution / unit</th>
                 <th scope="col" class="num">Margin</th>
                 <th scope="col" class="num">ROI</th>

@@ -3,10 +3,14 @@ import type { AssumptionLevel, Metric, MetricStatus, Provenance } from '../engin
 const numberFormat = new Intl.NumberFormat('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
 /** Money is shown without a currency symbol: the app doesn't know which currency the user entered. */
+export function formatNumber(value: number, unit: 'money' | 'percent'): string {
+  const text = numberFormat.format(value);
+  return unit === 'percent' ? `${text}%` : text;
+}
+
 export function formatMetricValue(metric: Metric): string {
   if (metric.status !== 'complete' || metric.value === null) return '—';
-  const text = numberFormat.format(metric.value);
-  return metric.unit === 'percent' ? `${text}%` : text;
+  return formatNumber(metric.value, metric.unit);
 }
 
 export const STATUS_LABEL: Readonly<Record<MetricStatus, string>> = {

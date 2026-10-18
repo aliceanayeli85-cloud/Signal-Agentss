@@ -30,6 +30,8 @@ export interface FieldDefinition {
   label: string;
   kind: FieldKind;
   help: string;
+  /** Where to look this value up for free. General guidance only; never a value. */
+  lookup: string;
 }
 
 /** A value exactly as the user typed it, plus where it came from. */

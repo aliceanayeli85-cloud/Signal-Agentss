@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
+import { emptyRulesForm } from '../src/engine';
 import {
   BACKUP_KEY,
+  RULES_KEY,
   BrowserProductStore,
   MemoryProductStore,
   PRODUCTS_KEY,
@@ -220,6 +222,11 @@ function fakeDb(opts: { failWith?: string[] } = {}) {
   const docRef = (path: string) => {
     paths.push(path);
     return {
+      get: async () => {
+        await maybeFail();
+        const body = docs.get(path);
+        return { exists: body !== undefined, data: () => body };
+      },
       set: async (data: Record<string, unknown>) => {
         await maybeFail();
         docs.set(path, structuredClone(data));
@@ -333,5 +340,50 @@ describe('draft autosave', () => {
     storage.failReads = true;
     expect(loadDraft(storage)).toBeNull();
     expect(loadDraft(null)).toBeNull();
+  });
+});
+
+describe('screening rules storage', () => {
+  const rules = { ...emptyRulesForm(), minMarginPercent: '30', minRoiPercent: '150' };
+
+  it('browser: returns null before any rules are saved, then round-trips', async () => {
+    const storage = new FakeStorage();
+    const store = new BrowserProductStore(storage);
+    expect(await store.loadRules()).toBeNull();
+    await store.saveRules(rules);
+    expect(await new BrowserProductStore(storage).loadRules()).toEqual(rules);
+  });
+
+  it('browser: ignores damaged rules instead of crashing', async () => {
+    const storage = new FakeStorage();
+    storage.setItem(RULES_KEY, '{bad');
+    expect(await new BrowserProductStore(storage).loadRules()).toBeNull();
+    storage.setItem(RULES_KEY, JSON.stringify({ minMarginPercent: 30 }));
+    expect(await new BrowserProductStore(storage).loadRules()).toBeNull();
+  });
+
+  it('browser: reports a failed rules save', async () => {
+    const storage = new FakeStorage();
+    storage.failWrites = true;
+    await expect(new BrowserProductStore(storage).saveRules(rules)).rejects.toThrow(/Could not save your rules/);
+  });
+
+  it('claude: stores rules in the viewer’s private settings document', async () => {
+    const { db, docs } = fakeDb();
+    const store = new ClaudeProductStore(db, 'u_viewer1');
+    expect(await store.loadRules()).toBeNull();
+    await store.saveRules(rules);
+    expect(docs.get('data/users/u_viewer1/fba')).toEqual({ schemaVersion: 1, rules });
+    expect(await store.loadRules()).toEqual(rules);
+    // Products in the subcollection are unaffected by the settings document.
+    await store.save(product());
+    expect((await store.list()).products).toHaveLength(1);
+  });
+
+  it('memory: round-trips rules', async () => {
+    const store = new MemoryProductStore();
+    expect(await store.loadRules()).toBeNull();
+    await store.saveRules(rules);
+    expect(await store.loadRules()).toEqual(rules);
   });
 });
