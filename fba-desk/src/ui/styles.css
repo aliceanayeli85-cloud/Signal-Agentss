@@ -7,16 +7,18 @@
   --accent: #2457c5;
   --accent-text: #ffffff;
   --error: #b42318;
+  --danger-text: #ffffff;
   --warn-bg: #fff6e0;
   --warn-border: #e8b84a;
   --ok-bg: #e8f5ec;
   --ok-border: #5fae7a;
   --unknown-bg: #f1f2f4;
-  color-scheme: light dark;
+  color-scheme: light;
 }
 
+/* Dark palette: follows the OS setting unless a host page forces light via data-theme. */
 @media (prefers-color-scheme: dark) {
-  :root {
+  :root:not([data-theme='light']) {
     --bg: #14161a;
     --panel: #1d2026;
     --text: #e7e9ec;
@@ -25,16 +27,41 @@
     --accent: #6d9cff;
     --accent-text: #0d1117;
     --error: #ff8a80;
+    --danger-text: #1a0d0c;
     --warn-bg: #3a2f14;
     --warn-border: #a8842e;
     --ok-bg: #16301f;
     --ok-border: #3f8a59;
     --unknown-bg: #262a31;
+    color-scheme: dark;
   }
+}
+
+:root[data-theme='dark'] {
+  --bg: #14161a;
+  --panel: #1d2026;
+  --text: #e7e9ec;
+  --muted: #9aa3af;
+  --border: #343941;
+  --accent: #6d9cff;
+  --accent-text: #0d1117;
+  --error: #ff8a80;
+  --danger-text: #1a0d0c;
+  --warn-bg: #3a2f14;
+  --warn-border: #a8842e;
+  --ok-bg: #16301f;
+  --ok-border: #3f8a59;
+  --unknown-bg: #262a31;
+  color-scheme: dark;
 }
 
 * {
   box-sizing: border-box;
+}
+
+/* Elements toggled with the hidden attribute must stay hidden even when a class sets display. */
+[hidden] {
+  display: none !important;
 }
 
 body {
@@ -45,7 +72,9 @@ body {
 }
 
 .page-header {
-  padding: 24px 16px 8px;
+  padding-block: 24px 8px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
   max-width: 1200px;
   margin: 0 auto;
 }
@@ -65,7 +94,9 @@ h1 {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
   gap: 16px;
-  padding: 8px 16px 32px;
+  padding-block: 8px 32px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
   max-width: 1200px;
   margin: 0 auto;
 }
@@ -77,8 +108,8 @@ h1 {
   }
   .results-panel {
     position: sticky;
-    top: 16px;
-    max-height: calc(100vh - 32px);
+    top: calc(16px + env(safe-area-inset-top, 0px));
+    max-height: calc(100vh - 32px - env(safe-area-inset-top, 0px));
     overflow-y: auto;
   }
 }
@@ -117,6 +148,25 @@ button {
   background: var(--accent);
   color: var(--accent-text);
   cursor: pointer;
+}
+
+button.danger {
+  background: var(--error);
+  border-color: var(--error);
+  color: var(--danger-text);
+}
+
+.confirm {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin: 8px 0 12px;
+  padding: 10px 12px;
+  border: 1px solid var(--error);
+  border-radius: 6px;
+  font-weight: 600;
 }
 
 button.secondary {

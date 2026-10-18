@@ -179,16 +179,29 @@ function init(): void {
   form.addEventListener('submit', (e) => e.preventDefault());
   buildForm(form);
   mustGet('load-sample').addEventListener('click', () => {
+    mustGet('clear-confirm').hidden = true;
     state = sampleForm();
     syncFormControls();
     update();
   });
-  mustGet('clear-all').addEventListener('click', () => {
-    const hasData = FIELDS.some((f) => state[f.key].text.trim() !== '');
-    if (hasData && !window.confirm('Clear all inputs? This cannot be undone.')) return;
+  // In-page confirmation: browser confirm() dialogs are blocked inside embedded pages.
+  const confirmBox = mustGet('clear-confirm');
+  const clearInputs = () => {
+    confirmBox.hidden = true;
     state = emptyForm();
     syncFormControls();
     update();
+  };
+  mustGet('clear-all').addEventListener('click', () => {
+    const hasData = FIELDS.some((f) => state[f.key].text.trim() !== '');
+    if (!hasData) return clearInputs();
+    confirmBox.hidden = false;
+    mustGet('clear-no').focus();
+  });
+  mustGet('clear-yes').addEventListener('click', clearInputs);
+  mustGet('clear-no').addEventListener('click', () => {
+    confirmBox.hidden = true;
+    mustGet('clear-all').focus();
   });
   syncFormControls();
   update();
