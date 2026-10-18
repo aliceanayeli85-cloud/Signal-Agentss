@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>FBA Research Desk</title>
+    <link rel="stylesheet" href="/src/ui/styles.css" />
+  </head>
+  <body>
+    <header class="page-header">
+      <h1>FBA Research Desk</h1>
+      <p class="lede">
+        Profitability calculator. You enter every fee and cost — nothing is built in. Blank fields are
+        treated as <strong>unknown</strong>, never as zero. Enter all amounts in one currency.
+      </p>
+    </header>
+
+    <main class="layout">
+      <section class="panel inputs-panel" aria-labelledby="inputs-title">
+        <div class="panel-head">
+          <h2 id="inputs-title">Inputs</h2>
+          <div class="actions">
+            <button type="button" id="load-sample">Load fictional sample</button>
+            <button type="button" id="clear-all" class="secondary">Clear all</button>
+          </div>
+        </div>
+        <p class="hint">
+          For each value, choose a label: <strong>Verified</strong> (checked against a source such as your
+          Seller Central fee preview or a supplier invoice), <strong>User-provided</strong> (your number, not
+          checked), <strong>Estimated</strong> (a guess), or leave the value blank for <strong>Unknown</strong>.
+        </p>
+        <form id="fields" class="fields" autocomplete="off"></form>
+      </section>
+
+      <section class="panel results-panel" aria-labelledby="results-title" aria-live="polite">
+        <h2 id="results-title">Results</h2>
+        <p id="summary" class="summary"></p>
+        <ul id="warnings" class="warnings"></ul>
+        <div id="results"></div>
+      </section>
+    </main>
+
+    <noscript>This calculator needs JavaScript enabled.</noscript>
+    <script type="module" src="/src/ui/main.ts"></script>
+  </body>
+</html>
