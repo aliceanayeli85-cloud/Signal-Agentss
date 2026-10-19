@@ -1,0 +1,70 @@
+{
+  "normal": [
+    {
+      "day": 1,
+      "theme": "Show up",
+      "content": "Publish one approved post on your Facebook Page (start with the next post in the library).",
+      "acquisition": "Find 2 local Facebook groups (Prospecting page), read their rules, and record the rule type. Ask to join. Don't post yet.",
+      "followup": "Reply to every New Lead. Then clear anything on 'Follow-ups due today'.",
+      "optional": "Take 5 minutes of close-up video on your next job (cup holder, wheel, under-seat). Save it for later."
+    },
+    {
+      "day": 2,
+      "theme": "Be findable",
+      "content": "Post one Instagram Story (price graphic or a quick close-up). 2 minutes.",
+      "acquisition": "Work on one Google/search step from the Prospecting checklist (e.g. confirm GBP eligibility, or set up the Facebook Page's About section).",
+      "followup": "Send any 'no reply - first nudge' messages that are due.",
+      "optional": "Pin the price-menu post on your Facebook Page if it's approved."
+    },
+    {
+      "day": 3,
+      "theme": "Neighbors",
+      "content": "Publish one approved post (Page). If a group you joined allows business posts today, share the group version there.",
+      "acquisition": "Search 2 joined groups for 'detail', 'car wash', 'clean my car'. Answer real recommendation requests with the group template. One reply each, no arguing.",
+      "followup": "Follow-ups due today.",
+      "optional": "Drop 5-10 flyers at one place that has a public community board (and allows it)."
+    },
+    {
+      "day": 4,
+      "theme": "Partners",
+      "content": "Post a Reel if you have real footage; otherwise skip content today.",
+      "acquisition": "Visit or message ONE local business from the Prospecting list via its public business contact (partner intro template). Record it.",
+      "followup": "Check every Quote Sent lead - send the quote follow-up if it's been 2+ days.",
+      "optional": "Add your real open drop-off times for next week on the Booking page."
+    },
+    {
+      "day": 5,
+      "theme": "Fill the week",
+      "content": "If you have REAL open slots, post 'Open drop-off times this week' with those exact times. If you're full, post anything else approved.",
+      "acquisition": "Text past customers whose repeat date has arrived (repeat offer template). Only people who've done business with you.",
+      "followup": "Send reminders for tomorrow's appointments.",
+      "optional": "Ask one happy customer for a referral (referral template)."
+    },
+    {
+      "day": 6,
+      "theme": "Work day",
+      "content": "Shoot before/after photos and 1-2 short clips while you work. Hands and car only.",
+      "acquisition": "Ask today's customers if it's okay to post photos of their car (plates blurred).",
+      "followup": "Review requests for yesterday's completed jobs.",
+      "optional": "Pick next week's 3 posts and approve them."
+    },
+    {
+      "day": 7,
+      "theme": "Review",
+      "content": "No posting required. Approve/schedule 2-3 posts for next week.",
+      "acquisition": "Open the Weekly Report. Look at which channel brought inquiries and drop the one that took time and brought nothing.",
+      "followup": "Mark anyone who hasn't replied after 2 follow-ups as Lost. Back up your data (Backup button).",
+      "optional": "Log any marketing time you forgot to record this week."
+    }
+  ],
+  "cash_mode": [
+    "1. Reply to every New Lead right now. Speed wins most small jobs.",
+    "2. Send every follow-up due today (quote follow-ups first - they already know the price).",
+    "3. Add your REAL open drop-off slots for the next 7 days on the Booking page.",
+    "4. Text past customers whose repeat date is close (repeat offer template) - only people who've done business with you.",
+    "5. Ask 2-3 happy past customers for a referral (referral template).",
+    "6. Post 'Open drop-off times this week' with your real open slots on your Page, and in any group whose rules allow business posts today.",
+    "7. Search your joined groups for people asking for a detailer or car cleaning and reply once with the group template.",
+    "8. Skip new Reels, logo tweaks and anything that doesn't lead to a message today."
+  ]
+}
