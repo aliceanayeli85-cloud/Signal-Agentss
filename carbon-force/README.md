@@ -9,6 +9,21 @@ branding files. You copy and paste every post and message yourself, then tap a b
 
 ---
 
+## Phone only? Use the phone version
+
+**https://claude.ai/artifact/TSCEG1rUG1QeUScfPZaLNQ**: open it on your phone while signed in to Claude.
+Add it to your home screen (Share → Add to Home Screen) so it works like an app.
+
+- Same features: leads, reply templates, drop-off booking, jobs and payments, 30-day posts, prospecting,
+  7-day plan and cash mode, weekly report.
+- Data is saved in your private Claude storage. Only you, the owner, can read or change it, even if the link is shared.
+- Backup: More → Setup → Save backup file.
+- Source: `phone/template.html`. Rebuild with `python phone/build.py` after editing `content/*.json`.
+
+The computer version below is optional.
+
+---
+
 ## 1. Setup (one time, about 10 minutes)
 
 You need **Python 3.9 or newer**. Nothing else gets installed. No accounts and no API keys.

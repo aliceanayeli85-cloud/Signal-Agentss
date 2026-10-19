@@ -1,0 +1,714 @@
+<title>Carbon Force Command Center</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Saira+Condensed:wght@600;700&family=Public+Sans:wght@400;500;600;700&display=swap">
+<style>
+/* Layout: one-column phone app, sticky top bar, fixed bottom tab bar; cards only for actionable groups. */
+:root {
+  --bg: #eef0f2; --surface: #ffffff; --sunk: #e3e6ea; --fg: #16191d; --muted: #5b636d; --line: #d3d8de;
+  --accent: #2446a6; --accent-fg: #ffffff; --ok: #1d7a43; --warn: #9a5b00; --bad: #b3261e;
+  --display: "Saira Condensed", "Arial Narrow", system-ui, sans-serif;
+  --body: "Public Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --r: 10px;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #111316; --surface: #1b1e23; --sunk: #24282e; --fg: #e9ecef; --muted: #9aa3ad; --line: #30353c;
+  --accent: #8aa6ff; --accent-fg: #0d1430; --ok: #5cc887; --warn: #f0a845; --bad: #ff8a80; color-scheme: dark } }
+:root[data-theme="dark"] {
+  --bg: #111316; --surface: #1b1e23; --sunk: #24282e; --fg: #e9ecef; --muted: #9aa3ad; --line: #30353c;
+  --accent: #8aa6ff; --accent-fg: #0d1430; --ok: #5cc887; --warn: #f0a845; --bad: #ff8a80; color-scheme: dark }
+* { box-sizing: border-box }
+body { background: var(--bg); color: var(--fg); font: 16px/1.45 var(--body); margin: 0;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 0 calc(84px + env(safe-area-inset-bottom, 0px)); }
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 10; background: var(--bg) }
+.wrap { max-width: 720px; margin: 0 auto; display: flex; flex-direction: column; gap: 14px }
+header.top { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5; background: var(--bg); padding-block: 12px 8px;
+  display: flex; align-items: baseline; justify-content: space-between; gap: 8px; border-bottom: 1px solid var(--line) }
+.brand { font: 700 22px/1 var(--display); letter-spacing: .02em; text-transform: uppercase }
+.brand small { display: block; font: 500 12px/1.3 var(--body); color: var(--muted); text-transform: none; letter-spacing: 0 }
+.sync { font-size: 12px; color: var(--muted) }
+h1 { font: 700 28px/1.1 var(--display); margin: 6px 0 0; text-wrap: balance; letter-spacing: .01em }
+h2 { font: 700 19px/1.2 var(--display); margin: 0 0 8px; letter-spacing: .02em; text-transform: uppercase }
+h3 { font-size: 15px; margin: 12px 0 4px }
+p { margin: 0 0 8px }
+.muted, .hint { color: var(--muted) } .hint { font-size: 13px; display: block; font-weight: 400; margin-top: 2px }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); padding: 14px; min-width: 0 }
+.card.warn { box-shadow: inset 4px 0 0 var(--warn) } .card.bad { box-shadow: inset 4px 0 0 var(--bad) } .card.ok { box-shadow: inset 4px 0 0 var(--ok) }
+.stack { display: flex; flex-direction: column; gap: 14px }
+.row { display: flex; flex-wrap: wrap; gap: 8px }
+.row > * { flex: 1 1 140px; min-width: 0 }
+ul.list { list-style: none; padding: 0; margin: 0 }
+ul.list li { padding: 10px 0; border-bottom: 1px solid var(--line); display: flex; justify-content: space-between; gap: 10px; align-items: flex-start }
+ul.list li:last-child { border-bottom: 0 }
+ul.list .main { min-width: 0; flex: 1 }
+ol.todo { margin: 0; padding-left: 22px } ol.todo li { margin: 6px 0 }
+.pill { display: inline-block; font-size: 12px; font-weight: 600; padding: 2px 8px; border-radius: 99px; border: 1px solid currentColor; white-space: nowrap }
+.p-warn { color: var(--warn) } .p-ok { color: var(--ok) } .p-bad { color: var(--bad) } .p-mute { color: var(--muted) }
+.p-solid { background: var(--ok); color: var(--surface); border-color: var(--ok) }
+.big { font: 700 34px/1 var(--display); font-variant-numeric: tabular-nums }
+.nums { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px }
+.nums div { background: var(--sunk); border-radius: 8px; padding: 10px }
+.nums b { display: block; font: 700 24px/1.1 var(--display); font-variant-numeric: tabular-nums }
+.nums span { font-size: 13px; color: var(--muted) }
+label { display: block; font-weight: 600; font-size: 14px }
+input, select, textarea { display: block; width: 100%; margin-top: 4px; padding: 10px; font: 16px var(--body);
+  color: var(--fg); background: var(--bg); border: 1px solid var(--line); border-radius: 8px }
+textarea { min-height: 120px; resize: vertical }
+input[type=checkbox] { display: inline-block; width: 20px; height: 20px; margin: 0 8px 0 0; vertical-align: middle }
+form.f { display: flex; flex-direction: column; gap: 10px }
+button, .btn { font: 600 15px var(--body); border-radius: 8px; padding: 11px 14px; border: 1px solid var(--accent);
+  background: var(--accent); color: var(--accent-fg); cursor: pointer; text-decoration: none; display: inline-block; text-align: center }
+button.ghost { background: transparent; color: var(--fg); border-color: var(--line) }
+button.small { padding: 7px 10px; font-size: 14px }
+button.danger { background: transparent; color: var(--bad); border-color: var(--bad) }
+button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible, summary:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px }
+.btns { display: flex; flex-wrap: wrap; gap: 8px }
+a { color: var(--accent) }
+a.rowlink { color: var(--fg); font-weight: 600; text-decoration: none }
+.copy { position: relative; margin: 6px 0 4px }
+.copy pre { white-space: pre-wrap; word-wrap: break-word; margin: 0; font: 15px/1.45 var(--body); background: var(--sunk);
+  border-radius: 8px; padding: 12px 12px 48px }
+.copy button { position: absolute; right: 8px; bottom: 8px }
+details { border-top: 1px solid var(--line); padding: 8px 0 }
+details:first-of-type { border-top: 0 }
+summary { cursor: pointer; font-weight: 600; padding: 4px 0; list-style-position: outside }
+.chips { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 4px }
+.chips button { flex: 0 0 auto; padding: 6px 12px; font-size: 14px; background: var(--surface); color: var(--fg); border-color: var(--line); border-radius: 99px }
+.chips button.on { background: var(--fg); color: var(--bg); border-color: var(--fg) }
+.tablewrap { overflow-x: auto } table { border-collapse: collapse; width: 100%; font-size: 14px; font-variant-numeric: tabular-nums }
+th, td { text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--line); white-space: nowrap }
+nav.tabs { position: fixed; left: 0; right: 0; bottom: 0; z-index: 6; background: var(--surface); border-top: 1px solid var(--line);
+  display: grid; grid-template-columns: repeat(5, 1fr);
+  padding: 4px max(8px, env(safe-area-inset-right, 0px)) calc(4px + env(safe-area-inset-bottom, 0px)) max(8px, env(safe-area-inset-left, 0px)) }
+nav.tabs button { background: transparent; border: 0; color: var(--muted); padding: 8px 2px; font-size: 12px; border-radius: 8px; display: flex; flex-direction: column; align-items: center; gap: 2px }
+nav.tabs button svg { width: 22px; height: 22px; stroke: currentColor; fill: none; stroke-width: 1.8 }
+nav.tabs button.on { color: var(--accent) }
+.toast { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(80px + env(safe-area-inset-bottom, 0px)); z-index: 20;
+  background: var(--fg); color: var(--bg); padding: 10px 14px; border-radius: 8px; max-width: calc(100% - 32px); font-size: 15px; box-shadow: 0 4px 16px rgba(0,0,0,.2) }
+.toast.err { background: var(--bad); color: #fff }
+.back { background: none; border: 0; color: var(--accent); padding: 4px 0; font-weight: 600 }
+.morelist button { width: 100%; text-align: left; background: var(--surface); color: var(--fg); border-color: var(--line); padding: 14px }
+.empty { color: var(--muted); padding: 6px 0 }
+.confirm { background: var(--sunk); border-radius: 8px; padding: 10px; display: flex; flex-direction: column; gap: 8px }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important } }
+</style>
+
+<header class="top"><div class="brand">Carbon Force<small>Detailing command center</small></div><div class="sync" id="sync">Connecting…</div></header>
+<main class="wrap" id="view"><div class="card"><h2>Loading your business data</h2><p class="muted">Your leads, bookings and posts load from your private Claude storage. If this stays here, reopen the link while signed in to Claude.</p></div></main>
+<nav class="tabs" id="tabs" aria-label="Sections"></nav>
+<div id="toastbox"></div>
+
+<script type="application/json" id="d-posts">__POSTS__</script>
+<script type="application/json" id="d-replies">__REPLIES__</script>
+<script type="application/json" id="d-plan">__PLAN__</script>
+<script>
+(function () {
+"use strict";
+const J = (id) => JSON.parse(document.getElementById(id).textContent);
+const POSTS = J("d-posts"), REPLIES = J("d-replies"), PLAN = J("d-plan");
+
+// ---------------------------------------------------------------- fixed business facts
+const BUSINESS = "Carbon Force Detailing";
+const SERVICES = { interior: { label: "Interior detail", price: 80 }, exterior: { label: "Exterior cleaning", price: 60 }, full: { label: "Full interior + exterior package", price: 140 } };
+const SERVICE_CHOICES = ["interior", "exterior", "full", "unsure"];
+const svcLabel = (k) => SERVICES[k] ? `${SERVICES[k].label} ($${SERVICES[k].price})` : "Not sure yet";
+const BANNED = ["mobile", "we come to you", "i come to you", "at your home", "at your location", "ceramic", "paint correction", "polish", "buffing", "extraction", "shampoo extract", "fully booked", "booked solid", "only 1 spot", "only one spot", "spots left", "limited spots", "certified", "insured", "#1", "best in"];
+const STATUSES = ["New Lead", "Replied", "Quote Sent", "Follow-Up Due", "Booked", "Completed", "Lost"];
+const SOURCES = ["facebook_page", "facebook_group", "facebook_marketplace", "instagram", "google_business_profile", "google_search", "flyer", "referral", "repeat_customer", "partner", "nextdoor", "walk_by_or_sign", "other"];
+const METHODS = ["text", "call", "facebook_messenger", "instagram_dm", "email", "in_person", "other"];
+const PAY = ["cash", "zelle", "venmo", "cash_app", "card", "other"];
+const OPP_TYPES = ["facebook_group", "facebook_page", "google_business_profile", "local_search", "partnership", "directory", "referral_program", "community_event", "other"];
+const OPP_STATUS = ["to_research", "researched", "join_requested", "joined", "contacted", "posted", "active_partner", "no_response", "declined", "not_a_fit"];
+const RULES = { promo_allowed: "Business posts allowed (keep it neighborly)", promo_day_only: "Business posts only on the promo day/thread", recommendations_only: "No ads; answer recommendation requests only", no_business: "No business posts - just be a member", unknown: "Rules not checked yet - read them before posting" };
+const SETTINGS = [
+  ["booking_line", "How customers book", "Text or call 708-555-0000 to book", true],
+  ["phone", "Business phone", "708-555-0000", true],
+  ["area_line", "Public location wording (no street address)", "Melrose Park, near North Ave & 25th", true],
+  ["hours_line", "Drop-off hours you actually keep", "Drop-off Mon-Sat, 8-10am", true],
+  ["owner_first_name", "Your first name for messages", "", false],
+  ["payment_methods", "Payment you accept", "Cash, Zelle", true],
+  ["interior_includes", "What the $80 interior actually includes", "vacuum seats/carpet/trunk, wipe down dash, console, door panels, cup holders, inside glass", true],
+  ["exterior_includes", "What the $60 exterior actually includes", "hand wash, wheels and tires, dry, outside glass", true],
+  ["turnaround_line", "Honest turnaround wording", "Drop off in the morning, I text you when it's ready", true],
+  ["private_address", "Exact drop-off address (only goes in booking confirmations)", "", false],
+  ["review_link", "Review link once you have one", "", false],
+  ["max_jobs_per_day", "Max cars you can do in one day", "2", true],
+  ["launch_date", "Day 1 of your 7-day plan", "", false],
+];
+const POST_FIELDS = { facebook: "Facebook Page", instagram: "Instagram caption", story: "Story frames", reel_script: "Reel script (no voice, text on screen)", group_version: "Community-group version" };
+const PUBLISH_STEPS = {
+  "Facebook Page": ["Open your Facebook Page (not your personal profile).", "Create post, paste the Facebook text, add your real photo(s) or video.", "Read it once out loud and fix anything that doesn't sound like you.", "Post it, then come back and tap Mark published."],
+  "Instagram": ["Instagram: + then Post, Reel or Story.", "Pick your real photo or clip. For Reels, add the on-screen text from the script.", "Paste the caption (3-5 hashtags max).", "Share, then tap Mark published."],
+  "Community groups": ["Read the group rules again (they change).", "Only post if the group's rule type allows it today (see Prospecting).", "Paste the group version with one real photo.", "Don't post the same thing in lots of groups on the same day."],
+};
+
+// ---------------------------------------------------------------- helpers
+const esc = (v) => String(v == null ? "" : v).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const pad = (n) => String(n).padStart(2, "0");
+const iso = (d) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+const parse = (s) => { const [y, m, d] = s.split("-").map(Number); return new Date(y, m - 1, d); };
+const today = () => iso(new Date());
+const plusDays = (n, start) => { const d = start ? parse(start) : new Date(); d.setDate(d.getDate() + n); return iso(d); };
+const DAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"], MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+const fdate = (s) => { if (!s) return "-"; const d = parse(s); return `${DAYS[d.getDay()]} ${MONTHS[d.getMonth()]} ${d.getDate()}`; };
+const ftime = (t) => { if (!t) return ""; let [h, m] = t.split(":").map(Number); const ap = h < 12 ? "am" : "pm"; h = h % 12 || 12; return m ? `${h}:${pad(m)}${ap}` : `${h}${ap}`; };
+const money = (x) => "$" + (Number(x) || 0).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const nice = (s) => String(s || "").replace(/_/g, " ");
+const isDate = (s) => /^\d{4}-\d{2}-\d{2}$/.test(s || "");
+class VErr extends Error {}
+const need = (cond, msg) => { if (!cond) throw new VErr(msg); };
+const num = (v, label) => { v = String(v == null ? "" : v).replace(/[$,\s]/g, ""); if (!v) return null; const n = Math.round(Number(v) * 100) / 100; need(isFinite(n) && n >= 0 && n <= 10000, `${label} must be a number like 80 or 80.00.`); return n; };
+const clean = (v, max = 500) => String(v == null ? "" : v).replace(/[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]/g, "").trim().slice(0, max);
+const opts = (vals, sel, labeler) => vals.map((v) => `<option value="${esc(v)}"${String(v) === String(sel ?? "") ? " selected" : ""}>${esc(labeler ? labeler(v) : nice(v) || "-")}</option>`).join("");
+
+function toast(msg, err) {
+  const box = document.getElementById("toastbox");
+  box.innerHTML = `<div class="toast${err ? " err" : ""}" role="status">${esc(msg)}</div>`;
+  clearTimeout(toast.t); toast.t = setTimeout(() => { box.innerHTML = ""; }, err ? 5000 : 2500);
+}
+
+// ---------------------------------------------------------------- state + storage
+const S = { leads: new Map(), slots: new Map(), appts: new Map(), jobs: new Map(), posts: new Map(), opps: new Map(), effort: new Map(), settings: {}, loaded: new Set() };
+let db = null, readOnly = false;
+const COLS = ["leads", "slots", "appts", "jobs", "posts", "opps", "effort"];
+
+async function put(col, id, body) {
+  if (!db) throw new VErr("Storage isn't connected. Reopen the link while signed in to Claude.");
+  if (readOnly) throw new VErr("Only the owner can change this.");
+  const data = JSON.parse(JSON.stringify(body)); delete data.id;
+  await db.collection(col).doc(id).set(data);
+  S[col].set(id, Object.assign({ id }, data)); // show it right away
+}
+const newId = (col) => db.collection(col).doc().id;
+const all = (col) => Array.from(S[col].values());
+const settings = () => S.settings || {};
+const maxPerDay = () => Math.max(1, parseInt(settings().max_jobs_per_day, 10) || 2);
+
+// ---------------------------------------------------------------- text filling + checks
+function values(extra) {
+  const v = Object.assign({}, settings(), { business: BUSINESS, price_interior: "$80", price_exterior: "$60", price_full: "$140" });
+  v.price_interior = "$" + SERVICES.interior.price; v.price_exterior = "$" + SERVICES.exterior.price; v.price_full = "$" + SERVICES.full.price;
+  return Object.assign(v, extra || {});
+}
+function fill(text, extra) {
+  const v = values(extra);
+  return String(text || "").replace(/\{(\w+)\}/g, (m, k) => (v[k] ? String(v[k]) : `[SET ${k.toUpperCase()} IN SETUP]`));
+}
+const negateMobile = (t) => String(t || "").toLowerCase().replace(/(not|no|isn't|aren't|don't do|can't do)\s+(a\s+)?mobile/g, "");
+function banned(text) {
+  const low = negateMobile(text);
+  return BANNED.filter((p) => new RegExp("(^|[^a-z])" + p.replace(/[.*+?^${}()|[\]\\#]/g, "\\$&") + "(?![a-z])").test(low));
+}
+function postView(base) {
+  const o = S.posts.get(base.id) || {};
+  const p = Object.assign({}, base, { status: o.status || "draft", approved: o.approved || null, scheduled: o.scheduled || null, published: o.published || null, where: o.where || "", notes: o.notes || "" });
+  for (const f in POST_FIELDS) if (o.edits && typeof o.edits[f] === "string") p[f] = o.edits[f];
+  return p;
+}
+function postProblems(p) {
+  const allow = String(p.allow_terms || "").split(",").map((s) => s.trim().toLowerCase()).filter(Boolean);
+  const out = [];
+  for (const f in POST_FIELDS) {
+    if (!p[f]) continue;
+    const t = fill(p[f]);
+    const miss = Array.from(new Set((t.match(/\[SET (\w+) IN SETUP\]/g) || []).map((m) => m.slice(5, -9).toLowerCase())));
+    if (miss.length) out.push(`${POST_FIELDS[f]}: fill in Setup first (${miss.join(", ")})`);
+    if (t.includes("[TYPE")) out.push(`${POST_FIELDS[f]}: replace the [TYPE ...] parts with real details`);
+    const c = banned(t).filter((x) => !allow.includes(x));
+    if (c.length) out.push(`${POST_FIELDS[f]}: has a claim you haven't confirmed (${c.join(", ")})`);
+  }
+  return out;
+}
+function openSlots(daysAhead) {
+  const t = today(), end = plusDays(daysAhead || 14);
+  return all("slots").filter((s) => s.status === "open" && s.date >= t && s.date <= end).sort((a, b) => (a.date + a.time).localeCompare(b.date + b.time));
+}
+function openTimesText() {
+  const s = openSlots(14).slice(0, 5);
+  return s.length ? s.map((x) => `- ${fdate(x.date)}, drop-off ${ftime(x.time)}`).join("\n") : "[NO OPEN SLOTS ENTERED - ADD REAL SLOTS ON THE BOOK TAB FIRST]";
+}
+function renderReply(id, lead, appt) {
+  const t = REPLIES.find((r) => r.id === id);
+  const extra = { open_times: openTimesText(), name: lead && lead.name ? lead.name.split(/\s+/)[0].replace(/[{}]/g, "") : "there" };
+  const svc = (appt && appt.service) || (lead && lead.service);
+  extra.service_label = SERVICES[svc] ? SERVICES[svc].label.toLowerCase() : "cleaning";
+  if (appt) { const sl = S.slots.get(appt.slot) || {}; Object.assign(extra, { appt_date: fdate(sl.date), appt_time: ftime(sl.time), appt_service: SERVICES[appt.service].label, appt_price: "$" + appt.price }); }
+  return fill(t.text, extra);
+}
+
+// ---------------------------------------------------------------- lead logic
+const ev = (lead, type, note, d) => { lead.events = (lead.events || []).concat([{ d: d || today(), t: type, n: clean(note, 200) }]).slice(-80); };
+function status(l) { // Follow-up due is shown from the date; nothing is written in the background
+  if ((l.status === "Replied" || l.status === "Quote Sent") && l.next && l.next <= today()) return "Follow-Up Due";
+  return l.status;
+}
+function leadFromForm(f, base) {
+  const l = Object.assign({}, base || {});
+  l.name = clean(f.name, 120); need(l.name, "Name or nickname is required.");
+  l.method = METHODS.includes(f.method) ? f.method : "text";
+  l.contact = clean(f.contact, 200); l.consent = f.consent === "on"; l.consentNote = clean(f.consentNote, 200);
+  need(SOURCES.includes(f.source), "Pick where they found you.");
+  l.source = f.source; l.sourceDetail = clean(f.sourceDetail, 200); l.vehicle = clean(f.vehicle, 120);
+  l.service = SERVICE_CHOICES.includes(f.service) ? f.service : "unsure";
+  l.quote = num(f.quote, "Quoted price"); l.notes = clean(f.notes, 2000);
+  return l;
+}
+async function createLead(f) {
+  const inquiry = isDate(f.inquiry) ? f.inquiry : today();
+  need(inquiry <= today(), "Inquiry date can't be in the future.");
+  const l = leadFromForm(f);
+  Object.assign(l, { inquiry, status: "New Lead", next: inquiry, created: new Date().toISOString(), events: [] });
+  ev(l, "inquiry", "via " + l.source, inquiry);
+  const id = newId("leads"); await put("leads", id, l); return id;
+}
+async function leadAct(id, fn) { const l = JSON.parse(JSON.stringify(S.leads.get(id))); need(l, "That lead is gone."); fn(l); await put("leads", id, l); }
+
+// ---------------------------------------------------------------- booking logic
+async function addSlot(f) {
+  need(isDate(f.date), "Pick a date."); need(f.date >= today(), "You can't open a slot in the past.");
+  need(/^\d{2}:\d{2}$/.test(f.time || ""), "Pick a drop-off time.");
+  if (f.pickup) need(f.pickup > f.time, "Pick-up has to be after drop-off.");
+  need(!all("slots").some((s) => s.date === f.date && s.time === f.time && s.status !== "closed"), "You already have a slot at that time.");
+  await put("slots", newId("slots"), { date: f.date, time: f.time, pickup: f.pickup || "", status: "open", note: clean(f.note, 200) });
+}
+async function propose(leadId, slotId, service, price) {
+  const slot = S.slots.get(slotId); need(slot, "Pick one of your open slots.");
+  need(slot.status === "open", "That slot is no longer open."); need(slot.date >= today(), "That slot is in the past.");
+  need(SERVICES[service], "Pick a service.");
+  const lead = S.leads.get(leadId);
+  let amt = num(price, "Price"); if (amt == null) amt = lead.quote || SERVICES[service].price;
+  const sameDay = all("appts").filter((a) => (a.status === "proposed" || a.status === "confirmed") && (S.slots.get(a.slot) || {}).date === slot.date).length;
+  need(sameDay < maxPerDay(), `You already have ${sameDay} car(s) that day - your daily max. Change it in Setup if you really can take another.`);
+  await put("appts", newId("appts"), { lead: leadId, slot: slotId, service, price: amt, status: "proposed", created: new Date().toISOString() });
+  await put("slots", slotId, Object.assign({}, slot, { status: "held" }));
+  await leadAct(leadId, (l) => { l.quote = amt; l.service = service; l.next = plusDays(1); ev(l, "time_offered", `${slot.date} ${slot.time}`); });
+}
+async function confirmAppt(aid) {
+  const a = S.appts.get(aid); need(a && a.status === "proposed", "Only a held time can be confirmed.");
+  const slot = S.slots.get(a.slot);
+  await put("appts", aid, Object.assign({}, a, { status: "confirmed", confirmed: today() }));
+  await put("slots", a.slot, Object.assign({}, slot, { status: "booked" }));
+  await leadAct(a.lead, (l) => { l.status = "Booked"; l.lastContact = today(); l.next = slot.date > today() ? plusDays(-1, slot.date) : slot.date; ev(l, "booked", `${slot.date} ${slot.time} ${a.service}`); });
+}
+async function cancelAppt(aid, noShow, reason) {
+  const a = S.appts.get(aid); need(a && (a.status === "proposed" || a.status === "confirmed"), "That appointment can't be cancelled.");
+  const slot = S.slots.get(a.slot);
+  await put("appts", aid, Object.assign({}, a, { status: noShow ? "no_show" : "cancelled", notes: clean(reason, 200) }));
+  if (slot) await put("slots", a.slot, Object.assign({}, slot, { status: slot.date >= today() ? "open" : "closed" }));
+  await leadAct(a.lead, (l) => { l.status = "Follow-Up Due"; l.next = plusDays(2); ev(l, noShow ? "no_show" : "cancelled", reason); });
+}
+async function completeJob(aid, f) {
+  const a = S.appts.get(aid); need(a && a.status === "confirmed", "Only a confirmed appointment can be completed.");
+  let price = num(f.price, "Price charged"); if (price == null) price = a.price; need(price > 0, "Price charged must be more than $0.");
+  const paid = num(f.paid, "Amount paid") || 0; need(paid <= price, "Paid is more than the price. Put tips in notes.");
+  need(!paid || PAY.includes(f.method), "Pick how they paid.");
+  const date = isDate(f.date) ? f.date : today(); need(date <= today(), "Completed date can't be in the future.");
+  const service = SERVICES[f.service] ? f.service : a.service;
+  await put("jobs", newId("jobs"), { appt: aid, lead: a.lead, date, service, price, paid, status: paid >= price ? "paid" : paid > 0 ? "partial" : "unpaid", payments: paid ? [{ d: date, a: paid, m: f.method }] : [], notes: clean(f.notes, 500) });
+  await put("appts", aid, Object.assign({}, a, { status: "completed" }));
+  await leadAct(a.lead, (l) => { l.status = "Completed"; l.next = plusDays(1, date); l.repeat = plusDays(35, date); ev(l, "completed", `${service} $${price}`, date); if (paid) ev(l, "payment", `$${paid} ${f.method}`, date); });
+}
+async function recordPayment(jid, amount, method) {
+  const j = JSON.parse(JSON.stringify(S.jobs.get(jid))); need(j, "That job is gone.");
+  const amt = num(amount, "Amount"); need(amt && amt > 0, "Enter an amount more than $0."); need(PAY.includes(method), "Pick a payment method.");
+  const total = Math.round((j.paid + amt) * 100) / 100; need(total <= j.price, "That's more than the price charged.");
+  j.paid = total; j.status = total >= j.price ? "paid" : "partial"; j.payments.push({ d: today(), a: amt, m: method });
+  await put("jobs", jid, j);
+  await leadAct(j.lead, (l) => ev(l, "payment", `$${amt} ${method}`));
+}
+
+// ---------------------------------------------------------------- reports
+const payments = () => all("jobs").flatMap((j) => (j.payments || []).map((p) => Object.assign({ job: j.id }, p)));
+const collected = (a, b) => payments().filter((p) => !a || (p.d >= a && p.d <= b)).reduce((s, p) => s + p.a, 0);
+const owed = () => all("jobs").filter((j) => j.status !== "paid").reduce((s, j) => s + (j.price - j.paid), 0);
+const hasEv = (l, t) => (l.events || []).some((e) => e.t === t);
+const evCount = (t, a, b) => all("leads").reduce((n, l) => n + (l.events || []).filter((e) => e.t === t && e.d >= a && e.d <= b).length, 0);
+function funnel(a, b) {
+  const ls = all("leads").filter((l) => !a || (l.inquiry >= a && l.inquiry <= b));
+  const c = (t) => ls.filter((l) => hasEv(l, t)).length;
+  const f = { leads: ls.length, quoted: c("quote_sent"), booked: c("booked"), completed: c("completed"), lost: ls.filter((l) => l.status === "Lost").length };
+  f.l2b = f.leads ? Math.round(100 * f.booked / f.leads) + "%" : "-"; f.q2b = f.quoted ? Math.round(100 * f.booked / f.quoted) + "%" : "-";
+  return f;
+}
+function channels(a, b) {
+  const by = {};
+  for (const l of all("leads")) {
+    if (a && !(l.inquiry >= a && l.inquiry <= b)) continue;
+    const r = by[l.source] || (by[l.source] = { source: l.source, inquiries: 0, booked: 0, money: 0 });
+    r.inquiries++; if (hasEv(l, "booked")) r.booked++;
+  }
+  for (const j of all("jobs")) { const l = S.leads.get(j.lead); if (l && by[l.source]) by[l.source].money += (j.payments || []).reduce((s, p) => s + p.a, 0); }
+  return Object.values(by).sort((x, y) => y.inquiries - x.inquiries);
+}
+function weekBounds(any) { const d = any ? parse(any) : new Date(); const off = (d.getDay() + 6) % 7; d.setDate(d.getDate() - off); const s = iso(d); return [s, plusDays(6, s)]; }
+function weekly(any) {
+  const [a, b] = weekBounds(any);
+  const posts = POSTS.map(postView).filter((p) => p.status === "published" && p.published >= a && p.published <= b);
+  const ch = channels(a, b);
+  const eff = {}; for (const e of all("effort")) if (e.date >= a && e.date <= b) { const r = eff[e.channel] || (eff[e.channel] = { actions: 0, minutes: 0 }); r.actions++; r.minutes += e.minutes; }
+  const names = Array.from(new Set(Object.keys(eff).concat(ch.map((c) => c.source)))).sort();
+  const effort = names.map((n) => { const e = eff[n] || { actions: 0, minutes: 0 }; const inq = (ch.find((c) => c.source === n) || {}).inquiries || 0; return { channel: n, actions: e.actions, minutes: e.minutes, inquiries: inq, perHour: e.minutes ? Math.round(inq / (e.minutes / 60) * 10) / 10 : null }; });
+  const gaps = all("leads").filter((l) => l.inquiry >= a && l.inquiry <= b).map((l) => { const f = (l.events || []).find((e) => e.t === "reply_sent" || e.t === "quote_sent"); return f ? (parse(f.d) - parse(l.inquiry)) / 864e5 : null; }).filter((x) => x != null);
+  const r = { a, b, posts, ch, effort, inquiries: ch.reduce((s, c) => s + c.inquiries, 0), replies: evCount("reply_sent", a, b), quotes: evCount("quote_sent", a, b), followups: evCount("followup_sent", a, b), booked: evCount("booked", a, b), cancelled: evCount("cancelled", a, b), noShows: evCount("no_show", a, b), jobs: all("jobs").filter((j) => j.date >= a && j.date <= b).length, revenue: collected(a, b), owed: owed(), speed: gaps.length ? Math.round(gaps.reduce((s, x) => s + x, 0) / gaps.length * 10) / 10 : null };
+  r.tips = tips(r); return r;
+}
+function tips(r) {
+  const t = [];
+  if (r.inquiries + r.posts.length + r.effort.reduce((s, e) => s + e.actions, 0) === 0) return ["Nothing was recorded this week, so there's nothing to judge yet. Log posts, leads and marketing time as they happen."];
+  if (!r.posts.length) t.push("No posts were marked published. Approve 2-3 posts on Sunday and publish one every other day.");
+  if (r.speed != null && r.speed >= 1) t.push(`Replies took ${r.speed} day(s) on average. Same-day replies win more jobs - check messages twice a day.`);
+  const newOnes = all("leads").filter((l) => l.status === "New Lead").length; if (newOnes) t.push(`${newOnes} lead(s) still have no reply. Answer them first thing.`);
+  if (r.quotes && !r.booked) t.push("Quotes went out but nobody booked. Send the quote follow-up with real open times.");
+  for (const e of r.effort) if (e.minutes >= 60 && !e.inquiries) t.push(`${nice(e.channel)}: ${e.minutes} min, 0 inquiries. Cut that time in half next week (unless it's a slow-build channel like Google).`);
+  const best = r.effort.filter((e) => e.perHour); if (best.length) { const top = best.sort((x, y) => y.perHour - x.perHour)[0]; t.push(`Best return on time: ${nice(top.channel)} (${top.perHour} inquiries/hour). Do a bit more of that.`); }
+  if (r.jobs && !r.ch.some((c) => c.source === "referral")) t.push("You finished jobs this week - send the referral ask to happy customers.");
+  if (r.inquiries && !r.effort.some((e) => e.minutes)) t.push("Leads came in but no time was logged, so the report can't tell which work paid off. Log minutes on the Plan screen.");
+  if (r.cancelled + r.noShows >= 2) t.push("2+ cancellations or no-shows. Send the reminder the day before every appointment.");
+  return t.length ? t : ["Nothing jumps out. Keep the same routine another week so there's enough to compare."];
+}
+function weeklyText(r) {
+  const L = [`CARBON FORCE DETAILING - WEEK ${r.a} to ${r.b}`, "", `Posts published: ${r.posts.length}`];
+  r.posts.forEach((p) => L.push(`  - ${p.published} ${p.title} (${p.where})`));
+  L.push(`Inquiries: ${r.inquiries}`); r.ch.forEach((c) => L.push(`  - ${nice(c.source)}: ${c.inquiries} (booked so far: ${c.booked})`));
+  L.push(`Replies: ${r.replies}  Quotes: ${r.quotes}  Follow-ups: ${r.followups}`, `Booked: ${r.booked}  Cancelled: ${r.cancelled}  No-shows: ${r.noShows}`, `Jobs completed: ${r.jobs}`, `Revenue collected: ${money(r.revenue)} (still owed: ${money(r.owed)})`, `Avg days to first reply: ${r.speed == null ? "n/a" : r.speed}`, "", "Time by channel:");
+  r.effort.forEach((e) => L.push(`  - ${nice(e.channel)}: ${e.actions} actions, ${e.minutes} min, ${e.inquiries} inquiries, ${e.perHour == null ? "n/a" : e.perHour}/hour`));
+  L.push("", "What to change next week:"); r.tips.forEach((x) => L.push("  - " + x)); L.push("", "Only recorded data counts. Likes and views are not revenue.");
+  return L.join("\n");
+}
+
+// ---------------------------------------------------------------- views
+let view = "today", sub = null, filter = "";
+const ICONS = {
+  today: '<path d="M4 6h16M4 12h16M4 18h10"/>', leads: '<circle cx="9" cy="8" r="3.5"/><path d="M3 20c.8-3.4 3.2-5 6-5s5.2 1.6 6 5M16 5.5a3 3 0 0 1 0 6M21 20c-.5-2.4-1.8-3.8-3.5-4.5"/>',
+  book: '<rect x="3.5" y="5" width="17" height="15" rx="2"/><path d="M3.5 10h17M8 3v4M16 3v4"/>', posts: '<rect x="4" y="4" width="16" height="16" rx="2"/><path d="M4 15l4.5-4.5 4 4 3-3L20 15"/><circle cx="15.5" cy="8.5" r="1.3"/>',
+  more: '<circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/>',
+};
+const TABS = [["today", "Today"], ["leads", "Leads"], ["book", "Book"], ["posts", "Posts"], ["more", "More"]];
+const MORE = [["replies", "Reply templates", "Copy-paste answers for every common question"], ["prospects", "Local prospecting", "Groups, Google, partners, referrals"], ["plan", "Daily plan + cash mode", "7-day routine, log marketing time"], ["weekly", "Weekly report", "What's working, from real numbers"], ["setup", "Setup", "Your booking info, prices wording, backup"]];
+const tabOf = (v) => (["replies", "prospects", "plan", "weekly", "setup"].includes(v) ? "more" : v);
+
+function pill(s) {
+  const k = { "New Lead": "p-warn", "Follow-Up Due": "p-warn", draft: "p-warn", Booked: "p-ok", approved: "p-ok", confirmed: "p-ok", scheduled: "p-ok", proposed: "p-mute", held: "p-mute", Lost: "p-mute", cancelled: "p-mute", no_show: "p-mute", closed: "p-mute", unpaid: "p-bad", partial: "p-warn", published: "p-solid", Completed: "p-solid", completed: "p-solid", paid: "p-solid", open: "p-ok", booked: "p-ok" }[s] || "p-mute";
+  return `<span class="pill ${k}">${esc(nice(s))}</span>`;
+}
+const copyBox = (t) => `<div class="copy"><pre>${esc(t)}</pre><button type="button" class="small" data-copy>Copy</button></div>`;
+const field = (label, name, val, type, hint, extra) => `<label>${esc(label)}${type === "textarea" ? `<textarea name="${name}" id="f-${name}" ${extra || ""}>${esc(val)}</textarea>` : `<input name="${name}" id="f-${name}" type="${type || "text"}" value="${esc(val)}" ${extra || ""}>`}${hint ? `<span class="hint">${esc(hint)}</span>` : ""}</label>`;
+const sel = (label, name, vals, cur, lab, hint) => `<label>${esc(label)}<select name="${name}" id="f-${name}">${opts(vals, cur, lab)}</select>${hint ? `<span class="hint">${esc(hint)}</span>` : ""}</label>`;
+const go = (v, s) => `data-go="${v}"${s != null ? ` data-sub="${esc(s)}"` : ""}`;
+const empty = (t) => `<p class="empty">${esc(t)}</p>`;
+
+function setupWarning() {
+  const miss = SETTINGS.filter((s) => s[3] && !settings()[s[0]]).map((s) => s[1]);
+  return miss.length ? `<div class="card warn"><h2>Finish Setup first</h2><p>Posts can't be approved and templates show [SET …] markers until you add: ${esc(miss.join(", "))}.</p><button ${go("setup")}>Open Setup</button></div>` : "";
+}
+function leadRow(l, note) {
+  return `<li><div class="main"><a class="rowlink" href="#" ${go("lead", l.id)}>${esc(l.name)}</a><span class="hint">${esc(nice(l.source))} · ${esc(svcLabel(l.service))}${note ? " · " + esc(note) : ""}</span></div>${pill(status(l))}</li>`;
+}
+function apptRow(a) {
+  const s = S.slots.get(a.slot) || {}, l = S.leads.get(a.lead) || { name: "?" };
+  return `<li><div class="main"><a class="rowlink" href="#" ${go("lead", a.lead)}>${esc(l.name)}</a><span class="hint">${esc(fdate(s.date))} ${esc(ftime(s.time))} · ${esc(SERVICES[a.service].label)} · ${money(a.price)}</span></div>${pill(a.status)}</li>`;
+}
+const list = (rows, none) => (rows.length ? `<ul class="list">${rows.join("")}</ul>` : empty(none));
+
+function vToday() {
+  const t = today(), [ws] = weekBounds(), st = settings();
+  let plan;
+  if (st.cash_mode === "yes") plan = `<div class="card bad"><h2>Cash mode is on</h2><ol class="todo">${PLAN.cash_mode.map((s) => `<li>${esc(s.replace(/^\d+\.\s*/, ""))}</li>`).join("")}</ol><button class="ghost small" data-act="cash" data-v="no">Turn cash mode off</button></div>`;
+  else {
+    let n = parse(t).getDay() || 7; // Monday = Day 1 until a launch date is set
+    if (st.launch_date) n = t < st.launch_date ? 0 : ((parse(t) - parse(st.launch_date)) / 864e5 % 7) + 1;
+    const d = PLAN.normal[Math.round(n) - 1];
+    plan = d ? `<div class="card ok"><h2>Day ${Math.round(n)}: ${esc(d.theme)}</h2><ol class="todo"><li><b>Content:</b> ${esc(d.content)}</li><li><b>Get customers:</b> ${esc(d.acquisition)}</li><li><b>Follow up:</b> ${esc(d.followup)}</li><li class="muted"><b>If you have energy:</b> ${esc(d.optional)}</li></ol></div>`
+      : `<div class="card"><h2>Launch starts ${esc(fdate(st.launch_date))}</h2><p class="muted">Use the time to finish Setup and approve your first posts.</p></div>`;
+  }
+  const leads = all("leads");
+  const unanswered = leads.filter((l) => l.status === "New Lead").sort((a, b) => a.inquiry.localeCompare(b.inquiry));
+  const fu = leads.filter((l) => !["New Lead", "Lost", "Completed", "Booked"].includes(l.status) && l.next && l.next <= t);
+  const appts = all("appts").filter((a) => (a.status === "proposed" || a.status === "confirmed") && ((S.slots.get(a.slot) || {}).date || "") >= plusDays(-1)).sort((x, y) => ((S.slots.get(x.slot) || {}).date || "").localeCompare((S.slots.get(y.slot) || {}).date || ""));
+  const remind = appts.filter((a) => a.status === "confirmed" && (S.slots.get(a.slot) || {}).date === plusDays(1) && !a.reminder);
+  const paidDone = new Set(all("jobs").filter((j) => j.status === "paid" && j.date < t).map((j) => j.lead));
+  const review = leads.filter((l) => paidDone.has(l.id) && !l.reviewReq);
+  const repeat = leads.filter((l) => l.status === "Completed" && l.repeat && l.repeat <= t);
+  const oppDue = all("opps").filter((o) => o.nextDate && o.nextDate <= t && !["declined", "not_a_fit"].includes(o.status));
+  const posts = POSTS.map(postView);
+  let todays = posts.filter((p) => p.status === "scheduled" && p.scheduled <= t);
+  if (todays.length < 2) todays = todays.concat(posts.filter((p) => p.status === "approved").slice(0, 2 - todays.length));
+  if (todays.length < 2) todays = todays.concat(posts.filter((p) => p.status === "draft").slice(0, 2 - todays.length));
+  const f = funnel(), ch = channels();
+  const unpaid = all("jobs").filter((j) => j.status !== "paid");
+  return `<h1>Today · ${esc(fdate(t))}</h1>${setupWarning()}${plan}
+<div class="card ${unanswered.length ? "bad" : ""}"><h2>New leads, no reply yet (${unanswered.length})</h2>${list(unanswered.map((l) => leadRow(l, "asked " + fdate(l.inquiry))), "None right now.")}<div class="btns" style="margin-top:8px"><button ${go("newlead")}>+ Add someone who messaged you</button></div></div>
+<div class="card ${fu.length ? "warn" : ""}"><h2>Follow-ups due (${fu.length})</h2>${list(fu.map((l) => leadRow(l, "due " + fdate(l.next))), "Nothing due today.")}</div>
+${remind.length ? `<div class="card warn"><h2>Send reminders (tomorrow's drop-offs)</h2>${list(remind.map(apptRow), "")}</div>` : ""}
+${review.length ? `<div class="card warn"><h2>Ask for a review</h2>${list(review.map((l) => leadRow(l)), "")}</div>` : ""}
+${repeat.length ? `<div class="card warn"><h2>Repeat-booking reminders</h2>${list(repeat.map((l) => leadRow(l)), "")}</div>` : ""}
+${oppDue.length ? `<div class="card warn"><h2>Prospecting due</h2>${list(oppDue.map((o) => `<li><div class="main"><a class="rowlink" href="#" ${go("prospects")}>${esc(o.name)}</a><span class="hint">${esc(o.next)}</span></div></li>`), "")}</div>` : ""}
+<div class="card"><h2>Posts for today</h2>${list(todays.map((p) => `<li><div class="main"><a class="rowlink" href="#" ${go("post", p.id)}>Day ${p.day}: ${esc(p.title)}</a><span class="hint">${esc(p.platform)}</span></div>${pill(p.status)}</li>`), "")}<p class="hint">You approve each post, then post it yourself. Nothing posts automatically.</p></div>
+<div class="card"><h2>Appointments</h2>${list(appts.map(apptRow), "No upcoming appointments.")}<h3>Open drop-off slots, next 7 days</h3>${list(openSlots(7).map((s) => `<li><div class="main">${esc(fdate(s.date))}, drop-off ${esc(ftime(s.time))}</div></li>`), "None entered. Add the times you can really take a car on the Book tab.")}</div>
+<div class="card"><h2>Money collected</h2><div class="big">${money(collected(ws, t))}</div><span class="hint">this week (Mon to today)</span>
+<div class="nums" style="margin-top:12px"><div><b>${money(collected())}</b><span>all time</span></div><div><b>${money(owed())}</b><span>still owed to you</span></div><div><b>${all("jobs").length}</b><span>jobs completed</span></div></div>
+${unpaid.length ? `<h3>Unpaid</h3>${list(unpaid.map((j) => `<li><div class="main">${esc((S.leads.get(j.lead) || {}).name)}</div><span>${money(j.price - j.paid)}</span></li>`), "")}` : ""}<p class="hint">Only payments you record count. Quotes, bookings, likes and views don't.</p></div>
+<div class="card"><h2>Leads to bookings</h2><div class="nums"><div><b>${f.leads}</b><span>leads</span></div><div><b>${f.quoted}</b><span>quoted</span></div><div><b>${f.booked}</b><span>booked</span></div><div><b>${f.completed}</b><span>completed</span></div><div><b>${f.l2b}</b><span>lead → booking</span></div><div><b>${f.q2b}</b><span>quote → booking</span></div></div></div>
+<div class="card"><h2>Where inquiries come from</h2>${ch.length ? `<div class="tablewrap"><table><tr><th>Channel</th><th>Inquiries</th><th>Booked</th><th>Collected</th></tr>${ch.map((c) => `<tr><td>${esc(nice(c.source))}</td><td>${c.inquiries}</td><td>${c.booked}</td><td>${money(c.money)}</td></tr>`).join("")}</table></div>` : empty("No leads recorded yet.")}</div>`;
+}
+
+function leadFields(l) {
+  l = l || {};
+  return `${field("Name or nickname", "name", l.name, "text", "First name is fine", 'required autocomplete="off"')}
+<div class="row">${sel("Contact method", "method", METHODS, l.method || "text")}${field("Phone / handle / email", "contact", l.contact, "text", "", 'autocomplete="off"')}</div>
+<div class="row">${sel("Where did they find you?", "source", SOURCES, l.source || "facebook_page")}${field("Which group or post?", "sourceDetail", l.sourceDetail)}</div>
+<div class="row">${sel("Service they want", "service", SERVICE_CHOICES, l.service || "unsure", svcLabel)}${field("Vehicle", "vehicle", l.vehicle, "text", "e.g. 2017 Honda CR-V")}</div>
+${field("Quoted price", "quote", l.quote == null ? "" : l.quote, "text", "Leave blank until you quote", 'inputmode="decimal"')}
+<label><input type="checkbox" name="consent" id="f-consent" ${l.consent ? "checked" : ""}>They messaged me first / OK to text them about this job</label>
+${field("Consent note", "consentNote", l.consentNote, "text", 'e.g. "texted me first 10/19"')}
+${field("Notes", "notes", l.notes, "textarea")}`;
+}
+function vNewLead() {
+  return `<button class="back" ${go("leads")}>‹ Leads</button><h1>Someone messaged you</h1><div class="card"><form class="f" data-form="newlead">${field("Date they asked", "inquiry", today(), "date")}${leadFields()}<button type="submit">Add lead</button></form></div>`;
+}
+function vLeads() {
+  const ls = all("leads").filter((l) => !filter || status(l) === filter);
+  const order = { "New Lead": 0, "Follow-Up Due": 1, "Quote Sent": 2, Replied: 3, Booked: 4, Completed: 5, Lost: 6 };
+  ls.sort((a, b) => order[status(a)] - order[status(b)] || b.inquiry.localeCompare(a.inquiry));
+  return `<h1>Leads</h1><button ${go("newlead")}>+ Add someone who messaged you</button>
+<div class="chips" role="group" aria-label="Filter">${["", ...STATUSES].map((s) => `<button data-filter="${esc(s)}" class="${filter === s ? "on" : ""}">${esc(s || "All")}</button>`).join("")}</div>
+<div class="card">${list(ls.map((l) => leadRow(l, (l.next ? "next " + fdate(l.next) : "asked " + fdate(l.inquiry)) + (l.quote != null ? " · " + money(l.quote) : ""))), "No leads yet. When someone messages you, add them here first - it's how you learn what's working.")}</div>`;
+}
+function vLead(id) {
+  const l = S.leads.get(id); if (!l) return `<button class="back" ${go("leads")}>‹ Leads</button>${empty("That lead isn't here.")}`;
+  const svcDefault = SERVICES[l.service] ? l.service : "full";
+  const replies = ["price", "location", "come_to_me", "full_package", "availability", "pet_or_stain", "quote_followup", "no_reply_1", "no_reply_2", "review_request", "referral_ask", "repeat_offer"];
+  const appts = all("appts").filter((a) => a.lead === id).sort((a, b) => (b.created || "").localeCompare(a.created || ""));
+  const jobs = all("jobs").filter((j) => j.lead === id);
+  const slots = openSlots(21);
+  const apptHtml = appts.map((a) => {
+    const s = S.slots.get(a.slot) || {}; let acts = "";
+    if (a.status === "proposed") acts = `<div class="btns"><button class="small" data-act="confirm" data-id="${a.id}">They said yes - confirm</button><button class="small ghost" data-act="release" data-id="${a.id}">Release slot</button></div>`;
+    if (a.status === "confirmed") acts = `<div class="btns"><button class="small ghost" data-act="reminder" data-id="${a.id}">${a.reminder ? "Reminder sent ✓" : "Reminder sent"}</button><button class="small danger" data-ask="cancel-${a.id}">Cancelled</button><button class="small danger" data-ask="noshow-${a.id}">No-show</button></div>
+<div class="confirm" data-confirm="cancel-${a.id}" hidden><form class="f" data-form="cancel" data-id="${a.id}">${field("Reason (optional)", "reason", "")}<div class="btns"><button type="submit" class="small danger">Yes, cancel it</button><button type="button" class="small ghost" data-ask="">Keep it</button></div></form></div>
+<div class="confirm" data-confirm="noshow-${a.id}" hidden><p>Mark as a no-show?</p><div class="btns"><button class="small danger" data-act="noshow" data-id="${a.id}">Yes, no-show</button><button type="button" class="small ghost" data-ask="">Keep it</button></div></div>
+<details data-key="done-${a.id}"><summary>Job done - record it</summary><form class="f" data-form="complete" data-id="${a.id}"><div class="row">${sel("Service done", "service", Object.keys(SERVICES), a.service, svcLabel)}${field("Price charged", "price", a.price, "text", "", 'inputmode="decimal"')}</div><div class="row">${field("Amount paid now", "paid", a.price, "text", "0 if not paid yet", 'inputmode="decimal"')}${sel("Paid with", "method", [""].concat(PAY), "")}</div>${field("Completed date", "date", today(), "date")}${field("Notes", "notes", "")}<button type="submit">Mark completed</button></form></details>`;
+    const msgs = a.status === "proposed" || a.status === "confirmed" ? `<details data-key="msgs-${a.id}"><summary>Messages for this appointment</summary>${["booking_confirmation", "reminder", "ready_pickup", "reschedule"].map((r) => `<h3>${esc(REPLIES.find((x) => x.id === r).title)}</h3>${copyBox(renderReply(r, l, a))}`).join("")}</details>` : "";
+    return `<div class="card"><h2>${esc(fdate(s.date))} ${esc(ftime(s.time))}</h2><p>${esc(SERVICES[a.service].label)} · ${money(a.price)} ${pill(a.status)}</p>${acts}${msgs}</div>`;
+  }).join("");
+  const after = jobs.length ? `<div class="card"><h2>After the job</h2>${jobs.map((j) => `<p>${esc(fdate(j.date))}: ${esc(SERVICES[j.service].label)} · charged ${money(j.price)}, paid ${money(j.paid)} ${pill(j.status)}</p>${j.status !== "paid" ? `<form class="f" data-form="pay" data-id="${j.id}"><div class="row">${field("Payment received", "amount", j.price - j.paid, "text", "", 'inputmode="decimal"')}${sel("Method", "method", PAY, "cash")}</div><button type="submit" class="small">Record payment</button></form>` : ""}`).join("")}
+<div class="btns">${l.reviewReq ? `<span class="hint">Review asked ${esc(fdate(l.reviewReq))}</span>` : `<button class="small" data-act="reviewreq" data-id="${id}">Review request sent</button>`}${l.reviewGot ? `<span class="hint">Review received ✓</span>` : `<button class="small ghost" data-act="reviewgot" data-id="${id}">They left a review</button>`}<button class="small ghost" data-act="repeat" data-id="${id}">Repeat offer sent</button></div><p class="hint">Next repeat reminder: ${esc(fdate(l.repeat))}</p></div>` : "";
+  return `<button class="back" ${go("leads")}>‹ Leads</button><h1>${esc(l.name)}</h1>
+<p>${pill(status(l))} <span class="muted">asked ${esc(fdate(l.inquiry))} via ${esc(nice(l.source))}${l.sourceDetail ? " (" + esc(l.sourceDetail) + ")" : ""} · ${esc(nice(l.method))}: ${esc(l.contact || "-")} · consent: ${l.consent ? "yes" : "not recorded"} · next follow-up: <b>${esc(fdate(l.next))}</b></span></p>
+<div class="card"><h2>1 · Reply</h2><p class="hint">Copy, paste into your messages app, send it yourself. Then record it below.</p>${replies.map((r) => { const t = REPLIES.find((x) => x.id === r); return `<details data-key="r-${r}"><summary>${esc(t.title)}</summary><span class="hint">${esc(t.when)}</span>${copyBox(renderReply(r, l))}<span class="hint">Then: ${esc(t.next_step)}</span></details>`; }).join("")}</div>
+<div class="card"><h2>2 · Record what you did</h2><div class="btns"><button class="small" data-act="replied" data-id="${id}">I replied</button><button class="small ghost" data-act="followup" data-id="${id}" data-v="4">I sent a follow-up</button><button class="small ghost" data-act="followup" data-id="${id}" data-v="0">Final follow-up sent</button></div>
+<h3>Quote</h3><form class="f" data-form="quote" data-id="${id}"><div class="row">${sel("Service", "service", Object.keys(SERVICES), svcDefault, svcLabel)}${field("Price (blank = standard)", "price", "", "text", "", 'inputmode="decimal"')}</div><button type="submit" class="small">I sent this quote</button></form>
+<h3>Offer a drop-off time</h3>${slots.length ? `<form class="f" data-form="offer" data-id="${id}">${sel("Your open slot", "slot", slots.map((s) => s.id), slots[0].id, (sid) => { const s = S.slots.get(sid); return `${fdate(s.date)} - ${ftime(s.time)}`; })}<div class="row">${sel("Service", "service", Object.keys(SERVICES), svcDefault, svcLabel)}${field("Price (blank = quote)", "price", "", "text", "", 'inputmode="decimal"')}</div><button type="submit" class="small">Hold this slot for them</button><span class="hint">Holding doesn't book it. Confirm only after they say yes.</span></form>` : `<p class="muted">No open slots. <a href="#" ${go("book")}>Add your real available times</a> first.</p>`}</div>
+${apptHtml}${after}
+<div class="card"><details data-key="edit-${id}"><summary>Edit lead</summary><form class="f" data-form="editlead" data-id="${id}">${leadFields(l)}<div class="row">${sel("Status", "status", STATUSES, l.status)}${field("Next follow-up", "next", l.next || "", "date")}</div><div class="row">${field("Repeat reminder date", "repeat", l.repeat || "", "date")}${field("Lost reason", "lostReason", l.lostReason)}</div><button type="submit">Save changes</button></form></details></div>
+<div class="card"><h2>History</h2>${list((l.events || []).slice().reverse().map((e) => `<li><div class="main">${esc(fdate(e.d))} · ${esc(nice(e.t))} <span class="hint">${esc(e.n)}</span></div></li>`), "")}</div>`;
+}
+
+function vBook() {
+  const slots = all("slots").filter((s) => s.date >= plusDays(-7)).sort((a, b) => (a.date + a.time).localeCompare(b.date + b.time));
+  const live = all("appts").filter((a) => a.status === "proposed" || a.status === "confirmed").sort((x, y) => ((S.slots.get(x.slot) || {}).date || "").localeCompare((S.slots.get(y.slot) || {}).date || ""));
+  const jobs = all("jobs").sort((a, b) => b.date.localeCompare(a.date));
+  return `<h1>Booking</h1><div class="card warn"><p><b>Drop-off only, at times you approved.</b> Add the times you can really take a car. On a lead, hold one and send it. Confirm when they say yes. Max ${maxPerDay()} car(s) a day (change in Setup).</p></div>
+<div class="card"><h2>Add an open drop-off time</h2><form class="f" data-form="slot"><div class="row">${field("Date", "date", plusDays(1), "date")}${field("Drop-off time", "time", "08:30", "time")}</div><div class="row">${field("Expected pick-up (optional)", "pickup", "", "time")}${field("Note", "note", "")}</div><button type="submit">Add slot</button></form></div>
+<div class="card"><h2>Upcoming appointments</h2>${list(live.map(apptRow), "None yet.")}</div>
+<div class="card"><h2>Your slots</h2>${list(slots.map((s) => { const a = all("appts").find((x) => x.slot === s.id && ["proposed", "confirmed", "completed"].includes(x.status)); const who = a ? (S.leads.get(a.lead) || {}).name : ""; return `<li><div class="main">${esc(fdate(s.date))} ${esc(ftime(s.time))}${s.pickup ? " → " + esc(ftime(s.pickup)) : ""}<span class="hint">${who ? esc(who) : esc(s.note || "")}</span></div><div class="btns">${pill(s.status)}${s.status === "open" ? `<button class="small ghost" data-act="closeslot" data-id="${s.id}">Close</button>` : ""}</div></li>`; }), "No slots yet.")}</div>
+<div class="card"><h2>Completed jobs</h2>${list(jobs.map((j) => `<li><div class="main"><a class="rowlink" href="#" ${go("lead", j.lead)}>${esc((S.leads.get(j.lead) || {}).name)}</a><span class="hint">${esc(fdate(j.date))} · ${esc(SERVICES[j.service].label)} · charged ${money(j.price)} · paid ${money(j.paid)}</span></div>${pill(j.status)}</li>`), "No completed jobs yet.")}</div>`;
+}
+
+function vPosts() {
+  const ps = POSTS.map(postView).filter((p) => !filter || p.status === filter);
+  const count = (s) => POSTS.map(postView).filter((p) => p.status === s).length;
+  return `<h1>30-day posts</h1><p class="muted">draft → you approve → you post it yourself → mark published. Skip seasonal ones that don't fit the week.</p>
+<div class="chips">${["", "draft", "approved", "scheduled", "published"].map((s) => `<button data-filter="${s}" class="${filter === s ? "on" : ""}">${esc(s || "All")}${s ? " " + count(s) : ""}</button>`).join("")}</div>
+<div class="card">${list(ps.map((p) => `<li><div class="main"><a class="rowlink" href="#" ${go("post", p.id)}>Day ${p.day}: ${esc(p.title)}</a><span class="hint">${esc(p.pillar)} · ${esc(p.platform)}${p.season !== "any" ? " · " + esc(p.season) : ""}${p.needs_real_photos ? " · needs your real photos" : ""}</span></div>${pill(p.status)}</li>`), "Nothing with that status.")}</div>`;
+}
+function vPost(id) {
+  const base = POSTS.find((p) => p.id === id); if (!base) return `<button class="back" ${go("posts")}>‹ Posts</button>${empty("Not found.")}`;
+  const p = postView(base), probs = postProblems(p);
+  const steps = []; if (p.facebook) steps.push("Facebook Page"); if (p.instagram || p.story || p.reel_script) steps.push("Instagram"); if (p.group_version) steps.push("Community groups");
+  let acts = "";
+  if (p.status === "draft") acts = `<form class="f" data-form="approve" data-id="${id}">${p.needs_real_photos ? `<label><input type="checkbox" name="photos" id="f-photos">I have my own real photos/video for this</label>` : ""}<button type="submit">Approve</button></form>`;
+  else if (p.status === "published") acts = `<p>Published ${esc(fdate(p.published))} · ${esc(p.where)}</p>`;
+  else acts = `<form class="f" data-form="publish" data-id="${id}">${field("Where you posted it", "where", "", "text", "e.g. facebook page, instagram, a group name", "required")}${field("Date posted", "date", today(), "date")}<button type="submit">Mark published (I posted it)</button></form>
+<form class="f" data-form="schedule" data-id="${id}">${field("Plan to post on", "date", p.scheduled || today(), "date")}<button type="submit" class="ghost small">Schedule (just a reminder)</button></form><button class="ghost small" data-act="todraft" data-id="${id}">Back to draft</button>`;
+  return `<button class="back" ${go("posts")}>‹ Posts</button><h1>${esc(p.title)}</h1><p>${pill(p.status)} <span class="muted">Day ${p.day} · ${esc(p.platform)} · ${esc(p.format)}</span></p>
+<div class="card"><p><b>Purpose:</b> ${esc(p.purpose)}</p><p><b>Call to action:</b> ${esc(p.cta)}</p><p><b>Visual:</b> ${esc(p.visual)}</p>${p.needs_real_photos ? "<p><b>Needs your genuine photos or video.</b> Never stock photos or someone else's work.</p>" : ""}<h3>Shot list</h3><pre style="white-space:pre-wrap;font:inherit;margin:0">${esc(p.shots)}</pre></div>
+${p.status === "draft" && probs.length ? `<div class="card warn"><h2>Before you can approve</h2><ul>${probs.map((x) => `<li>${esc(x)}</li>`).join("")}</ul></div>` : ""}
+<div class="card"><h2>Ready to paste</h2>${Object.keys(POST_FIELDS).filter((f) => p[f]).map((f) => `<h3>${esc(POST_FIELDS[f])}</h3>${copyBox(fill(p[f]))}`).join("")}</div>
+<div class="card"><h2>Approve / publish</h2>${acts}</div>
+<div class="card"><h2>How to post it</h2>${steps.map((s) => `<h3>${esc(s)}</h3><ol class="todo">${PUBLISH_STEPS[s].map((x) => `<li>${esc(x)}</li>`).join("")}</ol>`).join("")}</div>
+${p.status !== "published" ? `<div class="card"><details data-key="pedit-${id}"><summary>Edit the wording</summary><p class="hint">{price_full}, {booking_line} and the rest fill in from Setup. Editing an approved post sends it back to draft.</p><form class="f" data-form="postedit" data-id="${id}">${Object.keys(POST_FIELDS).map((f) => field(POST_FIELDS[f], f, p[f], "textarea")).join("")}<button type="submit">Save wording</button></form></details></div>` : ""}`;
+}
+
+function vReplies() {
+  const groups = {}; REPLIES.forEach((r) => (groups[r.group] = groups[r.group] || []).push(r));
+  return `<button class="back" ${go("more")}>‹ More</button><h1>Reply templates</h1><p class="muted">Filled with your Setup info and your real open slots. Open one from a lead to fill in their name. You send every message yourself.</p>
+${Object.keys(groups).map((g) => `<div class="card"><h2>${esc(g)}</h2>${groups[g].map((r) => `<details data-key="t-${r.id}"><summary>${esc(r.title)}</summary><span class="hint">${esc(r.when)}</span>${copyBox(renderReply(r.id))}<span class="hint">Then: ${esc(r.next_step)}</span></details>`).join("")}</div>`).join("")}`;
+}
+
+function oppFields(o) {
+  o = o || {};
+  return `<div class="row">${sel("Type", "type", OPP_TYPES, o.type || "facebook_group")}${sel("Status", "status", OPP_STATUS, o.status || "to_research")}</div>${field("Name", "name", o.name, "text", "", "required")}${field("Link or PUBLIC contact", "contact", o.contact)}
+${sel("Group rules", "rule", Object.keys(RULES), o.rule || "unknown", (k) => RULES[k])}${field("Rules notes", "rulesNotes", o.rulesNotes, "textarea")}<div class="row">${field("Next action", "next", o.next)}${field("Next action date", "nextDate", o.nextDate || "", "date")}</div>${field("Outcome so far", "outcome", o.outcome)}${field("Where this info came from", "info", o.info)}`;
+}
+function vProspects() {
+  const rank = (s) => OPP_STATUS.indexOf(s);
+  const os = all("opps").sort((a, b) => ((a.nextDate && a.nextDate <= today()) ? 0 : 1) - ((b.nextDate && b.nextDate <= today()) ? 0 : 1) || rank(a.status) - rank(b.status) || (a.order || 0) - (b.order || 0));
+  return `<button class="back" ${go("more")}>‹ More</button><h1>Local prospecting</h1>
+<div class="card warn"><p>Follow every platform's and group's rules. Public business contacts only. No scraping, buying leads or mass messages. Only change a status after <b>you</b> did it. Nothing here has been contacted or created yet unless you marked it.</p><p class="hint">Rule type decides what to post: promo allowed / promo day → the post's group version. Recommendations only → the "recommendation" reply. No business → don't post.</p></div>
+<div class="card"><details data-key="oppnew"><summary>+ Add an opportunity</summary><form class="f" data-form="oppnew">${oppFields()}<button type="submit">Add</button></form></details></div>
+${os.length ? os.map((o) => `<div class="card"><p><b>${esc(o.name)}</b> ${pill(o.status)}</p><p class="hint">${esc(nice(o.type))} · found ${esc(fdate(o.found))} · ${esc(o.contact)}</p><p><b>Next:</b> ${esc(o.next || "-")}${o.nextDate ? " (" + esc(fdate(o.nextDate)) + ")" : ""}</p><p class="hint"><b>Rules:</b> ${esc(RULES[o.rule] || "")}. ${esc(o.rulesNotes)}</p>${o.outcome ? `<p><b>Outcome:</b> ${esc(o.outcome)}</p>` : ""}<details data-key="opp-${o.id}"><summary>Update</summary><form class="f" data-form="opp" data-id="${o.id}">${oppFields(o)}<button type="submit">Save</button></form></details></div>`).join("") : `<div class="card">${empty("No opportunities yet. Add the first one above.")}</div>`}`;
+}
+
+function vPlan() {
+  const cash = settings().cash_mode === "yes";
+  const eff = all("effort").sort((a, b) => b.date.localeCompare(a.date)).slice(0, 12);
+  return `<button class="back" ${go("more")}>‹ More</button><h1>Daily plan</h1>
+<div class="card"><h2>Log marketing time</h2><p class="hint">Rough minutes are fine. The weekly report compares time spent to inquiries by channel.</p><form class="f" data-form="effort"><div class="row">${field("Date", "date", today(), "date")}${sel("Channel", "channel", SOURCES, "facebook_page")}</div><div class="row">${field("What you did", "activity", "", "text", "", "required")}${field("Minutes", "minutes", "15", "number", "", 'inputmode="numeric" min="0" max="600"')}</div><button type="submit">Log it</button></form>${list(eff.map((e) => `<li><div class="main">${esc(e.activity)}<span class="hint">${esc(fdate(e.date))} · ${esc(nice(e.channel))}</span></div><span>${e.minutes} min</span></li>`), "")}</div>
+<div class="card bad"><h2>Cash mode ${cash ? "(on)" : "(off)"}</h2><p class="hint">For weeks you need paying jobs now. It replaces the day plan on Today.</p><ol class="todo">${PLAN.cash_mode.map((s) => `<li>${esc(s.replace(/^\d+\.\s*/, ""))}</li>`).join("")}</ol><button data-act="cash" data-v="${cash ? "no" : "yes"}">Turn cash mode ${cash ? "off" : "on"}</button></div>
+<h2>7-day routine</h2>${PLAN.normal.map((d) => `<div class="card"><h2>Day ${d.day}: ${esc(d.theme)}</h2><ol class="todo"><li><b>Content:</b> ${esc(d.content)}</li><li><b>Get customers:</b> ${esc(d.acquisition)}</li><li><b>Follow up:</b> ${esc(d.followup)}</li><li class="muted"><b>Optional:</b> ${esc(d.optional)}</li></ol></div>`).join("")}`;
+}
+
+let reportWeek = null;
+function vWeekly() {
+  const r = weekly(reportWeek);
+  return `<button class="back" ${go("more")}>‹ More</button><h1>Week of ${esc(fdate(r.a))}</h1><div class="btns"><button class="small ghost" data-act="week" data-v="-7">‹ Previous</button><button class="small ghost" data-act="week" data-v="7">Next ›</button></div>
+<div class="card ok"><h2>What to change next week</h2><ul>${r.tips.map((t) => `<li>${esc(t)}</li>`).join("")}</ul></div>
+<div class="card"><div class="nums"><div><b>${r.posts.length}</b><span>posts published</span></div><div><b>${r.inquiries}</b><span>inquiries</span></div><div><b>${r.quotes}</b><span>quotes sent</span></div><div><b>${r.booked}</b><span>booked</span></div><div><b>${r.jobs}</b><span>jobs done</span></div><div><b>${money(r.revenue)}</b><span>collected</span></div></div></div>
+<div class="card"><h2>Full report</h2>${copyBox(weeklyText(r))}</div>`;
+}
+
+function vSetup() {
+  const st = settings();
+  return `<button class="back" ${go("more")}>‹ More</button><h1>Setup</h1><div class="card warn"><p>The grey examples are only hints. Nothing is saved until you type your own real details. Never put passwords here.</p></div>
+<div class="card"><form class="f" data-form="settings">${SETTINGS.map(([k, label, hint, req]) => field(label, k, st[k] || "", k === "launch_date" ? "date" : "text", req ? "Required before approving posts" : "", hint ? `placeholder="${esc(hint)}"` : "")).join("")}<button type="submit">Save setup</button></form></div>
+<div class="card"><h2>Backup</h2><p>Your data is saved in your private Claude storage for this page. For an extra copy, save a backup file to your phone once a week.</p><button data-act="backup" id="backupbtn">Save backup file</button></div>
+<div class="card"><h2>Privacy</h2><p class="hint">Only you (the owner) can read or change this data, even if the page is ever shared. Don't share this page's link with anyone.</p></div>`;
+}
+
+function vMore() {
+  return `<h1>More</h1><div class="stack morelist">${MORE.map(([v, t, d]) => `<button ${go(v)}><b>${esc(t)}</b><span class="hint">${esc(d)}</span></button>`).join("")}</div>`;
+}
+
+// ---------------------------------------------------------------- render loop
+let pendingRender = false;
+function render(force) {
+  const root = document.getElementById("view");
+  const a = document.activeElement;
+  if (!force && a && root.contains(a) && /INPUT|TEXTAREA|SELECT/.test(a.tagName)) { pendingRender = true; return; } // don't wipe what you're typing
+  pendingRender = false;
+  const open = new Set(Array.from(root.querySelectorAll("details[open]")).map((d) => d.dataset.key));
+  const fn = { today: vToday, leads: vLeads, newlead: vNewLead, lead: () => vLead(sub), book: vBook, posts: vPosts, post: () => vPost(sub), replies: vReplies, prospects: vProspects, plan: vPlan, weekly: vWeekly, setup: vSetup, more: vMore }[view] || vToday;
+  root.innerHTML = gate || fn();
+  root.querySelectorAll("details[data-key]").forEach((d) => { if (open.has(d.dataset.key)) d.open = true; });
+  document.getElementById("tabs").innerHTML = TABS.map(([v, l]) => `<button ${go(v)} class="${tabOf(view) === v || (view === "newlead" && v === "leads") || (view === "lead" && v === "leads") || (view === "post" && v === "posts") ? "on" : ""}" aria-label="${l}"><svg viewBox="0 0 24 24" aria-hidden="true">${ICONS[v]}</svg>${l}</button>`).join("");
+}
+document.addEventListener("focusout", () => setTimeout(() => { if (pendingRender) render(); }, 150));
+
+function navigate(v, s) { view = v; sub = s == null ? null : s; filter = ""; render(true); window.scrollTo(0, 0); }
+
+async function run(fn, okMsg) {
+  try { await fn(); if (okMsg) toast(okMsg); render(true); }
+  catch (e) { toast(e instanceof VErr ? e.message : "Couldn't save that. Check your connection and try again.", true); if (!(e instanceof VErr)) console.error(e); }
+}
+
+document.addEventListener("click", (e) => {
+  const t = e.target.closest("[data-go],[data-act],[data-copy],[data-filter],[data-ask]");
+  if (!t) return;
+  if (t.hasAttribute("data-go")) { e.preventDefault(); return navigate(t.dataset.go, t.dataset.sub); }
+  if (t.hasAttribute("data-filter")) { filter = t.dataset.filter; return render(true); }
+  if (t.hasAttribute("data-ask")) { document.querySelectorAll("[data-confirm]").forEach((c) => { c.hidden = c.dataset.confirm !== t.dataset.ask; }); return; }
+  if (t.hasAttribute("data-copy")) {
+    const pre = t.parentNode.querySelector("pre"), text = pre.innerText;
+    const done = () => { t.textContent = "Copied"; setTimeout(() => { t.textContent = "Copy"; }, 1500); };
+    const fallback = () => { const r = document.createRange(); r.selectNodeContents(pre); const s = getSelection(); s.removeAllRanges(); s.addRange(r); toast("Text selected - tap Copy in the menu"); };
+    try { navigator.clipboard.writeText(text).then(done, fallback); } catch (_) { fallback(); }
+    return;
+  }
+  const id = t.dataset.id, v = t.dataset.v;
+  const acts = {
+    replied: () => run(() => leadAct(id, (l) => { if (l.status === "New Lead" || l.status === "Follow-Up Due") l.status = "Replied"; l.lastContact = today(); l.next = plusDays(2); ev(l, "reply_sent"); }), "Reply logged. Follow-up set for 2 days from now."),
+    followup: () => run(() => leadAct(id, (l) => { l.lastContact = today(); l.next = Number(v) ? plusDays(Number(v)) : null; if (l.status === "Follow-Up Due") l.status = "Replied"; ev(l, "followup_sent"); }), Number(v) ? "Follow-up logged." : "Final follow-up logged. If they don't answer, mark them Lost."),
+    confirm: () => run(() => confirmAppt(id), "Confirmed. Send the booking confirmation message."),
+    release: () => run(() => cancelAppt(id, false, "slot released"), "Slot released."),
+    noshow: () => run(() => cancelAppt(id, true, ""), "No-show logged."),
+    reminder: () => run(async () => { const a = S.appts.get(id); await put("appts", id, Object.assign({}, a, { reminder: today() })); await leadAct(a.lead, (l) => ev(l, "reminder_sent")); }, "Reminder logged."),
+    closeslot: () => run(async () => { const s = S.slots.get(id); need(s && s.status === "open", "Only open slots can be closed."); await put("slots", id, Object.assign({}, s, { status: "closed" })); }, "Slot closed."),
+    reviewreq: () => run(() => leadAct(id, (l) => { l.reviewReq = today(); l.next = null; ev(l, "review_requested"); }), "Review request logged."),
+    reviewgot: () => run(() => leadAct(id, (l) => { l.reviewGot = true; ev(l, "review_received"); }), "Review logged."),
+    repeat: () => run(() => leadAct(id, (l) => { l.repeat = plusDays(60); ev(l, "repeat_offer_sent"); }), "Repeat offer logged. Next reminder in 60 days."),
+    todraft: () => run(() => putPost(id, { status: "draft", approved: null, scheduled: null }), "Back to draft."),
+    cash: () => run(() => saveSettings({ cash_mode: v }), v === "yes" ? "Cash mode on." : "Cash mode off."),
+    week: () => { reportWeek = plusDays(Number(v), weekBounds(reportWeek)[0]); render(true); },
+    backup: () => saveBackup(),
+  };
+  if (acts[t.dataset.act]) acts[t.dataset.act]();
+});
+
+async function putPost(id, patch) { const o = Object.assign({ status: "draft" }, S.posts.get(id) || {}, patch); await put("posts", id, o); }
+async function saveSettings(patch) { if (!db) throw new VErr("Storage isn't connected."); const next = Object.assign({}, S.settings, patch); await db.doc("config/settings").set(next); S.settings = next; }
+
+document.addEventListener("submit", (e) => {
+  const form = e.target.closest("form[data-form]"); if (!form) return;
+  e.preventDefault();
+  const f = {}; new FormData(form).forEach((val, k) => { f[k] = typeof val === "string" ? val : ""; });
+  const id = form.dataset.id;
+  const handlers = {
+    newlead: () => run(async () => { const nid = await createLead(f); view = "lead"; sub = nid; }, "Lead added. Reply now - fast replies win jobs."),
+    editlead: () => run(() => leadAct(id, (l) => { const n = leadFromForm(f, l); need(STATUSES.includes(f.status), "Pick a status."); if (f.status === "Lost" && l.status !== "Lost") ev(n, "lost", f.lostReason); n.status = f.status; n.next = isDate(f.next) ? f.next : null; n.repeat = isDate(f.repeat) ? f.repeat : null; n.lostReason = clean(f.lostReason, 200); Object.assign(l, n); }), "Saved."),
+    quote: () => run(() => leadAct(id, (l) => { need(SERVICES[f.service], "Pick a service."); let p = num(f.price, "Price"); if (p == null) p = SERVICES[f.service].price; l.status = "Quote Sent"; l.service = f.service; l.quote = p; l.lastContact = today(); l.next = plusDays(2); ev(l, "quote_sent", `${SERVICES[f.service].label} $${p}`); }), "Quote logged. Follow-up in 2 days."),
+    offer: () => run(() => propose(id, f.slot, f.service, f.price), "Slot held. Send them the time, then confirm when they say yes."),
+    cancel: () => run(() => cancelAppt(id, false, f.reason), "Cancelled. The slot is open again if it's in the future."),
+    complete: () => run(() => completeJob(id, f), "Job recorded. Ask for a review tomorrow."),
+    pay: () => run(() => recordPayment(id, f.amount, f.method), "Payment recorded."),
+    slot: () => run(() => addSlot(f), "Slot added."),
+    approve: () => run(async () => { const p = postView(POSTS.find((x) => x.id === id)); if (p.needs_real_photos) need(f.photos === "on", "This post needs your real photos or video. Tick the box once you have them."); const probs = postProblems(p); need(!probs.length, "Can't approve yet: " + probs.join("; ")); await putPost(id, { status: "approved", approved: today() }); }, "Approved. Post it yourself, then mark it published."),
+    publish: () => run(async () => { const where = clean(f.where, 200); need(where, "Say where you posted it."); const d = isDate(f.date) ? f.date : today(); need(d <= today(), "Use Schedule for a future date."); await putPost(id, { status: "published", published: d, where }); }, "Marked published."),
+    schedule: () => run(async () => { need(isDate(f.date), "Pick a date."); await putPost(id, { status: "scheduled", scheduled: f.date }); }, "Scheduled (reminder only - post it yourself on the day)."),
+    postedit: () => run(async () => { const base = POSTS.find((x) => x.id === id), cur = postView(base); need(cur.status !== "published", "Already published - edit it on the platform."); const edits = {}; let changed = false; for (const k in POST_FIELDS) { edits[k] = clean(f[k], 4000); if (edits[k] !== cur[k]) changed = true; } await putPost(id, Object.assign({ edits }, changed && cur.status !== "draft" ? { status: "draft", approved: null } : {})); }, "Wording saved."),
+    oppnew: () => run(() => put("opps", newId("opps"), oppFromForm(f, { found: today(), order: Date.now() })), "Added."),
+    opp: () => run(() => put("opps", id, oppFromForm(f, S.opps.get(id))), "Updated."),
+    effort: () => run(async () => { const m = parseInt(f.minutes, 10); need(m >= 0 && m <= 600, "Minutes must be 0-600."); need(clean(f.activity), "Say what you did."); need(SOURCES.includes(f.channel), "Pick a channel."); await put("effort", newId("effort"), { date: isDate(f.date) ? f.date : today(), channel: f.channel, activity: clean(f.activity, 200), minutes: m }); }, "Logged."),
+    settings: () => run(async () => { const patch = {}; for (const [k] of SETTINGS) patch[k] = clean(f[k], 200); if (patch.max_jobs_per_day) { const n = parseInt(patch.max_jobs_per_day, 10); need(n >= 1 && n <= 10, "Max cars per day must be 1-10."); patch.max_jobs_per_day = String(n); } if (patch.launch_date) need(isDate(patch.launch_date), "Launch date must be a date."); await saveSettings(patch); }, "Setup saved."),
+  };
+  if (handlers[form.dataset.form]) handlers[form.dataset.form]();
+});
+function oppFromForm(f, base) {
+  const o = Object.assign({}, base || {}); o.name = clean(f.name, 200); need(o.name, "Name is required.");
+  o.type = OPP_TYPES.includes(f.type) ? f.type : "other"; o.status = OPP_STATUS.includes(f.status) ? f.status : "to_research"; o.rule = RULES[f.rule] ? f.rule : "unknown";
+  o.contact = clean(f.contact, 300); o.rulesNotes = clean(f.rulesNotes, 1000); o.next = clean(f.next, 300); o.nextDate = isDate(f.nextDate) ? f.nextDate : null; o.outcome = clean(f.outcome, 500); o.info = clean(f.info, 300);
+  return o;
+}
+
+let downloads = null;
+async function saveBackup() {
+  const data = { saved: new Date().toISOString(), settings: S.settings };
+  COLS.forEach((c) => { data[c] = all(c); });
+  if (!downloads) return toast("Saving files isn't available in this view. Your data is still stored safely.", true);
+  try { await downloads.save({ filename: `carbon-force-backup-${today()}.json`, data: JSON.stringify(data, null, 1) }); }
+  catch (e) { toast("Backup wasn't saved.", true); }
+}
+
+// ---------------------------------------------------------------- boot
+let gate = "";
+(function boot() {
+  const h = (location.hash || "").slice(1);
+  if (["today", "leads", "book", "posts", "replies", "prospects", "plan", "weekly", "setup", "more"].includes(h)) view = h;
+  render(true);
+})();
+(async function connect() {
+  const sync = document.getElementById("sync");
+  if (!window.claude || !window.claude.use) { sync.textContent = "Offline copy"; gate = `<div class="card bad"><h2>Open this from Claude</h2><p>This page saves your data in your Claude account, so it only works when opened from its claude.ai link while you're signed in.</p></div>`; return render(true); }
+  const [d, u, dl] = await Promise.all([claude.use("db"), claude.use("user"), claude.use("downloads")]);
+  downloads = dl;
+  if (u) { try { if (!(await u.isOwner())) { readOnly = true; gate = `<div class="card bad"><h2>Private business tool</h2><p>This page belongs to someone else, and its data is private.</p></div>`; sync.textContent = ""; return render(true); } } catch (_) {} }
+  if (!d) { sync.textContent = "Not connected"; gate = `<div class="card bad"><h2>Storage isn't connected</h2><p>Reopen this page from its claude.ai link while signed in. Your data is safe - it just can't load in this view.</p></div>`; return render(true); }
+  db = d; gate = "";
+  const done = (name) => { S.loaded.add(name); sync.textContent = S.loaded.size >= COLS.length + 1 ? "Saved in your Claude account" : "Loading…"; render(); };
+  const fail = (e) => { sync.textContent = "Connection lost - reload"; console.warn(e && e.code); };
+  COLS.forEach((c) => db.collection(c).onSnapshot((snap) => { S[c] = new Map(snap.docs.map((x) => [x.id, Object.assign({ id: x.id }, x.data())])); done(c); }, fail));
+  db.doc("config/settings").onSnapshot((snap) => { S.settings = snap.exists ? Object.assign({}, snap.data()) : {}; done("settings"); }, fail);
+})();
+})();
+</script>
