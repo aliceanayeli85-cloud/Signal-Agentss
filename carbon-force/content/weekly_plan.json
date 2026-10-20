@@ -3,68 +3,68 @@
     {
       "day": 1,
       "theme": "Show up",
-      "content": "Publish one approved post on your Facebook Page (start with the next post in the library).",
-      "acquisition": "Find 2 local Facebook groups (Prospecting page), read their rules, and record the rule type. Ask to join. Don't post yet.",
-      "followup": "Reply to every New Lead. Then clear anything on 'Follow-ups due today'.",
-      "optional": "Take 5 minutes of close-up video on your next job (cup holder, wheel, under-seat). Save it for later."
+      "content": "Publish one post from your Nextdoor Business Page (Marketing agent has posts ready to copy).",
+      "acquisition": "Pin flyers at 2 places with a public board (laundromat, library). Ask first.",
+      "followup": "Reply to every New Lead. Then clear anything on 'Follow-ups due'.",
+      "optional": "Take 5 minutes of close-up photos or video on your next job for later posts."
     },
     {
       "day": 2,
       "theme": "Be findable",
-      "content": "Post one Instagram Story (price graphic or a quick close-up). 2 minutes.",
-      "acquisition": "Work on one Google/search step from the Prospecting checklist (e.g. confirm GBP eligibility, or set up the Facebook Page's About section).",
+      "content": "No post today. Check your Nextdoor page: hours, prices and photos are correct.",
+      "acquisition": "Answer every Nextdoor message within the hour if you can. Add each one as a lead (source: nextdoor).",
       "followup": "Send any 'no reply - first nudge' messages that are due.",
-      "optional": "Pin the price-menu post on your Facebook Page if it's approved."
+      "optional": "Look at one nearby detailer's prices so you know where you stand."
     },
     {
       "day": 3,
       "theme": "Neighbors",
-      "content": "Publish one approved post (Page). If a group you joined allows business posts today, share the group version there.",
-      "acquisition": "Search 2 joined groups for 'detail', 'car wash', 'clean my car'. Answer real recommendation requests with the group template. One reply each, no arguing.",
+      "content": "Publish one Nextdoor Business Page post (a before/after if you have one).",
+      "acquisition": "Check Nextdoor Groups you've joined: only post the business where the group's rules allow it.",
       "followup": "Follow-ups due today.",
-      "optional": "Drop 5-10 flyers at one place that has a public community board (and allows it)."
+      "optional": "Drop 5-10 flyers at one more public board."
     },
     {
       "day": 4,
       "theme": "Partners",
-      "content": "Post a Reel if you have real footage; otherwise skip content today.",
-      "acquisition": "Visit or message ONE local business from the Prospecting list via its public business contact (partner intro template). Record it.",
+      "content": "No post needed today.",
+      "acquisition": "Visit ONE local business in person (tire shop, repair shop, used-car lot) with flyers. Use the partner intro template. Record it in Prospecting.",
       "followup": "Check every Quote Sent lead - send the quote follow-up if it's been 2+ days.",
-      "optional": "Add your real open drop-off times for next week on the Booking page."
+      "optional": "Add your real open drop-off times for next week on the Book tab."
     },
     {
       "day": 5,
       "theme": "Fill the week",
-      "content": "If you have REAL open slots, post 'Open drop-off times this week' with those exact times. If you're full, post anything else approved.",
+      "content": "If you have REAL open slots, post 'Open drop-off times this week' on Nextdoor with those exact times.",
       "acquisition": "Text past customers whose repeat date has arrived (repeat offer template). Only people who've done business with you.",
       "followup": "Send reminders for tomorrow's appointments.",
-      "optional": "Ask one happy customer for a referral (referral template)."
+      "optional": "Ask one happy customer to Fave you on Nextdoor."
     },
     {
       "day": 6,
       "theme": "Work day",
-      "content": "Shoot before/after photos and 1-2 short clips while you work. Hands and car only.",
-      "acquisition": "Ask today's customers if it's okay to post photos of their car (plates blurred).",
-      "followup": "Review requests for yesterday's completed jobs.",
-      "optional": "Pick next week's 3 posts and approve them."
+      "content": "Use the Work tab on every car. Take before/after photos at the same spots.",
+      "acquisition": "Ask today's customers if it's okay to post photos of their car (plate blurred), and to Fave you on Nextdoor.",
+      "followup": "Review / Fave requests for yesterday's completed jobs.",
+      "optional": "Read your Work tab 'biggest time sink' and focus on it next job."
     },
     {
       "day": 7,
       "theme": "Review",
-      "content": "No posting required. Approve/schedule 2-3 posts for next week.",
-      "acquisition": "Open the Weekly Report. Look at which channel brought inquiries and drop the one that took time and brought nothing.",
-      "followup": "Mark anyone who hasn't replied after 2 follow-ups as Lost. Back up your data (Backup button).",
+      "content": "No posting required. Read this week's Marketing agent brief.",
+      "acquisition": "Open the Weekly report. Do more of what brought inquiries; drop what took time and brought nothing.",
+      "followup": "Mark anyone who hasn't replied after 2 follow-ups as Lost. Save a backup file (More > Setup).",
       "optional": "Log any marketing time you forgot to record this week."
     }
   ],
   "cash_mode": [
     "1. Reply to every New Lead right now. Speed wins most small jobs.",
     "2. Send every follow-up due today (quote follow-ups first - they already know the price).",
-    "3. Add your REAL open drop-off slots for the next 7 days on the Booking page.",
+    "3. Add your REAL open drop-off slots for the next 7 days on the Book tab.",
     "4. Text past customers whose repeat date is close (repeat offer template) - only people who've done business with you.",
-    "5. Ask 2-3 happy past customers for a referral (referral template).",
-    "6. Post 'Open drop-off times this week' with your real open slots on your Page, and in any group whose rules allow business posts today.",
-    "7. Search your joined groups for people asking for a detailer or car cleaning and reply once with the group template.",
-    "8. Skip new Reels, logo tweaks and anything that doesn't lead to a message today."
+    "5. Ask 2-3 happy past customers for a referral and a Nextdoor Fave.",
+    "6. Post 'Open drop-off times this week' with your real open slots from your Nextdoor Business Page.",
+    "7. Walk 15 flyers to tire shops, laundromats and the library today. Ask before pinning.",
+    "8. Skip anything that doesn't lead to a message today."
   ]
 }

@@ -1,22 +1,16 @@
 <title>Carbon Force Command Center</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Saira+Condensed:wght@600;700&family=Public+Sans:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:ital,wght@0,600;0,700;1,700;1,800&family=Public+Sans:wght@400;500;600;700&display=swap">
 <style>
-/* Layout: one-column phone app, sticky top bar, fixed bottom tab bar; cards only for actionable groups. */
+/* Layout: one-column phone app, sticky brand bar, fixed bottom tab bar. Theme: Carbon Force flyer - carbon black, race red, white, slanted heavy condensed type. */
 :root {
-  --bg: #eef0f2; --surface: #ffffff; --sunk: #e3e6ea; --fg: #16191d; --muted: #5b636d; --line: #d3d8de;
-  --accent: #2446a6; --accent-fg: #ffffff; --ok: #1d7a43; --warn: #9a5b00; --bad: #b3261e;
-  --display: "Saira Condensed", "Arial Narrow", system-ui, sans-serif;
+  --bg: #0b0b0d; --surface: #16161a; --sunk: #222228; --fg: #f4f4f6; --muted: #a3a3ad; --line: #2d2d35;
+  --accent: #e3262f; --accent-hi: #ff4148; --accent-fg: #ffffff; --ok: #4fcf83; --warn: #f5ab3c; --bad: #ff8f87;
+  --display: "Barlow Condensed", "Arial Narrow", Impact, system-ui, sans-serif;
   --body: "Public Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
-  --r: 10px;
+  --r: 12px; color-scheme: dark;
 }
-@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
-  --bg: #111316; --surface: #1b1e23; --sunk: #24282e; --fg: #e9ecef; --muted: #9aa3ad; --line: #30353c;
-  --accent: #8aa6ff; --accent-fg: #0d1430; --ok: #5cc887; --warn: #f0a845; --bad: #ff8a80; color-scheme: dark } }
-:root[data-theme="dark"] {
-  --bg: #111316; --surface: #1b1e23; --sunk: #24282e; --fg: #e9ecef; --muted: #9aa3ad; --line: #30353c;
-  --accent: #8aa6ff; --accent-fg: #0d1430; --ok: #5cc887; --warn: #f0a845; --bad: #ff8a80; color-scheme: dark }
 * { box-sizing: border-box }
 [hidden] { display: none !important }
 body { background: var(--bg); color: var(--fg); font: 16px/1.45 var(--body); margin: 0;
@@ -26,16 +20,18 @@ body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-a
 .wrap { max-width: 720px; margin: 0 auto; display: flex; flex-direction: column; gap: 14px }
 header.top { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5; background: var(--bg); padding-block: 12px 8px;
   display: flex; align-items: baseline; justify-content: space-between; gap: 8px; border-bottom: 1px solid var(--line) }
-.brand { font: 700 22px/1 var(--display); letter-spacing: .02em; text-transform: uppercase }
-.brand small { display: block; font: 500 12px/1.3 var(--body); color: var(--muted); text-transform: none; letter-spacing: 0 }
+.brand { font: italic 800 24px/1 var(--display); letter-spacing: .01em; text-transform: uppercase; color: var(--fg) }
+.brand em { font-style: italic; color: var(--accent) }
+.brand small { display: block; font: 500 11px/1.4 var(--body); color: var(--muted); text-transform: uppercase; letter-spacing: .12em; margin-top: 3px }
+header.top { background-color: var(--bg); background-image: repeating-linear-gradient(45deg, rgba(255,255,255,.025) 0 2px, transparent 2px 6px), repeating-linear-gradient(-45deg, rgba(255,255,255,.02) 0 2px, transparent 2px 6px); border-bottom: 2px solid var(--accent) !important }
 .sync { font-size: 12px; color: var(--muted) }
-h1 { font: 700 28px/1.1 var(--display); margin: 6px 0 0; text-wrap: balance; letter-spacing: .01em }
-h2 { font: 700 19px/1.2 var(--display); margin: 0 0 8px; letter-spacing: .02em; text-transform: uppercase }
+h1 { font: italic 800 34px/1 var(--display); margin: 8px 0 0; text-wrap: balance; letter-spacing: .01em; text-transform: uppercase }
+h2 { font: italic 700 21px/1.15 var(--display); margin: 0 0 8px; letter-spacing: .03em; text-transform: uppercase }
 h3 { font-size: 15px; margin: 12px 0 4px }
 p { margin: 0 0 8px }
 .muted, .hint { color: var(--muted) } .hint { font-size: 13px; display: block; font-weight: 400; margin-top: 2px }
 .card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); padding: 14px; min-width: 0 }
-.card.warn { box-shadow: inset 4px 0 0 var(--warn) } .card.bad { box-shadow: inset 4px 0 0 var(--bad) } .card.ok { box-shadow: inset 4px 0 0 var(--ok) }
+.card.warn { box-shadow: inset 4px 0 0 var(--warn) } .card.bad { box-shadow: inset 4px 0 0 var(--accent) } .card.ok { box-shadow: inset 4px 0 0 var(--ok) }
 .stack { display: flex; flex-direction: column; gap: 14px }
 .row { display: flex; flex-wrap: wrap; gap: 8px }
 .row > * { flex: 1 1 140px; min-width: 0 }
@@ -46,11 +42,11 @@ ul.list .main { min-width: 0; flex: 1 }
 ol.todo { margin: 0; padding-left: 22px } ol.todo li { margin: 6px 0 }
 .pill { display: inline-block; font-size: 12px; font-weight: 600; padding: 2px 8px; border-radius: 99px; border: 1px solid currentColor; white-space: nowrap }
 .p-warn { color: var(--warn) } .p-ok { color: var(--ok) } .p-bad { color: var(--bad) } .p-mute { color: var(--muted) }
-.p-solid { background: var(--ok); color: var(--surface); border-color: var(--ok) }
-.big { font: 700 34px/1 var(--display); font-variant-numeric: tabular-nums }
+.p-solid { background: var(--ok); color: #06210f; border-color: var(--ok) }
+.big { font: italic 800 40px/1 var(--display); font-variant-numeric: tabular-nums }
 .nums { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px }
 .nums div { background: var(--sunk); border-radius: 8px; padding: 10px }
-.nums b { display: block; font: 700 24px/1.1 var(--display); font-variant-numeric: tabular-nums }
+.nums b { display: block; font: italic 700 26px/1.1 var(--display); font-variant-numeric: tabular-nums }
 .nums span { font-size: 13px; color: var(--muted) }
 label { display: block; font-weight: 600; font-size: 14px }
 input, select, textarea { display: block; width: 100%; margin-top: 4px; padding: 10px; font: 16px var(--body);
@@ -58,7 +54,7 @@ input, select, textarea { display: block; width: 100%; margin-top: 4px; padding:
 textarea { min-height: 120px; resize: vertical }
 input[type=checkbox] { display: inline-block; width: 20px; height: 20px; margin: 0 8px 0 0; vertical-align: middle }
 form.f { display: flex; flex-direction: column; gap: 10px }
-button, .btn { font: 600 15px var(--body); border-radius: 8px; padding: 11px 14px; border: 1px solid var(--accent);
+button, .btn { font: 700 15px var(--body); letter-spacing: .01em; border-radius: 8px; padding: 11px 14px; border: 1px solid var(--accent);
   background: var(--accent); color: var(--accent-fg); cursor: pointer; text-decoration: none; display: inline-block; text-align: center }
 button.ghost { background: transparent; color: var(--fg); border-color: var(--line) }
 button.small { padding: 7px 10px; font-size: 14px }
@@ -76,7 +72,7 @@ details:first-of-type { border-top: 0 }
 summary { cursor: pointer; font-weight: 600; padding: 4px 0; list-style-position: outside }
 .chips { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 4px }
 .chips button { flex: 0 0 auto; padding: 6px 12px; font-size: 14px; background: var(--surface); color: var(--fg); border-color: var(--line); border-radius: 99px }
-.chips button.on { background: var(--fg); color: var(--bg); border-color: var(--fg) }
+.chips button.on { background: var(--accent); color: var(--accent-fg); border-color: var(--accent) }
 .tablewrap { overflow-x: auto } table { border-collapse: collapse; width: 100%; font-size: 14px; font-variant-numeric: tabular-nums }
 th, td { text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--line); white-space: nowrap }
 nav.tabs { position: fixed; left: 0; right: 0; bottom: 0; z-index: 6; background: var(--surface); border-top: 1px solid var(--line);
@@ -84,23 +80,50 @@ nav.tabs { position: fixed; left: 0; right: 0; bottom: 0; z-index: 6; background
   padding: 4px max(8px, env(safe-area-inset-right, 0px)) calc(4px + env(safe-area-inset-bottom, 0px)) max(8px, env(safe-area-inset-left, 0px)) }
 nav.tabs button { background: transparent; border: 0; color: var(--muted); padding: 8px 2px; font-size: 12px; border-radius: 8px; display: flex; flex-direction: column; align-items: center; gap: 2px }
 nav.tabs button svg { width: 22px; height: 22px; stroke: currentColor; fill: none; stroke-width: 1.8 }
-nav.tabs button.on { color: var(--accent) }
+nav.tabs button.on { color: var(--accent-hi) }
 .toast { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(80px + env(safe-area-inset-bottom, 0px)); z-index: 20;
   background: var(--fg); color: var(--bg); padding: 10px 14px; border-radius: 8px; max-width: calc(100% - 32px); font-size: 15px; box-shadow: 0 4px 16px rgba(0,0,0,.2) }
-.toast.err { background: var(--bad); color: #fff }
+.toast.err { background: var(--accent); color: #fff }
 .back { background: none; border: 0; color: var(--accent); padding: 4px 0; font-weight: 600 }
 .morelist button { width: 100%; text-align: left; background: var(--surface); color: var(--fg); border-color: var(--line); padding: 14px }
 .empty { color: var(--muted); padding: 6px 0 }
-.timer { font: 700 64px/1 var(--display); font-variant-numeric: tabular-nums; letter-spacing: .02em }
+.timer { font: italic 800 68px/1 var(--display); font-variant-numeric: tabular-nums; letter-spacing: .02em }
 .timer.over { color: var(--warn) }
-.stepname { font: 700 30px/1.1 var(--display); text-transform: uppercase; letter-spacing: .02em; text-wrap: balance }
+.stepname { font: italic 800 40px/1 var(--display); text-transform: uppercase; letter-spacing: .01em; text-wrap: balance; margin: 0 }
+.eyebrow { display: block; font: 700 11px/1.3 var(--body); text-transform: uppercase; letter-spacing: .14em; color: var(--muted); margin-bottom: 4px }
+.jobhead { display: flex; justify-content: space-between; align-items: end; gap: 10px; margin-top: 8px }
+.stepcount { font: italic 700 18px/1 var(--display); color: var(--muted) } .stepcount b { font-size: 34px; color: var(--accent) }
+.stepcard { display: flex; flex-direction: column; gap: 12px; border-top: 3px solid var(--accent) }
+.why { color: var(--muted); margin: 0 }
+.clock { display: flex; align-items: center; justify-content: space-between; gap: 12px; background: var(--sunk); border-radius: 10px; padding: 12px 14px }
+.goal { text-align: right; font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: .1em } .goal b { font: italic 700 26px/1 var(--display); color: var(--fg); letter-spacing: 0 }
+.small { font-size: 14px; margin: 0 }
+.checks { display: flex; flex-direction: column; gap: 6px }
+button.check { display: flex; align-items: center; gap: 12px; width: 100%; text-align: left; background: var(--sunk); color: var(--fg); border: 1px solid var(--line); padding: 12px; font-weight: 500 }
+button.check .box { flex: 0 0 26px; height: 26px; border: 2px solid var(--muted); border-radius: 6px; display: grid; place-items: center; font-weight: 800; color: var(--accent-fg) }
+button.check.on { color: var(--muted); text-decoration: line-through; border-color: var(--accent) } button.check.on .box { background: var(--accent); border-color: var(--accent) }
+.donewhen, .dont { border-radius: 10px; padding: 10px 12px; font-weight: 600 }
+.donewhen { background: color-mix(in srgb, var(--ok) 14%, transparent); border: 1px solid color-mix(in srgb, var(--ok) 45%, transparent) }
+.donewhen .eyebrow { color: var(--ok) }
+.dont { background: color-mix(in srgb, var(--warn) 12%, transparent); border: 1px solid color-mix(in srgb, var(--warn) 40%, transparent); font-weight: 500 }
+.dont .eyebrow { color: var(--warn) }
+.tools { display: flex; flex-wrap: wrap; gap: 6px } .tool { font-size: 13px; padding: 4px 10px; border-radius: 99px; background: var(--sunk); color: var(--muted); border: 1px solid var(--line) }
+button.huge.ready { background: var(--ok); border-color: var(--ok); color: #06210f }
+.hero { border-top: 3px solid var(--accent) }
+.finish { border-top: 3px solid var(--ok) }
+ol.habits { list-style: none; counter-reset: h; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 10px }
+ol.habits li { counter-increment: h; display: grid; grid-template-columns: 34px 1fr; column-gap: 8px }
+ol.habits li::before { content: counter(h); grid-row: span 2; font: italic 800 30px/1 var(--display); color: var(--accent) }
+ol.habits span { color: var(--muted); font-size: 14px }
+ul.tight { margin: 6px 0; padding-left: 20px } ul.tight li { margin: 3px 0 }
+details .donewhen, details .dont { margin-top: 8px; font-size: 14px }
 .bar { height: 8px; background: var(--sunk); border-radius: 99px; overflow: hidden } .bar i { display: block; height: 100%; background: var(--accent) }
 button.huge { width: 100%; padding: 18px; font-size: 19px }
 .confirm { background: var(--sunk); border-radius: 8px; padding: 10px; display: flex; flex-direction: column; gap: 8px }
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important } }
 </style>
 
-<header class="top"><div class="brand">Carbon Force<small>Detailing command center</small></div><div class="sync" id="sync">Connecting…</div></header>
+<header class="top"><div class="brand">Carbon Force <em>Detailing</em><small>Garage-based · Melrose Park</small></div><div class="sync" id="sync">Connecting…</div></header>
 <main class="wrap" id="view"><div class="card"><h2>Loading your business data</h2><p class="muted">Your leads, bookings and posts load from your private Claude storage. If this stays here, reopen the link while signed in to Claude.</p></div></main>
 <nav class="tabs" id="tabs" aria-label="Sections"></nav>
 <div id="toastbox"></div>
@@ -140,6 +163,7 @@ const SETTINGS = [
   ["private_address", "Exact drop-off address (only goes in booking confirmations)", "", false],
   ["review_link", "Review link once you have one", "", false],
   ["max_jobs_per_day", "Max cars you can do in one day", "2", true],
+  ["product_cost", "Product cost per car ($)", "30", false],
   ["launch_date", "Day 1 of your 7-day plan", "", false],
 ];
 const POST_FIELDS = { facebook: "Facebook Page", instagram: "Instagram caption", story: "Story frames", reel_script: "Reel script (no voice, text on screen)", group_version: "Community-group version" };
@@ -603,119 +627,147 @@ function vMore() {
 
 // ---------------------------------------------------------------- work mode: one step at a time, timed
 // Goal minutes are starting targets for a medium-dirty car; your own averages replace them as you log jobs.
+// Product names are P&S examples - use whatever you actually own, at the label's dilution.
+const S_ = (k, name, min, why, todo, done, dont, tools) => ({ k, name, min, why, todo, done, dont, tools });
 const STEPS = {
   exterior: [
-    ["x-setup", "Set up + before photos", 5, "Everything in reach BEFORE water: 2 buckets, mitt, wheel brushes, wheel cleaner, drying towel, spray wax, tire shine. Before photos: same 3 spots every car."],
-    ["x-wheels", "Spray wheels, let them soak", 5, "Spray wheel cleaner on ALL 4 wheels now and walk away. Don't scrub yet - it loosens the brake dust while you rinse. Spray bug remover on the front bumper and mirrors too."],
-    ["x-prerinse", "Pre-rinse the whole car", 10, "Rinse top to bottom in one lap. Most loose dirt comes off now, so the wash goes faster."],
-    ["x-wheelscrub", "Scrub + rinse wheels and tires", 15, "The soak did the hard part. Quick brush on each wheel, then each tire, rinse. Don't chase every spot - one pass each."],
-    ["x-wash", "Hand wash, top down, straight lines", 20, "Roof, glass, hood, trunk, upper sides, then lower sides and bumpers last. Straight lines, not circles. Rinse the mitt in the second bucket after each panel. One lap around the car."],
-    ["x-dry", "Rinse, then dry WITH spray wax", 15, "Rinse top down. Mist spray wax on the wet panel and dry it off in one wipe - drying and waxing in one step. Lay the big towel flat and drag it, don't rub."],
-    ["x-jambs", "Door jambs", 10, "Open each door once, wipe the jamb with a damp towel, close it, next door. One lap."],
-    ["x-glass", "Outside glass", 5, "Two towels: damp one cleans, dry one buffs. All glass in one pass. No streaks means no redo."],
-    ["x-finish", "Tire shine", 5, "Applicator pad, all 4 tires. Last, so it doesn't sling onto clean paint."],
-    ["x-photos", "After photos", 5, "Same 3 spots and angles as the before photos."],
+    S_("x-setup", "Setup", 5, "Every trip away from the car costs minutes.", ["2 buckets: one soap, one rinse", "Wash mitt + wheel brushes", "Wheel/tire cleaner, bug remover", "Big drying towel + spray wax", "Tire shine + applicator", "Before photos: same 3 spots"], "You won't have to walk away from the car once.", "Don't start rinsing before everything is in reach.", ["Brake Buster", "Absolute Wash", "Bead Maker"]),
+    S_("x-wheels", "Spray wheels + walk away", 5, "Chemicals work while you do something else.", ["Wheel cleaner on all 4 wheels and tires", "Bug remover on the bumper and mirrors", "Don't scrub yet"], "Everything is soaking.", "Don't scrub now - the soak does it for free.", ["Brake Buster"]),
+    S_("x-prerinse", "Pre-rinse", 10, "Loose dirt off now = faster, safer wash.", ["Top to bottom", "One lap around the car"], "Loose dirt and mud are off.", "Don't blast one spot for minutes.", []),
+    S_("x-wheelscrub", "Scrub + rinse wheels", 15, "The soak did the hard part.", ["One brush pass per wheel", "One brush pass per tire", "Rinse all 4"], "Wheels and tires look clean from standing height.", "Don't chase every speck in the lug nuts.", ["Wheel brush", "Tire brush"]),
+    S_("x-wash", "Hand wash", 20, "Top down, one lap: dirt only goes down.", ["Roof", "Glass", "Hood + trunk", "Upper sides", "Lower sides + bumpers last", "Rinse mitt in bucket 2 after each panel"], "Every panel washed once, in order.", "No circles, no jumping side to side.", ["Absolute Wash", "Wash mitt"]),
+    S_("x-dry", "Rinse + dry with wax", 15, "Two steps become one.", ["Rinse top down", "Mist spray wax on the wet panel", "Lay towel flat, drag toward you", "Panel by panel, same order as the wash"], "Whole car dry, no water spots.", "Don't rub in small circles. Drag.", ["Bead Maker", "Drying towel"]),
+    S_("x-jambs", "Door jambs", 10, "Customers notice them when they open the door.", ["Open door", "Damp towel on the jamb", "Close, next door"], "All 4 jambs wiped, one lap.", "Don't open and close the same door twice.", []),
+    S_("x-glass", "Outside glass", 5, "Two towels = no streaks = no redo.", ["Damp towel cleans", "Dry towel buffs", "All glass, one pass"], "No streaks when you look from an angle.", "Don't use a wet, used towel on glass.", ["Glass towel x2"]),
+    S_("x-tires", "Tire shine", 5, "Last, so it never slings on clean paint.", ["Thin coat with applicator", "All 4 tires"], "Even shine, no drips on the wheel.", "Don't glob it on - thin is faster and looks better.", ["Tire shine", "Applicator"]),
+    S_("x-photos", "After photos", 5, "Your next Nextdoor post.", ["Same 3 spots and angles as before photos", "Blur the plate later"], "3 after photos taken.", "Don't skip it - photos get you clients.", []),
   ],
   interior: [
-    ["i-setup", "Set up + before photos", 5, "Caddy next to the door: vacuum, brushes, cleaner, glass cleaner, towels folded in quarters (8 clean sides each), trash bag hung on the door. Before photos of the worst spots."],
-    ["i-empty", "Empty the car + PRE-SPRAY stains", 10, "Trash bag in one hand, everything else in their bin, mats out. Then spray every stain you can see NOW and leave it - it soaks while you vacuum, so it wipes out later instead of needing scrubbing."],
-    ["i-mats", "Mats (then let them dry)", 10, "Brush or drill-brush the mats, rinse, lean them up to dry. They dry while you do the rest."],
-    ["i-brush", "Brush BEFORE you vacuum", 15, "Stiff brush over carpet and seats - that loosens dirt so the vacuum gets it in ONE pass. Pet hair: rubber pet hair brush or hair stone, pull it into piles. Quick brush on vents and seams, top down."],
-    ["i-vac", "Vacuum, one lap, never twice", 30, "Seat all the way forward, vacuum behind it. All the way back, vacuum in front. Driver side, passenger, rear, trunk. Crevice tool for the seams on the same pass. Don't go back over a spot."],
-    ["i-wipe", "Wipe down: brush + towel together", 30, "Spray cleaner ON THE BRUSH OR TOWEL, not the dash. Brush in one hand, towel in the other: scrub, wipe, move on. Top down: dash, console, cup holders, then every door panel in a row. Flip the towel to a clean side instead of grabbing a new one."],
-    ["i-spots", "Stains (they've been soaking)", 15, "Wipe the pre-sprayed spots - most come right out now. Give a stubborn one 3 minutes max. If it isn't moving, stop and tell the customer instead of fighting it."],
-    ["i-glass", "Inside glass, two towels", 10, "Damp towel cleans, dry towel buffs. All windows and mirrors in one pass. Glass last, so nothing gets on it after."],
-    ["i-final", "Mats in + 2-minute check + after photos", 10, "Mats back in. Look at the 3 spots customers notice: cup holders, driver floor, dash. Done means done - no extra rounds. After photos at the same spots."],
+    S_("i-setup", "Setup", 5, "Every trip away from the car costs minutes.", ["Caddy at the door", "Vacuum + crevice + brush tool", "Stiff carpet brush, detail brushes", "Interior cleaner, glass cleaner, carpet cleaner", "Towels folded in quarters (8 sides each)", "Trash bag hung on the door", "Before photos of the worst spots"], "You won't have to walk away from the car once.", "Don't start until the caddy is full.", ["Xpress Interior", "Carpet Bomber"]),
+    S_("i-empty", "Empty + pre-spray", 10, "Stains soak while you vacuum.", ["Trash in the bag", "Personal items in the bin", "All mats out", "Check door + seat-back pockets", "SPRAY every stain now and leave it"], "Car empty and stains soaking.", "Don't scrub stains now.", ["Carpet Bomber"]),
+    S_("i-mats", "Floor mats", 10, "They dry while you do everything else.", ["Rubber: spray, scrub, rinse", "Carpet: cleaner + brush or drill brush", "Lean them up to dry"], "Mats drying and you've moved on.", "Don't wait for them to dry.", ["Carpet Bomber", "Drill brush"]),
+    S_("i-brush", "Brush before vacuum", 15, "Loosened dirt comes up in ONE vacuum pass.", ["Stiff brush across carpet, one direction", "Brush the seats", "Pet hair: rubber brush or hair stone into piles", "Detail brush: vents, seams, console gaps, top down"], "All the dirt is loose and on the floor.", "Don't vacuum first - it takes 3 passes.", ["Stiff brush", "Pet hair brush"]),
+    S_("i-vac", "Vacuum, one lap", 30, "Never go back over a spot.", ["Driver side", "Rear driver", "Rear passenger", "Front passenger", "Trunk", "Seat forward: behind. Seat back: in front.", "Crevice tool on seams in the same pass"], "You went around once.", "Don't switch tools back and forth.", ["Crevice tool", "Brush tool"]),
+    S_("i-wipe", "Wipe-down", 30, "Scrub and wipe in one move.", ["Spray ON the brush or towel, not the dash", "Dash", "Steering wheel", "Console + cup holders", "Every door panel in a row", "Flip to a clean towel side"], "Every hard surface touched once.", "Don't spray the dash - overspray hits the glass.", ["Xpress Interior", "Detail brush"]),
+    S_("i-stains", "Stains", 15, "They've been soaking since step 2.", ["Agitate with a brush", "Blot with a towel", "Headliner: spray the TOWEL, dab", "3 minutes max per stain"], "Soaked stains treated; stubborn ones noted for the customer.", "Don't fight one stain for 20 minutes.", ["Carpet Bomber"]),
+    S_("i-glass", "Inside glass", 10, "Last, so nothing lands on it after.", ["Damp towel cleans, dry towel buffs", "Windshield", "Side + rear windows", "Mirrors", "Screens: dry towel only"], "No streaks from an angle.", "Don't wipe glass with your wipe-down towel.", ["Glass towel x2"]),
+    S_("i-final", "Final check", 10, "Done means done.", ["Mats back in", "Touch-up vacuum on the driver floor", "Check cup holders", "Check driver floor", "Check dash", "After photos, same spots"], "Those 3 spots look perfect. Stop.", "No extra rounds nobody pays for.", []),
   ],
 };
-STEPS.full = STEPS.exterior.slice(0, -1).concat(STEPS.interior.slice(1));
+// Full package: exterior first (no water drips into a clean interior; mats dry in the sun), then interior.
+STEPS.full = STEPS.exterior.filter((s) => s.k !== "x-photos").concat(STEPS.interior.filter((s) => s.k !== "i-setup"));
+const STEP_BY_KEY = {}; Object.values(STEPS).forEach((arr) => arr.forEach((s) => { STEP_BY_KEY[s.k] = s; }));
 const CONDITION = { light: ["Light (pretty clean)", 0.8], medium: ["Medium (normal)", 1], heavy: ["Heavy (pet hair, stains, trash)", 1.4] };
-const KIT = ["Vacuum + crevice tool + brush tool, charged or plugged in", "Detail brushes (vents, seams, cup holders)", "Interior cleaner in a spray bottle, filled", "Stack of clean towels, sorted: interior / glass / drying", "2 buckets, wash mitt, wheel brushes, wheel cleaner", "Spray wax + tire shine", "Trash bags + a bin for the customer's things", "Phone stand for before/after photos", "Water + snack ready, so you don't stop mid-job"];
-const CUT_TIME = [
-  ["Let chemicals soak", "Spray stains, wheels and bugs FIRST, then do something else. They wipe off later instead of needing 10 minutes of scrubbing. Built into the steps."],
-  ["Stop over-cleaning", "Most of a 5-hour interior is extra rounds nobody pays for. Each step says what done looks like. When it's done, tap Next."],
-  ["Brush before vacuuming", "Loosened dirt comes up in one vacuum pass instead of three."],
-  ["Spray wax while drying", "Turns 2 exterior steps into 1."],
-  ["Never stop mid-job", "Enough towels for the whole car, bottles filled the night before, water and snack ready."],
-];
-const SPEED_RULES = [
-  "Same order on every car. Never decide what to do next - the Work tab tells you.",
-  "Top to bottom, front to back, one lap. Dirt falls down, so the floor is last.",
-  "Batch tools: finish everything that needs the vacuum before you pick up a towel.",
-  "Mats come out first and dry while you work.",
-  "Kit packed and staged the night before (the checklist below).",
-  "Judge the condition from photos BEFORE they drop off. Heavy cars get a higher quote, not free extra hours.",
-  "Stains get a time limit. If it isn't coming out, tell the customer instead of fighting it.",
-  "Phone face down except for the timer. Each step is a short sprint.",
+const KIT = ["Vacuum charged or plugged in, with crevice + brush tools", "Stiff carpet brush + detail brushes + pet hair brush", "Interior cleaner, carpet cleaner, glass cleaner - bottles filled", "Wheel cleaner, soap, spray wax, tire shine", "Towels for the whole job, sorted: interior / glass / drying", "2 buckets + wash mitt + wheel brushes", "Trash bags + a bin for the customer's things", "Phone stand for photos", "Water + snack, so you don't stop mid-job"];
+const HABITS = [
+  ["Spray first, scrub later", "Wheels, bugs and stains soak while you do something else."],
+  ["Brush before you vacuum", "One vacuum pass instead of three."],
+  ["One lap, same order every car", "The app tells you what's next. No deciding."],
+  ["Every step has a \"done when\"", "When it's true, tap Next. No extra rounds."],
+  ["Never stop mid-job", "Kit packed the night before, towels for the whole car, water ready."],
 ];
 const fmt = (sec) => { sec = Math.max(0, Math.round(sec)); const h = Math.floor(sec / 3600), m = Math.floor(sec % 3600 / 60), s = sec % 60; return h ? `${h}:${pad(m)}:${pad(s)}` : `${m}:${pad(s)}`; };
 const fmtMin = (sec) => { const m = Math.round(sec / 60); return m >= 60 ? `${Math.floor(m / 60)}h ${m % 60}m` : `${m}m`; };
-function stepStats() { // average seconds per step key, from finished jobs (skipped steps excluded)
+const goalFor = (step, cond) => Math.round(step.min * 60 * (CONDITION[cond] || CONDITION.medium)[1]);
+const jobGoal = (service, cond) => STEPS[service].reduce((s, st) => s + goalFor(st, cond), 0);
+const productCost = () => { const n = Number(String(settings().product_cost || "").replace(/[$,\s]/g, "")); return isFinite(n) && n >= 0 ? n : 0; };
+const perHour = (service, sec) => sec >= 600 ? money((SERVICES[service].price - productCost()) / (sec / 3600)) : "-"; // under 10 min = test run, not a real rate
+function stepStats() {
   const st = {};
-  for (const t of all("timings")) for (const d of t.steps || []) { if (d.skipped) continue; const r = st[d.k] || (st[d.k] = { n: 0, sum: 0 }); r.n++; r.sum += d.sec; }
+  for (const t of all("timings")) for (const d of t.steps || []) { if (d.skipped || !STEP_BY_KEY[d.k]) continue; const r = st[d.k] || (st[d.k] = { n: 0, sum: 0 }); r.n++; r.sum += d.sec; }
   return st;
 }
-function goalFor(key, minutes, cond) { return Math.round(minutes * 60 * (CONDITION[cond] || CONDITION.medium)[1]); }
-async function saveActive(a) { if (!db) throw new VErr("Storage isn't connected."); await db.doc("config/activejob").set(a); S.active = a; }
-async function clearActive() { await db.doc("config/activejob").delete(); S.active = null; }
-function stepElapsed(a, now) { return ((a.pausedAt || now) - a.stepStart) / 1000; }
+let activeQ = Promise.resolve(), lastFinish = null;
+function saveActive(a) { // one write at a time to the running-job document
+  if (!db) return Promise.reject(new VErr("Storage isn't connected."));
+  S.active = a; const snap = JSON.parse(JSON.stringify(a));
+  activeQ = activeQ.catch(() => {}).then(() => db.doc("config/activejob").set(snap)); return activeQ;
+}
+function clearActive() { S.active = null; activeQ = activeQ.catch(() => {}).then(() => db.doc("config/activejob").delete()); return activeQ; }
+const stepElapsed = (a, now) => ((a.pausedAt || now) - a.stepStart) / 1000;
 
+function vWorkRunning(a) {
+  const steps = STEPS[a.service], cur = steps[a.i];
+  const goal = goalFor(cur, a.condition), now = Date.now(), el = stepElapsed(a, now);
+  const total = ((a.pausedAt || now) - a.jobStart) / 1000;
+  const checks = (a.checks && a.checks[a.i]) || [];
+  const allDone = cur.todo.every((_, i) => checks[i]);
+  return `<div class="jobhead"><span class="eyebrow">${esc(SERVICES[a.service].label)}${a.who ? " · " + esc(a.who) : ""} · ${esc(CONDITION[a.condition][0])}</span>
+<div class="stepcount"><b>${a.i + 1}</b>/${steps.length}</div></div>
+<div class="bar"><i style="width:${Math.round(100 * a.i / steps.length)}%"></i></div>
+<div class="card stepcard">
+<p class="stepname">${esc(cur.name)}</p><p class="why">${esc(cur.why)}</p>
+<div class="clock"><div class="timer${el > goal ? " over" : ""}" id="worktimer" data-goal="${goal}">${fmt(el)}</div><div class="goal">goal<br><b>${fmtMin(goal)}</b></div></div>
+<p class="muted small">Whole job <span id="worktotal">${fmt(total)}</span> of ${fmtMin(jobGoal(a.service, a.condition))} goal${a.pausedAt ? " · <b class='p-warn'>PAUSED</b>" : ""}</p>
+<div class="checks">${cur.todo.map((t, i) => `<button type="button" class="check${checks[i] ? " on" : ""}" data-act="workcheck" data-v="${i}" aria-pressed="${checks[i] ? "true" : "false"}"><span class="box">${checks[i] ? "✓" : ""}</span>${esc(t)}</button>`).join("")}</div>
+<div class="donewhen"><span class="eyebrow">Done when</span>${esc(cur.done)}</div>
+<div class="dont"><span class="eyebrow">Time-waster</span>${esc(cur.dont)}</div>
+${cur.tools.length ? `<div class="tools">${cur.tools.map((t) => `<span class="tool">${esc(t)}</span>`).join("")}</div>` : ""}
+${a.pausedAt ? `<button class="huge" data-act="workresume">Resume</button>` : `<button class="huge${allDone ? " ready" : ""}" data-act="worknext">${allDone ? "✓ " : ""}${a.i + 1 < steps.length ? "Done - next step" : "Done - finish job"}</button>`}
+<div class="btns">${a.pausedAt ? "" : `<button class="ghost small" data-act="workpause">Pause</button>`}<button class="ghost small" data-act="workskip">Skip step</button><button class="danger small" data-ask="workcancel">Cancel job</button></div>
+<div class="confirm" data-confirm="workcancel" hidden><p>Throw away this job's timing?</p><div class="btns"><button class="small danger" data-act="workcancel">Yes, cancel</button><button class="small ghost" data-ask="">Keep going</button></div></div>
+</div>
+<div class="card"><h2>Coming up</h2>${list(steps.slice(a.i + 1).map((s, j) => `<li><div class="main"><span class="muted">${a.i + j + 2}.</span> ${esc(s.name)}</div><span class="muted">${fmtMin(goalFor(s, a.condition))}</span></li>`), "This is the last step.")}</div>`;
+}
+function vFinish(r) {
+  const goal = jobGoal(r.service, r.condition), beat = r.total <= goal;
+  const sorted = r.steps.filter((d) => !d.skipped && STEP_BY_KEY[d.k]).map((d) => ({ d, over: d.sec - goalFor(STEP_BY_KEY[d.k], r.condition) })).sort((x, y) => y.over - x.over);
+  const worst = sorted[0];
+  return `<div class="card finish ${beat ? "ok" : "warn"}"><span class="eyebrow">Job done</span><p class="stepname">${fmtMin(r.total)}</p>
+<p>${beat ? "You beat the goal of " + fmtMin(goal) + "." : "Goal was " + fmtMin(goal) + ". Every job gets you closer."}</p>
+<div class="nums"><div><b>${perHour(r.service, r.total)}</b><span>per hour after ${money(productCost())} products</span></div>${worst ? `<div><b>${esc(STEP_BY_KEY[worst.d.k].name)}</b><span>${worst.over > 0 ? "biggest time sink (+" + fmtMin(worst.over) + ")" : "slowest step"}</span></div>` : ""}</div>
+${worst && worst.over > 0 ? `<p class="hint">Next job, focus only on "${esc(STEP_BY_KEY[worst.d.k].name)}": ${esc(STEP_BY_KEY[worst.d.k].dont)}</p>` : ""}
+<div class="btns">${r.appt ? `<button ${go("lead", r.lead)}>Record payment on the lead</button>` : ""}<button class="ghost" data-act="finishok">Close</button></div></div>`;
+}
+function vGuide(service) {
+  return STEPS[service].map((s, i) => `<details data-key="g-${service}-${s.k}"><summary>${i + 1}. ${esc(s.name)} <span class="muted">· ${s.min}m</span></summary>
+<p class="why">${esc(s.why)}</p><ul class="tight">${s.todo.map((t) => `<li>${esc(t)}</li>`).join("")}</ul>
+<div class="donewhen"><span class="eyebrow">Done when</span>${esc(s.done)}</div><div class="dont"><span class="eyebrow">Time-waster</span>${esc(s.dont)}</div></details>`).join("");
+}
+let guideSvc = "interior";
 function vWork() {
   const a = S.active;
-  if (a && a.service) {
-    const steps = STEPS[a.service], cur = steps[a.i];
-    const goal = goalFor(cur[0], cur[2], a.condition);
-    const now = Date.now(), el = stepElapsed(a, now);
-    const total = ((a.pausedAt || now) - a.jobStart) / 1000;
-    return `<h1>${esc(SERVICES[a.service].label)}${a.who ? " · " + esc(a.who) : ""}</h1>
-<div class="card ok"><p class="muted">Step ${a.i + 1} of ${steps.length} · ${esc(CONDITION[a.condition][0])}</p><div class="bar"><i style="width:${Math.round(100 * a.i / steps.length)}%"></i></div>
-<p class="stepname" style="margin-top:14px">${esc(cur[1])}</p>
-<div class="timer${el > goal ? " over" : ""}" id="worktimer" data-goal="${goal}">${fmt(el)}</div>
-<p class="muted">Goal ${fmtMin(goal)} · whole job so far <span id="worktotal">${fmt(total)}</span>${a.pausedAt ? " · <b>PAUSED</b>" : ""}</p>
-<p>${esc(cur[3])}</p>
-${a.pausedAt ? `<button class="huge" data-act="workresume">Resume</button>` : `<button class="huge" data-act="worknext">${a.i + 1 < steps.length ? "Done - next step" : "Done - finish job"}</button>`}
-<div class="btns" style="margin-top:10px">${a.pausedAt ? "" : `<button class="ghost small" data-act="workpause">Pause (break)</button>`}<button class="ghost small" data-act="workskip">Skip step</button><button class="danger small" data-ask="workcancel">Cancel job</button></div>
-<div class="confirm" data-confirm="workcancel" hidden><p>Throw away this job's timing?</p><div class="btns"><button class="small danger" data-act="workcancel">Yes, cancel</button><button class="small ghost" data-ask="">Keep going</button></div></div></div>
-<div class="card"><h2>Coming up</h2>${list(steps.slice(a.i + 1).map((s) => `<li><div class="main">${esc(s[1])}</div><span class="muted">${fmtMin(goalFor(s[0], s[2], a.condition))}</span></li>`), "This is the last step.")}</div>`;
-  }
+  if (a && a.service && STEPS[a.service]) return vWorkRunning(a);
   const t = today();
   const todays = all("appts").filter((x) => x.status === "confirmed" && (S.slots.get(x.slot) || {}).date <= t);
   const st = stepStats();
   const jobs = all("timings").sort((x, y) => (y.date || "").localeCompare(x.date || ""));
-  const bySvc = Object.keys(SERVICES).map((k) => { const js = jobs.filter((j) => j.service === k); if (!js.length) return null; const avg = js.reduce((s, j) => s + j.total, 0) / js.length; const best = Math.min.apply(null, js.map((j) => j.total)); return `<li><div class="main">${esc(SERVICES[k].label)}<span class="hint">${js.length} job(s) · best ${fmtMin(best)} · ${money(SERVICES[k].price / (avg / 3600))}/hr average</span></div><b>${fmtMin(avg)}</b></li>`; }).filter(Boolean);
-  const keys = {}; Object.values(STEPS).forEach((arr) => arr.forEach((s) => { keys[s[0]] = s; }));
-  const over = Object.keys(st).map((k) => ({ k, avg: st[k].sum / st[k].n, goal: keys[k][2] * 60, name: keys[k][1] })).sort((x, y) => (y.avg - y.goal) - (x.avg - x.goal));
-  return `<h1>Work</h1>
-<div class="card"><h2>Start a job</h2><form class="f" data-form="workstart">
+  const bySvc = Object.keys(SERVICES).map((k) => { const js = jobs.filter((j) => j.service === k); if (!js.length) return null; const avg = js.reduce((s, j) => s + j.total, 0) / js.length; const best = Math.min.apply(null, js.map((j) => j.total)); return `<li><div class="main">${esc(SERVICES[k].label)}<span class="hint">${js.length} job(s) · best ${fmtMin(best)} · goal ${fmtMin(jobGoal(k, "medium"))} · ${perHour(k, avg)}/hr after products</span></div><b>${fmtMin(avg)}</b></li>`; }).filter(Boolean);
+  const over = Object.keys(st).map((k) => ({ k, avg: st[k].sum / st[k].n, goal: STEP_BY_KEY[k].min * 60 })).sort((x, y) => (y.avg - y.goal) - (x.avg - x.goal));
+  return `${lastFinish ? vFinish(lastFinish) : ""}<h1>Work</h1>
+<div class="card hero"><h2>Start a job</h2><form class="f" data-form="workstart">
 ${todays.length ? sel("Which appointment?", "appt", [""].concat(todays.map((x) => x.id)), todays[0].id, (id) => { if (!id) return "Practice / not in the app"; const x = S.appts.get(id); return `${(S.leads.get(x.lead) || {}).name} - ${SERVICES[x.service].label}`; }) : `<input type="hidden" name="appt" value="">`}
-${sel("Service", "service", Object.keys(SERVICES), todays.length ? todays[0].service : "full", (k) => SERVICES[k].label)}
+${sel("Service", "service", Object.keys(SERVICES), todays.length ? todays[0].service : "full", (k) => `${SERVICES[k].label} · goal ${fmtMin(jobGoal(k, "medium"))}`)}
 ${sel("How dirty is it?", "condition", Object.keys(CONDITION), "medium", (k) => CONDITION[k][0])}
-<button type="submit" class="huge">Start timer</button></form>
-<p class="hint">The timer keeps running if your phone locks. Just open this tab again.</p></div>
-<div class="card"><h2>Your times</h2>${bySvc.length ? list(bySvc, "") : empty("No timed jobs yet. Time your next car, even a practice one on your own car.")}
-${over.length ? `<h3>Where the time goes (vs goal)</h3>${list(over.slice(0, 5).map((o) => `<li><div class="main">${esc(o.name)}<span class="hint">goal ${fmtMin(o.goal)}</span></div><b class="${o.avg > o.goal ? "p-warn" : "p-ok"}">${fmtMin(o.avg)}</b></li>`), "")}<p class="hint">The top line is your biggest time sink. Work on that one step next job.</p>` : ""}</div>
-<div class="card ok"><h2>How you'll cut your time</h2>${list(CUT_TIME.map((c) => `<li><div class="main"><b>${esc(c[0])}</b><span class="hint">${esc(c[1])}</span></div></li>`), "")}<p class="hint">Tools that help most (cost money - only if you can): rubber pet hair brush or hair stone, drill brush attachments, extra microfiber towels.</p></div>
-<div class="card"><h2>8 rules for speed</h2><ol class="todo">${SPEED_RULES.map((r) => `<li>${esc(r)}</li>`).join("")}</ol></div>
-<div class="card"><details data-key="kit"><summary>Night-before kit checklist</summary><ul class="list">${KIT.map((k, i) => `<li><label style="font-weight:400"><input type="checkbox" id="kit-${i}">${esc(k)}</label></li>`).join("")}</ul></details></div>
-${jobs.length ? `<div class="card"><h2>Recent timed jobs</h2>${list(jobs.slice(0, 8).map((j) => `<li><div class="main">${esc(fdate(j.date))} · ${esc(SERVICES[j.service].label)}<span class="hint">${esc((CONDITION[j.condition] || CONDITION.medium)[0])}${j.who ? " · " + esc(j.who) : ""}</span></div><b>${fmtMin(j.total)}</b></li>`), "")}</div>` : ""}`;
+<button type="submit" class="huge">Start job</button></form>
+<p class="hint">One step at a time with a checklist and a timer. It keeps running if your phone locks.</p></div>
+<div class="card"><h2>Your times</h2>${bySvc.length ? list(bySvc, "") : empty("No timed jobs yet. Time your next car - even a practice one on your own car.")}
+${over.length ? `<h3>Where the time goes</h3>${list(over.slice(0, 5).map((o) => `<li><div class="main">${esc(STEP_BY_KEY[o.k].name)}<span class="hint">goal ${fmtMin(o.goal)}</span></div><b class="${o.avg > o.goal ? "p-warn" : "p-ok"}">${fmtMin(o.avg)}</b></li>`), "")}<p class="hint">Top line = your biggest time sink. Fix that one step next job.</p>` : ""}</div>
+<div class="card"><h2>5 habits that save the most time</h2><ol class="habits">${HABITS.map((h) => `<li><b>${esc(h[0])}</b><span>${esc(h[1])}</span></li>`).join("")}</ol></div>
+<div class="card"><h2>Step-by-step guide</h2><div class="chips">${["interior", "exterior", "full"].map((k) => `<button data-act="guide" data-v="${k}" class="${guideSvc === k ? "on" : ""}">${esc(k === "full" ? "Full (exterior first)" : nice(k))}</button>`).join("")}</div>${vGuide(guideSvc)}</div>
+<div class="card"><details data-key="kit"><summary>Night-before kit checklist</summary><div class="checks">${KIT.map((k, i) => `<button type="button" class="check${kitChecks[i] ? " on" : ""}" data-act="kit" data-v="${i}"><span class="box">${kitChecks[i] ? "✓" : ""}</span>${esc(k)}</button>`).join("")}</div></details></div>
+${jobs.length ? `<div class="card"><h2>Recent jobs</h2>${list(jobs.slice(0, 8).map((j) => `<li><div class="main">${esc(fdate(j.date))} · ${esc(SERVICES[j.service].label)}<span class="hint">${esc((CONDITION[j.condition] || CONDITION.medium)[0])}${j.who ? " · " + esc(j.who) : ""}</span></div><b>${fmtMin(j.total)}</b></li>`), "")}</div>` : ""}`;
 }
+let kitChecks = (() => { try { return JSON.parse(localStorage.getItem("cf-kit") || "[]"); } catch (_) { return []; } })();
 async function workStart(f) {
   need(SERVICES[f.service], "Pick a service.");
   need(!S.active || !S.active.service, "A job is already running.");
-  const appt = f.appt ? S.appts.get(f.appt) : null;
-  const now = Date.now();
-  await saveActive({ service: f.service, condition: CONDITION[f.condition] ? f.condition : "medium", appt: appt ? appt.id : "", who: appt ? (S.leads.get(appt.lead) || {}).name || "" : "", i: 0, jobStart: now, stepStart: now, pausedAt: null, done: [] });
+  const appt = f.appt ? S.appts.get(f.appt) : null, now = Date.now();
+  lastFinish = null;
+  await saveActive({ service: f.service, condition: CONDITION[f.condition] ? f.condition : "medium", appt: appt ? appt.id : "", lead: appt ? appt.lead : "", who: appt ? (S.leads.get(appt.lead) || {}).name || "" : "", i: 0, jobStart: now, stepStart: now, pausedAt: null, done: [], checks: {} });
 }
 async function workNext(skip) {
   const a = JSON.parse(JSON.stringify(S.active)); need(a && a.service, "No job running.");
   const steps = STEPS[a.service], now = Date.now();
   if (a.pausedAt) { a.stepStart += now - a.pausedAt; a.jobStart += now - a.pausedAt; a.pausedAt = null; }
-  a.done.push({ k: steps[a.i][0], sec: Math.round((now - a.stepStart) / 1000), skipped: !!skip });
-  if (a.i + 1 < steps.length) { a.i++; a.stepStart = now; await saveActive(a); return null; }
+  a.done.push({ k: steps[a.i].k, sec: Math.round((now - a.stepStart) / 1000), skipped: !!skip });
+  if (a.i + 1 < steps.length) { a.i++; a.stepStart = now; await saveActive(a); window.scrollTo(0, 0); return null; }
   const total = Math.round(a.done.filter((d) => !d.skipped).reduce((s, d) => s + d.sec, 0));
-  await put("timings", newId("timings"), { date: today(), service: a.service, condition: a.condition, appt: a.appt, who: a.who, steps: a.done, total });
+  const rec = { date: today(), service: a.service, condition: a.condition, appt: a.appt, lead: a.lead || "", who: a.who, steps: a.done, total };
+  await put("timings", newId("timings"), rec);
   await clearActive();
-  return { total, appt: a.appt, service: a.service };
+  lastFinish = rec; window.scrollTo(0, 0);
+  return rec;
 }
 async function workPause(on) {
   const a = JSON.parse(JSON.stringify(S.active)); need(a && a.service, "No job running.");
@@ -724,7 +776,14 @@ async function workPause(on) {
   if (!on && a.pausedAt) { a.stepStart += now - a.pausedAt; a.jobStart += now - a.pausedAt; a.pausedAt = null; }
   await saveActive(a);
 }
-setInterval(() => { // refresh only the clock, so nothing you're doing gets redrawn
+function workCheck(idx) {
+  const a = JSON.parse(JSON.stringify(S.active)); if (!a || !a.service) return;
+  a.checks = a.checks || {}; const c = a.checks[a.i] = a.checks[a.i] || [];
+  c[idx] = !c[idx];
+  saveActive(a).catch(() => toast("Couldn't save that tick.", true));
+  render(true);
+}
+setInterval(() => { // refresh only the clock, so nothing else gets redrawn
   const el = document.getElementById("worktimer"), a = S.active;
   if (!el || !a || !a.service) return;
   const now = Date.now(), sec = stepElapsed(a, now);
@@ -849,7 +908,11 @@ document.addEventListener("click", (e) => {
     backup: () => saveBackup(),
     askchip: () => { askDraft = ASK_CHIPS[Number(v)][1]; render(true); const ta = document.getElementById("f-askq"); if (ta) ta.focus(); },
     askstop: () => { if (askCtl) askCtl.abort(); },
-    worknext: () => run(async () => { const r = await workNext(false); if (r) toast(`Job done in ${fmtMin(r.total)}.${r.appt ? " Now record the payment on the lead." : ""}`); }),
+    worknext: () => run(() => workNext(false)),
+    workcheck: () => workCheck(Number(v)),
+    finishok: () => { lastFinish = null; render(true); },
+    guide: () => { guideSvc = v; render(true); },
+    kit: () => { kitChecks[Number(v)] = !kitChecks[Number(v)]; try { localStorage.setItem("cf-kit", JSON.stringify(kitChecks)); } catch (_) {} render(true); },
     workskip: () => run(() => workNext(true)),
     workpause: () => run(() => workPause(true), "Paused. Tap Resume when you're back."),
     workresume: () => run(() => workPause(false)),
@@ -919,7 +982,7 @@ let gate = "";
   if (u) { try { if (!(await u.isOwner())) { readOnly = true; gate = `<div class="card bad"><h2>Private business tool</h2><p>This page belongs to someone else, and its data is private.</p></div>`; sync.textContent = ""; return render(true); } } catch (_) {} }
   if (!d) { sync.textContent = "Not connected"; gate = `<div class="card bad"><h2>Storage isn't connected</h2><p>Reopen this page from its claude.ai link while signed in. Your data is safe - it just can't load in this view.</p></div>`; return render(true); }
   db = d; gate = "";
-  const done = (name) => { S.loaded.add(name); sync.textContent = S.loaded.size >= COLS.length + 1 ? "Saved in your Claude account" : "Loading…"; render(); };
+  const done = (name) => { S.loaded.add(name); sync.textContent = S.loaded.size >= COLS.length + 1 ? "Saved ✓" : "Loading…"; render(); };
   const fail = (e) => { sync.textContent = "Connection lost - reload"; console.warn(e && e.code); };
   COLS.forEach((c) => db.collection(c).onSnapshot((snap) => { S[c] = new Map(snap.docs.map((x) => [x.id, Object.assign({ id: x.id }, x.data())])); done(c); }, fail));
   db.doc("config/activejob").onSnapshot((snap) => { S.active = snap.exists ? Object.assign({}, snap.data()) : null; render(); }, fail);
