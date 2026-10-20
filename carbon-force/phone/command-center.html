@@ -175,9 +175,9 @@ function toast(msg, err) {
 }
 
 // ---------------------------------------------------------------- state + storage
-const S = { leads: new Map(), slots: new Map(), appts: new Map(), jobs: new Map(), posts: new Map(), opps: new Map(), effort: new Map(), timings: new Map(), settings: {}, active: null, loaded: new Set() };
+const S = { leads: new Map(), slots: new Map(), appts: new Map(), jobs: new Map(), posts: new Map(), opps: new Map(), effort: new Map(), timings: new Map(), briefs: new Map(), settings: {}, active: null, loaded: new Set() };
 let db = null, readOnly = false;
-const COLS = ["leads", "slots", "appts", "jobs", "posts", "opps", "effort", "timings"];
+const COLS = ["leads", "slots", "appts", "jobs", "posts", "opps", "effort", "timings", "briefs"];
 
 async function put(col, id, body) {
   if (!db) throw new VErr("Storage isn't connected. Reopen the link while signed in to Claude.");
@@ -392,8 +392,8 @@ const ICONS = {
   more: '<circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/>',
 };
 const TABS = [["today", "Today"], ["leads", "Leads"], ["book", "Book"], ["work", "Work"], ["posts", "Posts"], ["more", "More"]];
-const MORE = [["replies", "Reply templates", "Copy-paste answers for every common question"], ["prospects", "Local prospecting", "Groups, Google, partners, referrals"], ["plan", "Daily plan + cash mode", "7-day routine, log marketing time"], ["weekly", "Weekly report", "What's working, from real numbers"], ["setup", "Setup", "Your booking info, prices wording, backup"]];
-const tabOf = (v) => (["replies", "prospects", "plan", "weekly", "setup"].includes(v) ? "more" : v);
+const MORE = [["agent", "Marketing agent", "This week's research brief + ask Claude for posts and replies"], ["replies", "Reply templates", "Copy-paste answers for every common question"], ["prospects", "Local prospecting", "Groups, Google, partners, referrals"], ["plan", "Daily plan + cash mode", "7-day routine, log marketing time"], ["weekly", "Weekly report", "What's working, from real numbers"], ["setup", "Setup", "Your booking info, prices wording, backup"]];
+const tabOf = (v) => (["agent", "replies", "prospects", "plan", "weekly", "setup"].includes(v) ? "more" : v);
 
 function pill(s) {
   const k = { "New Lead": "p-warn", "Follow-Up Due": "p-warn", draft: "p-warn", Booked: "p-ok", approved: "p-ok", confirmed: "p-ok", scheduled: "p-ok", proposed: "p-mute", held: "p-mute", Lost: "p-mute", cancelled: "p-mute", no_show: "p-mute", closed: "p-mute", unpaid: "p-bad", partial: "p-warn", published: "p-solid", Completed: "p-solid", completed: "p-solid", paid: "p-solid", open: "p-ok", booked: "p-ok" }[s] || "p-mute";
@@ -445,7 +445,9 @@ function vToday() {
   const f = funnel(), ch = channels();
   const unpaid = all("jobs").filter((j) => j.status !== "paid");
   const running = S.active && S.active.service ? `<div class="card ok"><h2>Job in progress</h2><p>${esc(SERVICES[S.active.service].label)}${S.active.who ? " · " + esc(S.active.who) : ""}</p><button ${go("work")}>Back to the timer</button></div>` : "";
-  return `<h1>Today · ${esc(fdate(t))}</h1>${running}${setupWarning()}${plan}
+  const lb = latestBrief();
+  const briefCard = lb ? `<div class="card"><h2>This week's marketing brief</h2><p>${esc(lb.summary)}</p><button class="ghost small" ${go("agent")}>Open brief + ready posts</button></div>` : "";
+  return `<h1>Today · ${esc(fdate(t))}</h1>${running}${setupWarning()}${plan}${briefCard}
 <div class="card ${unanswered.length ? "bad" : ""}"><h2>New leads, no reply yet (${unanswered.length})</h2>${list(unanswered.map((l) => leadRow(l, "asked " + fdate(l.inquiry))), "None right now.")}<div class="btns" style="margin-top:8px"><button ${go("newlead")}>+ Add someone who messaged you</button></div></div>
 <div class="card ${fu.length ? "warn" : ""}"><h2>Follow-ups due (${fu.length})</h2>${list(fu.map((l) => leadRow(l, "due " + fdate(l.next))), "Nothing due today.")}</div>
 ${remind.length ? `<div class="card warn"><h2>Send reminders (tomorrow's drop-offs)</h2>${list(remind.map(apptRow), "")}</div>` : ""}
@@ -730,6 +732,70 @@ setInterval(() => { // refresh only the clock, so nothing you're doing gets redr
   const tot = document.getElementById("worktotal"); if (tot) tot.textContent = fmt(((a.pausedAt || now) - a.jobStart) / 1000);
 }, 1000);
 
+// ---------------------------------------------------------------- marketing agent
+// The weekly brief is written by a scheduled Claude research run into the "briefs" collection.
+// The assistant below drafts on demand; you still review and post everything yourself.
+const ASK_CHIPS = [
+  ["Nextdoor post for this week", "Write one Nextdoor Business Page post for this week. Pick an angle that fits the season and isn't one I've already used. Under 90 words."],
+  ["Reply to a message", "A customer sent me this message. Write my reply (short, friendly, drop-off only, real prices, never promise a time I haven't opened):\n\n[paste their message here]"],
+  ["Ideas to get clients this week", "Give me 5 specific things I can do this week to get paying clients in Melrose Park using only Nextdoor, flyers and in-person visits. Rank them by how likely they are to bring a booking. One line each."],
+  ["Before/after caption", "Write a short Nextdoor caption for a real before/after photo. Details of the job: [type what the car was like]"],
+  ["Help me price a dirty car", "A customer described their car like this: [paste]. Should I quote my standard price or more? Give me a short honest reply I can send asking for photos first."],
+];
+function agentContext() {
+  const st = settings(), f = funnel(), ch = channels();
+  const brief = latestBrief();
+  const usedTitles = POSTS.map(postView).filter((p) => p.status === "published").map((p) => p.title);
+  return [
+    `You are the marketing assistant for ${BUSINESS}, a one-person, garage-based car detailing business in Melrose Park, IL. Customers DROP OFF their car; it is NOT mobile.`,
+    `Services and prices (the only ones offered): Interior $80 (${st.interior_includes || "see owner"}); Exterior $60 (${st.exterior_includes || "see owner"}); Full interior + exterior $140. Prices may be quoted higher for very dirty cars only after seeing photos.`,
+    `Booking: ${st.booking_line || "call or text"}. Hours: ${st.hours_line || "ask"}. Payment: ${st.payment_methods || "ask"}. Turnaround: ${st.turnaround_line || "same day"}.`,
+    "Marketing channel: a free Nextdoor Business Page (no personal-profile promotion, no paid ads or Opportunity Alerts), flyers on community boards, in-person visits to local businesses. No Facebook profile.",
+    "Hard rules: never claim mobile service, ceramic coating, polishing, paint correction, extraction, being insured/certified/#1, being fully booked or having limited spots. Never invent reviews, testimonials, customer stories or results. Write like a real local owner: plain, specific, a little funny sometimes, no hashtags on Nextdoor, at most one emoji. Use [brackets] for any detail the owner must fill in with something true.",
+    `Real numbers so far: ${f.leads} leads, ${f.booked} booked, ${f.completed} completed, ${money(collected())} collected. Leads by channel: ${ch.map((c) => `${nice(c.source)} ${c.inquiries}`).join(", ") || "none yet"}.`,
+    usedTitles.length ? `Posts already published: ${usedTitles.join("; ")}.` : "No posts marked published yet.",
+    brief ? `This week's research brief: ${brief.summary}` : "",
+    "Answer in plain text the owner can copy. Keep it short.",
+  ].filter(Boolean).join("\n");
+}
+const latestBrief = () => all("briefs").sort((a, b) => (b.week || "").localeCompare(a.week || ""))[0] || null;
+let sampleFn = null, askBusy = false, askAnswer = "", askErr = "", askCtl = null;
+function vAgent() {
+  const b = latestBrief();
+  const briefHtml = b ? `<div class="card ok"><h2>This week's brief · ${esc(fdate(b.week))}</h2><p>${esc(b.summary)}</p>
+<h3>Do this week</h3><ol class="todo">${(b.actions || []).map((a) => `<li>${esc(a)}</li>`).join("")}</ol></div>
+<div class="card"><h2>Posts ready for Nextdoor</h2><p class="hint">Post from your Business Page. Fill in any [brackets] with something true first.</p>${(b.posts || []).map((p) => { const c = banned(negateMobile(p.text)); return `<h3>${esc(p.when ? p.when + ": " : "")}${esc(p.title)}</h3>${p.photo ? `<span class="hint">Photo: ${esc(p.photo)}</span>` : ""}${copyBox(p.text)}${c.length ? `<p class="p-bad">Check before posting: mentions ${esc(c.join(", "))}</p>` : ""}`; }).join("")}</div>
+<div class="card"><details data-key="research"><summary>What the research found</summary>${list((b.research || []).map((r) => `<li><div class="main"><b>${esc(r.title)}</b><span class="hint">${esc(r.detail)}${r.source ? " · " + esc(r.source) : ""}</span></div></li>`), "")}</details></div>`
+    : `<div class="card"><h2>Weekly brief</h2>${empty("Your first brief arrives with the next weekly research run.")}</div>`;
+  const older = all("briefs").sort((x, y) => (y.week || "").localeCompare(x.week || "")).slice(1, 6);
+  return `<button class="back" ${go("more")}>‹ More</button><h1>Marketing agent</h1>
+<p class="muted">Every Monday morning Claude researches your area (season, weather, local prices, what's working in your numbers) and leaves a brief here with posts ready to copy. It never posts or messages anyone for you.</p>
+${briefHtml}
+<div class="card"><h2>Ask Claude</h2>${sampleFn ? `<div class="chips">${ASK_CHIPS.map((c, i) => `<button data-act="askchip" data-v="${i}">${esc(c[0])}</button>`).join("")}</div>
+<form class="f" data-form="ask"><label>What do you need?<textarea name="q" id="f-askq" placeholder="e.g. Write a Nextdoor post about salt season">${esc(askDraft)}</textarea></label>
+<div class="btns"><button type="submit" ${askBusy ? "disabled" : ""}>${askBusy ? "Writing…" : "Ask"}</button>${askBusy ? `<button type="button" class="ghost" data-act="askstop">Stop</button>` : ""}</div></form>
+${askErr ? `<p class="p-bad">${esc(askErr)}</p>` : ""}${askAnswer ? `<h3>Answer</h3><div id="askout">${copyBox(askAnswer)}</div>${banned(negateMobile(askAnswer)).length ? `<p class="p-bad">Check before using: mentions ${esc(banned(negateMobile(askAnswer)).join(", "))}</p>` : ""}<p class="hint">Read it, fix anything that isn't true, then post or send it yourself.</p>` : `<div id="askout"></div>`}`
+    : empty("The assistant isn't available in this view. Open the page from its claude.ai link while signed in.")}</div>
+${older.length ? `<div class="card"><h2>Past briefs</h2>${list(older.map((x) => `<li><div class="main">${esc(fdate(x.week))}<span class="hint">${esc(x.summary)}</span></div></li>`), "")}</div>` : ""}`;
+}
+let askDraft = "";
+async function ask(q) {
+  q = clean(q, 4000); need(q, "Type what you need first.");
+  need(sampleFn, "The assistant isn't available in this view.");
+  askDraft = q; askBusy = true; askErr = ""; askAnswer = ""; render(true);
+  askCtl = new AbortController();
+  try {
+    const r = await sampleFn([{ role: "user", content: agentContext() + "\n\nOWNER'S REQUEST:\n" + q }], {
+      cache: false, signal: askCtl.signal, modelTier: "default",
+      onText: ({ text }) => { askAnswer = text; const out = document.getElementById("askout"); if (out) out.innerHTML = copyBox(text); },
+    });
+    askAnswer = r.text;
+  } catch (e) {
+    if (e && e.text) askAnswer = e.text;
+    askErr = !e || e.code === "cancelled" ? "" : e.code === "not_granted" ? "You declined the assistant for this page. You can allow it from the page's Permissions menu." : e.code === "rate_limited" ? "Too many requests right now. Try again in a few minutes." : "Couldn't get an answer. Try again.";
+  } finally { askBusy = false; askCtl = null; render(true); }
+}
+
 // ---------------------------------------------------------------- render loop
 let pendingRender = false;
 function render(force) {
@@ -738,7 +804,7 @@ function render(force) {
   if (!force && a && root.contains(a) && /INPUT|TEXTAREA|SELECT/.test(a.tagName)) { pendingRender = true; return; } // don't wipe what you're typing
   pendingRender = false;
   const open = new Set(Array.from(root.querySelectorAll("details[open]")).map((d) => d.dataset.key));
-  const fn = { today: vToday, leads: vLeads, newlead: vNewLead, lead: () => vLead(sub), book: vBook, posts: vPosts, post: () => vPost(sub), replies: vReplies, prospects: vProspects, plan: vPlan, weekly: vWeekly, setup: vSetup, more: vMore, work: vWork }[view] || vToday;
+  const fn = { today: vToday, leads: vLeads, newlead: vNewLead, lead: () => vLead(sub), book: vBook, posts: vPosts, post: () => vPost(sub), replies: vReplies, prospects: vProspects, plan: vPlan, weekly: vWeekly, setup: vSetup, more: vMore, work: vWork, agent: vAgent }[view] || vToday;
   root.innerHTML = gate || fn();
   root.querySelectorAll("details[data-key]").forEach((d) => { if (open.has(d.dataset.key)) d.open = true; });
   document.getElementById("tabs").innerHTML = TABS.map(([v, l]) => `<button ${go(v)} class="${tabOf(view) === v || (view === "newlead" && v === "leads") || (view === "lead" && v === "leads") || (view === "post" && v === "posts") ? "on" : ""}" aria-label="${l}"><svg viewBox="0 0 24 24" aria-hidden="true">${ICONS[v]}</svg>${l}</button>`).join("");
@@ -781,6 +847,8 @@ document.addEventListener("click", (e) => {
     cash: () => run(() => saveSettings({ cash_mode: v }), v === "yes" ? "Cash mode on." : "Cash mode off."),
     week: () => { reportWeek = plusDays(Number(v), weekBounds(reportWeek)[0]); render(true); },
     backup: () => saveBackup(),
+    askchip: () => { askDraft = ASK_CHIPS[Number(v)][1]; render(true); const ta = document.getElementById("f-askq"); if (ta) ta.focus(); },
+    askstop: () => { if (askCtl) askCtl.abort(); },
     worknext: () => run(async () => { const r = await workNext(false); if (r) toast(`Job done in ${fmtMin(r.total)}.${r.appt ? " Now record the payment on the lead." : ""}`); }),
     workskip: () => run(() => workNext(true)),
     workpause: () => run(() => workPause(true), "Paused. Tap Resume when you're back."),
@@ -800,6 +868,7 @@ document.addEventListener("submit", (e) => {
   const id = form.dataset.id;
   const handlers = {
     workstart: () => run(() => workStart(f), "Timer started. One step at a time."),
+    ask: () => { ask(f.q).catch((err) => toast(err.message || "Couldn't ask.", true)); },
     newlead: () => run(async () => { const nid = await createLead(f); view = "lead"; sub = nid; }, "Lead added. Reply now - fast replies win jobs."),
     editlead: () => run(() => leadAct(id, (l) => { const n = leadFromForm(f, l); need(STATUSES.includes(f.status), "Pick a status."); if (f.status === "Lost" && l.status !== "Lost") ev(n, "lost", f.lostReason); n.status = f.status; n.next = isDate(f.next) ? f.next : null; n.repeat = isDate(f.repeat) ? f.repeat : null; n.lostReason = clean(f.lostReason, 200); Object.assign(l, n); }), "Saved."),
     quote: () => run(() => leadAct(id, (l) => { need(SERVICES[f.service], "Pick a service."); let p = num(f.price, "Price"); if (p == null) p = SERVICES[f.service].price; l.status = "Quote Sent"; l.service = f.service; l.quote = p; l.lastContact = today(); l.next = plusDays(2); ev(l, "quote_sent", `${SERVICES[f.service].label} $${p}`); }), "Quote logged. Follow-up in 2 days."),
@@ -839,14 +908,14 @@ async function saveBackup() {
 let gate = "";
 (function boot() {
   const h = (location.hash || "").slice(1);
-  if (["today", "leads", "book", "work", "posts", "replies", "prospects", "plan", "weekly", "setup", "more"].includes(h)) view = h;
+  if (["agent", "today", "leads", "book", "work", "posts", "replies", "prospects", "plan", "weekly", "setup", "more"].includes(h)) view = h;
   render(true);
 })();
 (async function connect() {
   const sync = document.getElementById("sync");
   if (!window.claude || !window.claude.use) { sync.textContent = "Offline copy"; gate = `<div class="card bad"><h2>Open this from Claude</h2><p>This page saves your data in your Claude account, so it only works when opened from its claude.ai link while you're signed in.</p></div>`; return render(true); }
-  const [d, u, dl] = await Promise.all([claude.use("db"), claude.use("user"), claude.use("downloads")]);
-  downloads = dl;
+  const [d, u, dl, sm] = await Promise.all([claude.use("db"), claude.use("user"), claude.use("downloads"), claude.use("sample")]);
+  downloads = dl; sampleFn = sm;
   if (u) { try { if (!(await u.isOwner())) { readOnly = true; gate = `<div class="card bad"><h2>Private business tool</h2><p>This page belongs to someone else, and its data is private.</p></div>`; sync.textContent = ""; return render(true); } } catch (_) {} }
   if (!d) { sync.textContent = "Not connected"; gate = `<div class="card bad"><h2>Storage isn't connected</h2><p>Reopen this page from its claude.ai link while signed in. Your data is safe - it just can't load in this view.</p></div>`; return render(true); }
   db = d; gate = "";
