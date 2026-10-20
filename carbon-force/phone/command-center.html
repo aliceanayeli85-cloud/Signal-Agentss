@@ -603,31 +603,39 @@ function vMore() {
 // Goal minutes are starting targets for a medium-dirty car; your own averages replace them as you log jobs.
 const STEPS = {
   exterior: [
-    ["x-setup", "Set up + before photos", 5, "Buckets, wash mitt, wheel brushes, towels and wax all within reach BEFORE water touches the car. Before photos: same 3 spots every time."],
-    ["x-wheels", "Wheels + tires", 20, "Wheels first, always - they're the dirtiest. All 4 wheels, then all 4 tires. Don't wash paint yet."],
-    ["x-prerinse", "Pre-rinse + bugs", 10, "Rinse top to bottom. Hit bugs on the bumper and mirrors now while you're at the front."],
-    ["x-wash", "Hand wash, top down", 25, "Roof, glass, hood, upper sides, then lower sides and bumpers last. One direction around the car - don't bounce side to side."],
-    ["x-dry", "Rinse + dry", 15, "Rinse top down, dry top down. Big drying towel first, small towel for mirrors and handles."],
-    ["x-jambs", "Door jambs", 10, "Open each door once and do the jamb while it's open. Go around the car one time."],
-    ["x-glass", "Outside glass", 5, "All glass in one pass, same towel type every time."],
-    ["x-finish", "Tire shine + spray wax", 10, "Spray wax panel by panel in the same order you washed. Tire shine last so it doesn't sling onto clean paint."],
-    ["x-photos", "After photos", 5, "Same 3 spots as the before photos, same angle."],
+    ["x-setup", "Set up + before photos", 5, "Everything in reach BEFORE water: 2 buckets, mitt, wheel brushes, wheel cleaner, drying towel, spray wax, tire shine. Before photos: same 3 spots every car."],
+    ["x-wheels", "Spray wheels, let them soak", 5, "Spray wheel cleaner on ALL 4 wheels now and walk away. Don't scrub yet - it loosens the brake dust while you rinse. Spray bug remover on the front bumper and mirrors too."],
+    ["x-prerinse", "Pre-rinse the whole car", 10, "Rinse top to bottom in one lap. Most loose dirt comes off now, so the wash goes faster."],
+    ["x-wheelscrub", "Scrub + rinse wheels and tires", 15, "The soak did the hard part. Quick brush on each wheel, then each tire, rinse. Don't chase every spot - one pass each."],
+    ["x-wash", "Hand wash, top down, straight lines", 20, "Roof, glass, hood, trunk, upper sides, then lower sides and bumpers last. Straight lines, not circles. Rinse the mitt in the second bucket after each panel. One lap around the car."],
+    ["x-dry", "Rinse, then dry WITH spray wax", 15, "Rinse top down. Mist spray wax on the wet panel and dry it off in one wipe - drying and waxing in one step. Lay the big towel flat and drag it, don't rub."],
+    ["x-jambs", "Door jambs", 10, "Open each door once, wipe the jamb with a damp towel, close it, next door. One lap."],
+    ["x-glass", "Outside glass", 5, "Two towels: damp one cleans, dry one buffs. All glass in one pass. No streaks means no redo."],
+    ["x-finish", "Tire shine", 5, "Applicator pad, all 4 tires. Last, so it doesn't sling onto clean paint."],
+    ["x-photos", "After photos", 5, "Same 3 spots and angles as the before photos."],
   ],
   interior: [
-    ["i-setup", "Set up + before photos", 10, "Vacuum, brushes, cleaner, towels and a bin for their stuff - all in your caddy next to the car. Before photos of the worst spots."],
-    ["i-empty", "Empty the car", 10, "Trash bag in one hand. Everything personal goes in the bin, floor mats come out. Check door pockets and under seats now, not later."],
-    ["i-mats", "Floor mats", 15, "Clean all mats now and leave them to dry while you work inside. They dry while you do the rest."],
-    ["i-brush", "Brush out vents + seams", 15, "Top down: vents, dash seams, console gaps, seat seams. Knock the dust down so the vacuum gets it once."],
-    ["i-vac", "Vacuum, one lap", 40, "Driver side front to back, then passenger, then trunk. Seats all the way forward, vacuum behind; all the way back, vacuum in front. Don't switch tools mid-lap."],
-    ["i-wipe", "Wipe down, top down", 40, "Dash, console, door panels, cup holders. One cleaner, one brush, one towel. Do every door panel in a row instead of jumping around."],
-    ["i-spots", "Stains + headliner spots", 20, "Only the spots you noted in your before photos. Set a limit - if a stain isn't moving after a few minutes, tell the customer instead of fighting it."],
-    ["i-glass", "Inside glass", 10, "All windows and mirrors in one pass."],
-    ["i-final", "Mats in + final check + after photos", 10, "Mats back, quick touch-up vacuum, check cup holders, after photos at the same spots."],
+    ["i-setup", "Set up + before photos", 5, "Caddy next to the door: vacuum, brushes, cleaner, glass cleaner, towels folded in quarters (8 clean sides each), trash bag hung on the door. Before photos of the worst spots."],
+    ["i-empty", "Empty the car + PRE-SPRAY stains", 10, "Trash bag in one hand, everything else in their bin, mats out. Then spray every stain you can see NOW and leave it - it soaks while you vacuum, so it wipes out later instead of needing scrubbing."],
+    ["i-mats", "Mats (then let them dry)", 10, "Brush or drill-brush the mats, rinse, lean them up to dry. They dry while you do the rest."],
+    ["i-brush", "Brush BEFORE you vacuum", 15, "Stiff brush over carpet and seats - that loosens dirt so the vacuum gets it in ONE pass. Pet hair: rubber pet hair brush or hair stone, pull it into piles. Quick brush on vents and seams, top down."],
+    ["i-vac", "Vacuum, one lap, never twice", 30, "Seat all the way forward, vacuum behind it. All the way back, vacuum in front. Driver side, passenger, rear, trunk. Crevice tool for the seams on the same pass. Don't go back over a spot."],
+    ["i-wipe", "Wipe down: brush + towel together", 30, "Spray cleaner ON THE BRUSH OR TOWEL, not the dash. Brush in one hand, towel in the other: scrub, wipe, move on. Top down: dash, console, cup holders, then every door panel in a row. Flip the towel to a clean side instead of grabbing a new one."],
+    ["i-spots", "Stains (they've been soaking)", 15, "Wipe the pre-sprayed spots - most come right out now. Give a stubborn one 3 minutes max. If it isn't moving, stop and tell the customer instead of fighting it."],
+    ["i-glass", "Inside glass, two towels", 10, "Damp towel cleans, dry towel buffs. All windows and mirrors in one pass. Glass last, so nothing gets on it after."],
+    ["i-final", "Mats in + 2-minute check + after photos", 10, "Mats back in. Look at the 3 spots customers notice: cup holders, driver floor, dash. Done means done - no extra rounds. After photos at the same spots."],
   ],
 };
 STEPS.full = STEPS.exterior.slice(0, -1).concat(STEPS.interior.slice(1));
 const CONDITION = { light: ["Light (pretty clean)", 0.8], medium: ["Medium (normal)", 1], heavy: ["Heavy (pet hair, stains, trash)", 1.4] };
 const KIT = ["Vacuum + crevice tool + brush tool, charged or plugged in", "Detail brushes (vents, seams, cup holders)", "Interior cleaner in a spray bottle, filled", "Stack of clean towels, sorted: interior / glass / drying", "2 buckets, wash mitt, wheel brushes, wheel cleaner", "Spray wax + tire shine", "Trash bags + a bin for the customer's things", "Phone stand for before/after photos", "Water + snack ready, so you don't stop mid-job"];
+const CUT_TIME = [
+  ["Let chemicals soak", "Spray stains, wheels and bugs FIRST, then do something else. They wipe off later instead of needing 10 minutes of scrubbing. Built into the steps."],
+  ["Stop over-cleaning", "Most of a 5-hour interior is extra rounds nobody pays for. Each step says what done looks like. When it's done, tap Next."],
+  ["Brush before vacuuming", "Loosened dirt comes up in one vacuum pass instead of three."],
+  ["Spray wax while drying", "Turns 2 exterior steps into 1."],
+  ["Never stop mid-job", "Enough towels for the whole car, bottles filled the night before, water and snack ready."],
+];
 const SPEED_RULES = [
   "Same order on every car. Never decide what to do next - the Work tab tells you.",
   "Top to bottom, front to back, one lap. Dirt falls down, so the floor is last.",
@@ -684,6 +692,7 @@ ${sel("How dirty is it?", "condition", Object.keys(CONDITION), "medium", (k) => 
 <p class="hint">The timer keeps running if your phone locks. Just open this tab again.</p></div>
 <div class="card"><h2>Your times</h2>${bySvc.length ? list(bySvc, "") : empty("No timed jobs yet. Time your next car, even a practice one on your own car.")}
 ${over.length ? `<h3>Where the time goes (vs goal)</h3>${list(over.slice(0, 5).map((o) => `<li><div class="main">${esc(o.name)}<span class="hint">goal ${fmtMin(o.goal)}</span></div><b class="${o.avg > o.goal ? "p-warn" : "p-ok"}">${fmtMin(o.avg)}</b></li>`), "")}<p class="hint">The top line is your biggest time sink. Work on that one step next job.</p>` : ""}</div>
+<div class="card ok"><h2>How you'll cut your time</h2>${list(CUT_TIME.map((c) => `<li><div class="main"><b>${esc(c[0])}</b><span class="hint">${esc(c[1])}</span></div></li>`), "")}<p class="hint">Tools that help most (cost money - only if you can): rubber pet hair brush or hair stone, drill brush attachments, extra microfiber towels.</p></div>
 <div class="card"><h2>8 rules for speed</h2><ol class="todo">${SPEED_RULES.map((r) => `<li>${esc(r)}</li>`).join("")}</ol></div>
 <div class="card"><details data-key="kit"><summary>Night-before kit checklist</summary><ul class="list">${KIT.map((k, i) => `<li><label style="font-weight:400"><input type="checkbox" id="kit-${i}">${esc(k)}</label></li>`).join("")}</ul></details></div>
 ${jobs.length ? `<div class="card"><h2>Recent timed jobs</h2>${list(jobs.slice(0, 8).map((j) => `<li><div class="main">${esc(fdate(j.date))} · ${esc(SERVICES[j.service].label)}<span class="hint">${esc((CONDITION[j.condition] || CONDITION.medium)[0])}${j.who ? " · " + esc(j.who) : ""}</span></div><b>${fmtMin(j.total)}</b></li>`), "")}</div>` : ""}`;
