@@ -18,6 +18,7 @@
   --bg: #111316; --surface: #1b1e23; --sunk: #24282e; --fg: #e9ecef; --muted: #9aa3ad; --line: #30353c;
   --accent: #8aa6ff; --accent-fg: #0d1430; --ok: #5cc887; --warn: #f0a845; --bad: #ff8a80; color-scheme: dark }
 * { box-sizing: border-box }
+[hidden] { display: none !important }
 body { background: var(--bg); color: var(--fg); font: 16px/1.45 var(--body); margin: 0;
   padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
   padding-block: 0 calc(84px + env(safe-area-inset-bottom, 0px)); }
@@ -79,7 +80,7 @@ summary { cursor: pointer; font-weight: 600; padding: 4px 0; list-style-position
 .tablewrap { overflow-x: auto } table { border-collapse: collapse; width: 100%; font-size: 14px; font-variant-numeric: tabular-nums }
 th, td { text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--line); white-space: nowrap }
 nav.tabs { position: fixed; left: 0; right: 0; bottom: 0; z-index: 6; background: var(--surface); border-top: 1px solid var(--line);
-  display: grid; grid-template-columns: repeat(5, 1fr);
+  display: grid; grid-template-columns: repeat(6, 1fr);
   padding: 4px max(8px, env(safe-area-inset-right, 0px)) calc(4px + env(safe-area-inset-bottom, 0px)) max(8px, env(safe-area-inset-left, 0px)) }
 nav.tabs button { background: transparent; border: 0; color: var(--muted); padding: 8px 2px; font-size: 12px; border-radius: 8px; display: flex; flex-direction: column; align-items: center; gap: 2px }
 nav.tabs button svg { width: 22px; height: 22px; stroke: currentColor; fill: none; stroke-width: 1.8 }
@@ -90,6 +91,11 @@ nav.tabs button.on { color: var(--accent) }
 .back { background: none; border: 0; color: var(--accent); padding: 4px 0; font-weight: 600 }
 .morelist button { width: 100%; text-align: left; background: var(--surface); color: var(--fg); border-color: var(--line); padding: 14px }
 .empty { color: var(--muted); padding: 6px 0 }
+.timer { font: 700 64px/1 var(--display); font-variant-numeric: tabular-nums; letter-spacing: .02em }
+.timer.over { color: var(--warn) }
+.stepname { font: 700 30px/1.1 var(--display); text-transform: uppercase; letter-spacing: .02em; text-wrap: balance }
+.bar { height: 8px; background: var(--sunk); border-radius: 99px; overflow: hidden } .bar i { display: block; height: 100%; background: var(--accent) }
+button.huge { width: 100%; padding: 18px; font-size: 19px }
 .confirm { background: var(--sunk); border-radius: 8px; padding: 10px; display: flex; flex-direction: column; gap: 8px }
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important } }
 </style>
@@ -169,9 +175,9 @@ function toast(msg, err) {
 }
 
 // ---------------------------------------------------------------- state + storage
-const S = { leads: new Map(), slots: new Map(), appts: new Map(), jobs: new Map(), posts: new Map(), opps: new Map(), effort: new Map(), settings: {}, loaded: new Set() };
+const S = { leads: new Map(), slots: new Map(), appts: new Map(), jobs: new Map(), posts: new Map(), opps: new Map(), effort: new Map(), timings: new Map(), settings: {}, active: null, loaded: new Set() };
 let db = null, readOnly = false;
-const COLS = ["leads", "slots", "appts", "jobs", "posts", "opps", "effort"];
+const COLS = ["leads", "slots", "appts", "jobs", "posts", "opps", "effort", "timings"];
 
 async function put(col, id, body) {
   if (!db) throw new VErr("Storage isn't connected. Reopen the link while signed in to Claude.");
@@ -382,9 +388,10 @@ let view = "today", sub = null, filter = "";
 const ICONS = {
   today: '<path d="M4 6h16M4 12h16M4 18h10"/>', leads: '<circle cx="9" cy="8" r="3.5"/><path d="M3 20c.8-3.4 3.2-5 6-5s5.2 1.6 6 5M16 5.5a3 3 0 0 1 0 6M21 20c-.5-2.4-1.8-3.8-3.5-4.5"/>',
   book: '<rect x="3.5" y="5" width="17" height="15" rx="2"/><path d="M3.5 10h17M8 3v4M16 3v4"/>', posts: '<rect x="4" y="4" width="16" height="16" rx="2"/><path d="M4 15l4.5-4.5 4 4 3-3L20 15"/><circle cx="15.5" cy="8.5" r="1.3"/>',
+  work: '<circle cx="12" cy="13" r="7.5"/><path d="M12 9v4l2.5 2M9.5 2.5h5"/>',
   more: '<circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/>',
 };
-const TABS = [["today", "Today"], ["leads", "Leads"], ["book", "Book"], ["posts", "Posts"], ["more", "More"]];
+const TABS = [["today", "Today"], ["leads", "Leads"], ["book", "Book"], ["work", "Work"], ["posts", "Posts"], ["more", "More"]];
 const MORE = [["replies", "Reply templates", "Copy-paste answers for every common question"], ["prospects", "Local prospecting", "Groups, Google, partners, referrals"], ["plan", "Daily plan + cash mode", "7-day routine, log marketing time"], ["weekly", "Weekly report", "What's working, from real numbers"], ["setup", "Setup", "Your booking info, prices wording, backup"]];
 const tabOf = (v) => (["replies", "prospects", "plan", "weekly", "setup"].includes(v) ? "more" : v);
 
@@ -437,7 +444,8 @@ function vToday() {
   if (todays.length < 2) todays = todays.concat(posts.filter((p) => p.status === "draft").slice(0, 2 - todays.length));
   const f = funnel(), ch = channels();
   const unpaid = all("jobs").filter((j) => j.status !== "paid");
-  return `<h1>Today · ${esc(fdate(t))}</h1>${setupWarning()}${plan}
+  const running = S.active && S.active.service ? `<div class="card ok"><h2>Job in progress</h2><p>${esc(SERVICES[S.active.service].label)}${S.active.who ? " · " + esc(S.active.who) : ""}</p><button ${go("work")}>Back to the timer</button></div>` : "";
+  return `<h1>Today · ${esc(fdate(t))}</h1>${running}${setupWarning()}${plan}
 <div class="card ${unanswered.length ? "bad" : ""}"><h2>New leads, no reply yet (${unanswered.length})</h2>${list(unanswered.map((l) => leadRow(l, "asked " + fdate(l.inquiry))), "None right now.")}<div class="btns" style="margin-top:8px"><button ${go("newlead")}>+ Add someone who messaged you</button></div></div>
 <div class="card ${fu.length ? "warn" : ""}"><h2>Follow-ups due (${fu.length})</h2>${list(fu.map((l) => leadRow(l, "due " + fdate(l.next))), "Nothing due today.")}</div>
 ${remind.length ? `<div class="card warn"><h2>Send reminders (tomorrow's drop-offs)</h2>${list(remind.map(apptRow), "")}</div>` : ""}
@@ -591,6 +599,128 @@ function vMore() {
   return `<h1>More</h1><div class="stack morelist">${MORE.map(([v, t, d]) => `<button ${go(v)}><b>${esc(t)}</b><span class="hint">${esc(d)}</span></button>`).join("")}</div>`;
 }
 
+// ---------------------------------------------------------------- work mode: one step at a time, timed
+// Goal minutes are starting targets for a medium-dirty car; your own averages replace them as you log jobs.
+const STEPS = {
+  exterior: [
+    ["x-setup", "Set up + before photos", 5, "Buckets, wash mitt, wheel brushes, towels and wax all within reach BEFORE water touches the car. Before photos: same 3 spots every time."],
+    ["x-wheels", "Wheels + tires", 20, "Wheels first, always - they're the dirtiest. All 4 wheels, then all 4 tires. Don't wash paint yet."],
+    ["x-prerinse", "Pre-rinse + bugs", 10, "Rinse top to bottom. Hit bugs on the bumper and mirrors now while you're at the front."],
+    ["x-wash", "Hand wash, top down", 25, "Roof, glass, hood, upper sides, then lower sides and bumpers last. One direction around the car - don't bounce side to side."],
+    ["x-dry", "Rinse + dry", 15, "Rinse top down, dry top down. Big drying towel first, small towel for mirrors and handles."],
+    ["x-jambs", "Door jambs", 10, "Open each door once and do the jamb while it's open. Go around the car one time."],
+    ["x-glass", "Outside glass", 5, "All glass in one pass, same towel type every time."],
+    ["x-finish", "Tire shine + spray wax", 10, "Spray wax panel by panel in the same order you washed. Tire shine last so it doesn't sling onto clean paint."],
+    ["x-photos", "After photos", 5, "Same 3 spots as the before photos, same angle."],
+  ],
+  interior: [
+    ["i-setup", "Set up + before photos", 10, "Vacuum, brushes, cleaner, towels and a bin for their stuff - all in your caddy next to the car. Before photos of the worst spots."],
+    ["i-empty", "Empty the car", 10, "Trash bag in one hand. Everything personal goes in the bin, floor mats come out. Check door pockets and under seats now, not later."],
+    ["i-mats", "Floor mats", 15, "Clean all mats now and leave them to dry while you work inside. They dry while you do the rest."],
+    ["i-brush", "Brush out vents + seams", 15, "Top down: vents, dash seams, console gaps, seat seams. Knock the dust down so the vacuum gets it once."],
+    ["i-vac", "Vacuum, one lap", 40, "Driver side front to back, then passenger, then trunk. Seats all the way forward, vacuum behind; all the way back, vacuum in front. Don't switch tools mid-lap."],
+    ["i-wipe", "Wipe down, top down", 40, "Dash, console, door panels, cup holders. One cleaner, one brush, one towel. Do every door panel in a row instead of jumping around."],
+    ["i-spots", "Stains + headliner spots", 20, "Only the spots you noted in your before photos. Set a limit - if a stain isn't moving after a few minutes, tell the customer instead of fighting it."],
+    ["i-glass", "Inside glass", 10, "All windows and mirrors in one pass."],
+    ["i-final", "Mats in + final check + after photos", 10, "Mats back, quick touch-up vacuum, check cup holders, after photos at the same spots."],
+  ],
+};
+STEPS.full = STEPS.exterior.slice(0, -1).concat(STEPS.interior.slice(1));
+const CONDITION = { light: ["Light (pretty clean)", 0.8], medium: ["Medium (normal)", 1], heavy: ["Heavy (pet hair, stains, trash)", 1.4] };
+const KIT = ["Vacuum + crevice tool + brush tool, charged or plugged in", "Detail brushes (vents, seams, cup holders)", "Interior cleaner in a spray bottle, filled", "Stack of clean towels, sorted: interior / glass / drying", "2 buckets, wash mitt, wheel brushes, wheel cleaner", "Spray wax + tire shine", "Trash bags + a bin for the customer's things", "Phone stand for before/after photos", "Water + snack ready, so you don't stop mid-job"];
+const SPEED_RULES = [
+  "Same order on every car. Never decide what to do next - the Work tab tells you.",
+  "Top to bottom, front to back, one lap. Dirt falls down, so the floor is last.",
+  "Batch tools: finish everything that needs the vacuum before you pick up a towel.",
+  "Mats come out first and dry while you work.",
+  "Kit packed and staged the night before (the checklist below).",
+  "Judge the condition from photos BEFORE they drop off. Heavy cars get a higher quote, not free extra hours.",
+  "Stains get a time limit. If it isn't coming out, tell the customer instead of fighting it.",
+  "Phone face down except for the timer. Each step is a short sprint.",
+];
+const fmt = (sec) => { sec = Math.max(0, Math.round(sec)); const h = Math.floor(sec / 3600), m = Math.floor(sec % 3600 / 60), s = sec % 60; return h ? `${h}:${pad(m)}:${pad(s)}` : `${m}:${pad(s)}`; };
+const fmtMin = (sec) => { const m = Math.round(sec / 60); return m >= 60 ? `${Math.floor(m / 60)}h ${m % 60}m` : `${m}m`; };
+function stepStats() { // average seconds per step key, from finished jobs (skipped steps excluded)
+  const st = {};
+  for (const t of all("timings")) for (const d of t.steps || []) { if (d.skipped) continue; const r = st[d.k] || (st[d.k] = { n: 0, sum: 0 }); r.n++; r.sum += d.sec; }
+  return st;
+}
+function goalFor(key, minutes, cond) { return Math.round(minutes * 60 * (CONDITION[cond] || CONDITION.medium)[1]); }
+async function saveActive(a) { if (!db) throw new VErr("Storage isn't connected."); await db.doc("config/activejob").set(a); S.active = a; }
+async function clearActive() { await db.doc("config/activejob").delete(); S.active = null; }
+function stepElapsed(a, now) { return ((a.pausedAt || now) - a.stepStart) / 1000; }
+
+function vWork() {
+  const a = S.active;
+  if (a && a.service) {
+    const steps = STEPS[a.service], cur = steps[a.i];
+    const goal = goalFor(cur[0], cur[2], a.condition);
+    const now = Date.now(), el = stepElapsed(a, now);
+    const total = ((a.pausedAt || now) - a.jobStart) / 1000;
+    return `<h1>${esc(SERVICES[a.service].label)}${a.who ? " · " + esc(a.who) : ""}</h1>
+<div class="card ok"><p class="muted">Step ${a.i + 1} of ${steps.length} · ${esc(CONDITION[a.condition][0])}</p><div class="bar"><i style="width:${Math.round(100 * a.i / steps.length)}%"></i></div>
+<p class="stepname" style="margin-top:14px">${esc(cur[1])}</p>
+<div class="timer${el > goal ? " over" : ""}" id="worktimer" data-goal="${goal}">${fmt(el)}</div>
+<p class="muted">Goal ${fmtMin(goal)} · whole job so far <span id="worktotal">${fmt(total)}</span>${a.pausedAt ? " · <b>PAUSED</b>" : ""}</p>
+<p>${esc(cur[3])}</p>
+${a.pausedAt ? `<button class="huge" data-act="workresume">Resume</button>` : `<button class="huge" data-act="worknext">${a.i + 1 < steps.length ? "Done - next step" : "Done - finish job"}</button>`}
+<div class="btns" style="margin-top:10px">${a.pausedAt ? "" : `<button class="ghost small" data-act="workpause">Pause (break)</button>`}<button class="ghost small" data-act="workskip">Skip step</button><button class="danger small" data-ask="workcancel">Cancel job</button></div>
+<div class="confirm" data-confirm="workcancel" hidden><p>Throw away this job's timing?</p><div class="btns"><button class="small danger" data-act="workcancel">Yes, cancel</button><button class="small ghost" data-ask="">Keep going</button></div></div></div>
+<div class="card"><h2>Coming up</h2>${list(steps.slice(a.i + 1).map((s) => `<li><div class="main">${esc(s[1])}</div><span class="muted">${fmtMin(goalFor(s[0], s[2], a.condition))}</span></li>`), "This is the last step.")}</div>`;
+  }
+  const t = today();
+  const todays = all("appts").filter((x) => x.status === "confirmed" && (S.slots.get(x.slot) || {}).date <= t);
+  const st = stepStats();
+  const jobs = all("timings").sort((x, y) => (y.date || "").localeCompare(x.date || ""));
+  const bySvc = Object.keys(SERVICES).map((k) => { const js = jobs.filter((j) => j.service === k); if (!js.length) return null; const avg = js.reduce((s, j) => s + j.total, 0) / js.length; const best = Math.min.apply(null, js.map((j) => j.total)); return `<li><div class="main">${esc(SERVICES[k].label)}<span class="hint">${js.length} job(s) · best ${fmtMin(best)} · ${money(SERVICES[k].price / (avg / 3600))}/hr average</span></div><b>${fmtMin(avg)}</b></li>`; }).filter(Boolean);
+  const keys = {}; Object.values(STEPS).forEach((arr) => arr.forEach((s) => { keys[s[0]] = s; }));
+  const over = Object.keys(st).map((k) => ({ k, avg: st[k].sum / st[k].n, goal: keys[k][2] * 60, name: keys[k][1] })).sort((x, y) => (y.avg - y.goal) - (x.avg - x.goal));
+  return `<h1>Work</h1>
+<div class="card"><h2>Start a job</h2><form class="f" data-form="workstart">
+${todays.length ? sel("Which appointment?", "appt", [""].concat(todays.map((x) => x.id)), todays[0].id, (id) => { if (!id) return "Practice / not in the app"; const x = S.appts.get(id); return `${(S.leads.get(x.lead) || {}).name} - ${SERVICES[x.service].label}`; }) : `<input type="hidden" name="appt" value="">`}
+${sel("Service", "service", Object.keys(SERVICES), todays.length ? todays[0].service : "full", (k) => SERVICES[k].label)}
+${sel("How dirty is it?", "condition", Object.keys(CONDITION), "medium", (k) => CONDITION[k][0])}
+<button type="submit" class="huge">Start timer</button></form>
+<p class="hint">The timer keeps running if your phone locks. Just open this tab again.</p></div>
+<div class="card"><h2>Your times</h2>${bySvc.length ? list(bySvc, "") : empty("No timed jobs yet. Time your next car, even a practice one on your own car.")}
+${over.length ? `<h3>Where the time goes (vs goal)</h3>${list(over.slice(0, 5).map((o) => `<li><div class="main">${esc(o.name)}<span class="hint">goal ${fmtMin(o.goal)}</span></div><b class="${o.avg > o.goal ? "p-warn" : "p-ok"}">${fmtMin(o.avg)}</b></li>`), "")}<p class="hint">The top line is your biggest time sink. Work on that one step next job.</p>` : ""}</div>
+<div class="card"><h2>8 rules for speed</h2><ol class="todo">${SPEED_RULES.map((r) => `<li>${esc(r)}</li>`).join("")}</ol></div>
+<div class="card"><details data-key="kit"><summary>Night-before kit checklist</summary><ul class="list">${KIT.map((k, i) => `<li><label style="font-weight:400"><input type="checkbox" id="kit-${i}">${esc(k)}</label></li>`).join("")}</ul></details></div>
+${jobs.length ? `<div class="card"><h2>Recent timed jobs</h2>${list(jobs.slice(0, 8).map((j) => `<li><div class="main">${esc(fdate(j.date))} · ${esc(SERVICES[j.service].label)}<span class="hint">${esc((CONDITION[j.condition] || CONDITION.medium)[0])}${j.who ? " · " + esc(j.who) : ""}</span></div><b>${fmtMin(j.total)}</b></li>`), "")}</div>` : ""}`;
+}
+async function workStart(f) {
+  need(SERVICES[f.service], "Pick a service.");
+  need(!S.active || !S.active.service, "A job is already running.");
+  const appt = f.appt ? S.appts.get(f.appt) : null;
+  const now = Date.now();
+  await saveActive({ service: f.service, condition: CONDITION[f.condition] ? f.condition : "medium", appt: appt ? appt.id : "", who: appt ? (S.leads.get(appt.lead) || {}).name || "" : "", i: 0, jobStart: now, stepStart: now, pausedAt: null, done: [] });
+}
+async function workNext(skip) {
+  const a = JSON.parse(JSON.stringify(S.active)); need(a && a.service, "No job running.");
+  const steps = STEPS[a.service], now = Date.now();
+  if (a.pausedAt) { a.stepStart += now - a.pausedAt; a.jobStart += now - a.pausedAt; a.pausedAt = null; }
+  a.done.push({ k: steps[a.i][0], sec: Math.round((now - a.stepStart) / 1000), skipped: !!skip });
+  if (a.i + 1 < steps.length) { a.i++; a.stepStart = now; await saveActive(a); return null; }
+  const total = Math.round(a.done.filter((d) => !d.skipped).reduce((s, d) => s + d.sec, 0));
+  await put("timings", newId("timings"), { date: today(), service: a.service, condition: a.condition, appt: a.appt, who: a.who, steps: a.done, total });
+  await clearActive();
+  return { total, appt: a.appt, service: a.service };
+}
+async function workPause(on) {
+  const a = JSON.parse(JSON.stringify(S.active)); need(a && a.service, "No job running.");
+  const now = Date.now();
+  if (on && !a.pausedAt) a.pausedAt = now;
+  if (!on && a.pausedAt) { a.stepStart += now - a.pausedAt; a.jobStart += now - a.pausedAt; a.pausedAt = null; }
+  await saveActive(a);
+}
+setInterval(() => { // refresh only the clock, so nothing you're doing gets redrawn
+  const el = document.getElementById("worktimer"), a = S.active;
+  if (!el || !a || !a.service) return;
+  const now = Date.now(), sec = stepElapsed(a, now);
+  el.textContent = fmt(sec); el.classList.toggle("over", sec > Number(el.dataset.goal));
+  const tot = document.getElementById("worktotal"); if (tot) tot.textContent = fmt(((a.pausedAt || now) - a.jobStart) / 1000);
+}, 1000);
+
 // ---------------------------------------------------------------- render loop
 let pendingRender = false;
 function render(force) {
@@ -599,7 +729,7 @@ function render(force) {
   if (!force && a && root.contains(a) && /INPUT|TEXTAREA|SELECT/.test(a.tagName)) { pendingRender = true; return; } // don't wipe what you're typing
   pendingRender = false;
   const open = new Set(Array.from(root.querySelectorAll("details[open]")).map((d) => d.dataset.key));
-  const fn = { today: vToday, leads: vLeads, newlead: vNewLead, lead: () => vLead(sub), book: vBook, posts: vPosts, post: () => vPost(sub), replies: vReplies, prospects: vProspects, plan: vPlan, weekly: vWeekly, setup: vSetup, more: vMore }[view] || vToday;
+  const fn = { today: vToday, leads: vLeads, newlead: vNewLead, lead: () => vLead(sub), book: vBook, posts: vPosts, post: () => vPost(sub), replies: vReplies, prospects: vProspects, plan: vPlan, weekly: vWeekly, setup: vSetup, more: vMore, work: vWork }[view] || vToday;
   root.innerHTML = gate || fn();
   root.querySelectorAll("details[data-key]").forEach((d) => { if (open.has(d.dataset.key)) d.open = true; });
   document.getElementById("tabs").innerHTML = TABS.map(([v, l]) => `<button ${go(v)} class="${tabOf(view) === v || (view === "newlead" && v === "leads") || (view === "lead" && v === "leads") || (view === "post" && v === "posts") ? "on" : ""}" aria-label="${l}"><svg viewBox="0 0 24 24" aria-hidden="true">${ICONS[v]}</svg>${l}</button>`).join("");
@@ -642,6 +772,11 @@ document.addEventListener("click", (e) => {
     cash: () => run(() => saveSettings({ cash_mode: v }), v === "yes" ? "Cash mode on." : "Cash mode off."),
     week: () => { reportWeek = plusDays(Number(v), weekBounds(reportWeek)[0]); render(true); },
     backup: () => saveBackup(),
+    worknext: () => run(async () => { const r = await workNext(false); if (r) toast(`Job done in ${fmtMin(r.total)}.${r.appt ? " Now record the payment on the lead." : ""}`); }),
+    workskip: () => run(() => workNext(true)),
+    workpause: () => run(() => workPause(true), "Paused. Tap Resume when you're back."),
+    workresume: () => run(() => workPause(false)),
+    workcancel: () => run(clearActive, "Job timer cancelled."),
   };
   if (acts[t.dataset.act]) acts[t.dataset.act]();
 });
@@ -655,6 +790,7 @@ document.addEventListener("submit", (e) => {
   const f = {}; new FormData(form).forEach((val, k) => { f[k] = typeof val === "string" ? val : ""; });
   const id = form.dataset.id;
   const handlers = {
+    workstart: () => run(() => workStart(f), "Timer started. One step at a time."),
     newlead: () => run(async () => { const nid = await createLead(f); view = "lead"; sub = nid; }, "Lead added. Reply now - fast replies win jobs."),
     editlead: () => run(() => leadAct(id, (l) => { const n = leadFromForm(f, l); need(STATUSES.includes(f.status), "Pick a status."); if (f.status === "Lost" && l.status !== "Lost") ev(n, "lost", f.lostReason); n.status = f.status; n.next = isDate(f.next) ? f.next : null; n.repeat = isDate(f.repeat) ? f.repeat : null; n.lostReason = clean(f.lostReason, 200); Object.assign(l, n); }), "Saved."),
     quote: () => run(() => leadAct(id, (l) => { need(SERVICES[f.service], "Pick a service."); let p = num(f.price, "Price"); if (p == null) p = SERVICES[f.service].price; l.status = "Quote Sent"; l.service = f.service; l.quote = p; l.lastContact = today(); l.next = plusDays(2); ev(l, "quote_sent", `${SERVICES[f.service].label} $${p}`); }), "Quote logged. Follow-up in 2 days."),
@@ -694,7 +830,7 @@ async function saveBackup() {
 let gate = "";
 (function boot() {
   const h = (location.hash || "").slice(1);
-  if (["today", "leads", "book", "posts", "replies", "prospects", "plan", "weekly", "setup", "more"].includes(h)) view = h;
+  if (["today", "leads", "book", "work", "posts", "replies", "prospects", "plan", "weekly", "setup", "more"].includes(h)) view = h;
   render(true);
 })();
 (async function connect() {
@@ -708,6 +844,7 @@ let gate = "";
   const done = (name) => { S.loaded.add(name); sync.textContent = S.loaded.size >= COLS.length + 1 ? "Saved in your Claude account" : "Loading…"; render(); };
   const fail = (e) => { sync.textContent = "Connection lost - reload"; console.warn(e && e.code); };
   COLS.forEach((c) => db.collection(c).onSnapshot((snap) => { S[c] = new Map(snap.docs.map((x) => [x.id, Object.assign({ id: x.id }, x.data())])); done(c); }, fail));
+  db.doc("config/activejob").onSnapshot((snap) => { S.active = snap.exists ? Object.assign({}, snap.data()) : null; render(); }, fail);
   db.doc("config/settings").onSnapshot((snap) => { S.settings = snap.exists ? Object.assign({}, snap.data()) : {}; done("settings"); }, fail);
 })();
 })();
