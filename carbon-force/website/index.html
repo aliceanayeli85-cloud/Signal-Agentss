@@ -1,0 +1,230 @@
+<title>Carbon Force Detailing</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<meta name="description" content="Garage-based car detailing in Melrose Park, IL. Interior $80, exterior $60, full detail $140. Drop-off Mon-Sat 9-11am. Call or text 224-545-7135.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:ital,wght@0,600;0,700;1,700;1,800;1,900&family=Public+Sans:wght@400;500;600;700&display=swap">
+<style>
+/* Layout: full-bleed dark bands, centered 1080px column; hero headline is the brand moment, everything else stays quiet. One committed look from the flyer: carbon black, race red, white. */
+:root {
+  --carbon: #0a0a0c; --panel: #141418; --panel-2: #1d1d23; --line: #2c2c34;
+  --white: #f5f5f7; --steel: #a7a7b2; --red: #e3262f; --red-hi: #ff444b;
+  --display: "Barlow Condensed", "Arial Narrow", Impact, sans-serif;
+  --body: "Public Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  color-scheme: dark;
+}
+* { box-sizing: border-box }
+html { scroll-behavior: smooth }
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto } * { animation: none !important; transition: none !important } }
+body { margin: 0; background: var(--carbon); color: var(--white); font: 17px/1.55 var(--body) }
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 30; background: var(--carbon) }
+.band { padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)) }
+.inner { max-width: 1080px; margin: 0 auto }
+a { color: var(--white) }
+a:focus-visible, button:focus-visible, summary:focus-visible { outline: 3px solid var(--red-hi); outline-offset: 3px }
+.carbon { background-color: var(--carbon);
+  background-image: repeating-linear-gradient(45deg, rgba(255,255,255,.03) 0 3px, transparent 3px 8px), repeating-linear-gradient(-45deg, rgba(255,255,255,.022) 0 3px, transparent 3px 8px) }
+
+/* header */
+header.bar { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 20; border-bottom: 2px solid var(--red) }
+header.bar .inner { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding-block: 12px }
+.mark { font: italic 900 24px/0.9 var(--display); text-transform: uppercase; letter-spacing: .01em; text-decoration: none }
+.mark em { color: var(--red); font-style: italic; display: block }
+.callbtn { font: 700 15px var(--body); background: var(--red); color: #fff; text-decoration: none; border-radius: 999px; padding: 10px 16px; white-space: nowrap }
+.callbtn:hover { background: var(--red-hi) }
+
+/* hero */
+.hero { position: relative; overflow: hidden; border-bottom: 1px solid var(--line) }
+.hero::after { content: ""; position: absolute; right: -12%; top: 0; bottom: 0; width: 46%; background: linear-gradient(100deg, transparent 0 18%, var(--red) 18% 21%, transparent 21% 26%, rgba(227,38,47,.35) 26% 27.5%, transparent 27.5%); transform: skewX(-12deg); pointer-events: none; opacity: .9 }
+.hero .inner { position: relative; z-index: 1; padding-block: 56px 60px; display: flex; flex-direction: column; gap: 22px }
+.kicker { font: 700 13px/1.3 var(--body); text-transform: uppercase; letter-spacing: .18em; color: var(--steel) }
+.kicker b { color: var(--red-hi) }
+.hero h1 { margin: 0; font: italic 900 clamp(58px, 13vw, 132px)/.86 var(--display); text-transform: uppercase; letter-spacing: -.005em; text-wrap: balance }
+.hero h1 span { display: block }
+.hero h1 .r { color: var(--red) }
+.hero p.lede { margin: 0; max-width: 34ch; font-size: 19px; color: var(--steel) }
+.hero p.lede b { color: var(--white) }
+.cta { display: flex; flex-wrap: wrap; gap: 10px; align-items: center }
+.phone { display: inline-flex; align-items: center; gap: 12px; background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 10px 10px 10px 16px }
+.phone .num { font: italic 800 30px/1 var(--display); letter-spacing: .02em; font-variant-numeric: tabular-nums; user-select: all }
+.phone small { display: block; font: 600 11px/1.2 var(--body); text-transform: uppercase; letter-spacing: .14em; color: var(--steel); margin-bottom: 4px }
+.btn { font: 700 15px var(--body); border-radius: 10px; padding: 11px 16px; border: 1px solid var(--red); background: var(--red); color: #fff; cursor: pointer; text-decoration: none; display: inline-block }
+.btn.ghost { background: transparent; border-color: var(--line); color: var(--white) }
+.btn:hover { filter: brightness(1.1) }
+.facts { display: flex; flex-wrap: wrap; gap: 8px; padding: 0; margin: 0; list-style: none }
+.facts li { font-size: 14px; padding: 6px 12px; border: 1px solid var(--line); border-radius: 999px; color: var(--steel); background: rgba(20,20,24,.7) }
+
+/* sections */
+section .inner { padding-block: 64px }
+.eyebrow { font: 700 12px/1.3 var(--body); text-transform: uppercase; letter-spacing: .18em; color: var(--red-hi); margin: 0 0 8px }
+h2 { margin: 0 0 12px; font: italic 900 clamp(40px, 7vw, 64px)/.92 var(--display); text-transform: uppercase; text-wrap: balance }
+.sub { margin: 0 0 32px; color: var(--steel); max-width: 60ch }
+
+/* menu */
+.menu { display: grid; grid-template-columns: repeat(auto-fit, minmax(270px, 1fr)); gap: 16px; align-items: stretch }
+.svc { background: var(--panel); border: 1px solid var(--line); border-radius: 16px; padding: 22px; display: flex; flex-direction: column; gap: 14px; min-width: 0 }
+.svc.best { border-color: var(--red); box-shadow: 0 0 0 1px var(--red) inset }
+.svc .top { display: flex; justify-content: space-between; align-items: start; gap: 10px }
+.svc h3 { margin: 0; font: italic 800 30px/1 var(--display); text-transform: uppercase }
+.tag { font: 700 11px/1 var(--body); text-transform: uppercase; letter-spacing: .12em; background: var(--red); color: #fff; padding: 6px 8px; border-radius: 6px; white-space: nowrap }
+.price { font: italic 900 64px/.9 var(--display); font-variant-numeric: tabular-nums }
+.price sup { font-size: 28px; vertical-align: top; margin-right: 2px; color: var(--steel) }
+.svc ul { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 7px }
+.svc li { padding-left: 24px; position: relative; color: var(--steel); font-size: 15.5px }
+.svc li::before { content: ""; position: absolute; left: 2px; top: .55em; width: 12px; height: 6px; border-left: 2.5px solid var(--red); border-bottom: 2.5px solid var(--red); transform: rotate(-45deg) }
+.svc .time { margin-top: auto; font-size: 14px; color: var(--steel); border-top: 1px solid var(--line); padding-top: 12px }
+.note { margin-top: 18px; padding: 14px 16px; border-radius: 12px; background: var(--panel-2); color: var(--steel); font-size: 15px }
+.note b { color: var(--white) }
+
+/* ticket */
+.ticket { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 0; border: 1px dashed #4a4a55; border-radius: 16px; overflow: hidden; background: var(--panel) }
+.stub { padding: 22px; border-right: 1px dashed #4a4a55; display: flex; flex-direction: column; gap: 6px; min-width: 0 }
+.stub:last-child { border-right: 0 }
+.stub .n { font: italic 900 44px/1 var(--display); color: var(--red) }
+.stub h3 { margin: 0; font: italic 800 24px/1.05 var(--display); text-transform: uppercase }
+.stub p { margin: 0; color: var(--steel); font-size: 15.5px }
+@media (max-width: 560px) { .stub { border-right: 0; border-bottom: 1px dashed #4a4a55 } .stub:last-child { border-bottom: 0 } }
+
+/* details grid */
+.split { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px }
+.info { background: var(--panel); border: 1px solid var(--line); border-radius: 16px; padding: 22px; min-width: 0 }
+.info dl { margin: 0; display: grid; grid-template-columns: auto 1fr; gap: 12px 18px }
+.info dt { font: 700 12px/1.6 var(--body); text-transform: uppercase; letter-spacing: .14em; color: var(--steel) }
+.info dd { margin: 0; font-weight: 600 }
+.why { display: flex; flex-direction: column; gap: 16px; margin: 0; padding: 0; list-style: none }
+.why li { display: grid; grid-template-columns: 40px 1fr; gap: 4px 12px }
+.why .ico { grid-row: span 2; width: 40px; height: 40px; border-radius: 10px; background: var(--panel-2); display: grid; place-items: center }
+.why svg { width: 22px; height: 22px; stroke: var(--red-hi); fill: none; stroke-width: 2 }
+.why b { font: italic 800 21px/1.1 var(--display); text-transform: uppercase; letter-spacing: .01em }
+.why span { color: var(--steel); font-size: 15.5px }
+
+/* faq */
+.faq { display: flex; flex-direction: column; border-top: 1px solid var(--line) }
+.faq details { border-bottom: 1px solid var(--line) }
+.faq summary { cursor: pointer; list-style: none; padding: 18px 40px 18px 0; position: relative; font: italic 800 24px/1.1 var(--display); text-transform: uppercase }
+.faq summary::-webkit-details-marker { display: none }
+.faq summary::after { content: "+"; position: absolute; right: 6px; top: 14px; font: 700 28px/1 var(--body); color: var(--red) }
+.faq details[open] summary::after { content: "–" }
+.faq details p { margin: 0 0 18px; color: var(--steel); max-width: 64ch }
+
+/* closing */
+.closing .inner { text-align: left; display: flex; flex-direction: column; gap: 18px; padding-block: 70px }
+.closing h2 { font-size: clamp(46px, 9vw, 92px) }
+footer .inner { padding-block: 28px; display: flex; flex-wrap: wrap; gap: 8px 24px; justify-content: space-between; color: var(--steel); font-size: 14px; border-top: 1px solid var(--line) }
+.copied { color: var(--red-hi); font-size: 14px; min-height: 1.2em }
+</style>
+
+<header class="bar band carbon"><div class="inner">
+  <a class="mark" href="#top" aria-label="Carbon Force Detailing, back to top">Carbon Force<em>Detailing</em></a>
+  <a class="callbtn" href="tel:+12245457135">Call / Text 224-545-7135</a>
+</div></header>
+
+<main id="top">
+<div class="hero band carbon"><div class="inner">
+  <div class="kicker"><b>Garage-based</b> car detailing · Melrose Park, IL</div>
+  <h1><span>Cleaner.</span><span>Shinier.</span><span class="r">Better.</span></h1>
+  <p class="lede">Drop your car off in the morning, pick it up clean the same day. <b>One-person shop</b>, honest prices, and your car gets my full attention.</p>
+  <div class="cta">
+    <div class="phone"><div><small>Call or text to book</small><span class="num" id="num">224-545-7135</span></div><button class="btn" type="button" id="copybtn">Copy</button></div>
+    <a class="btn ghost" href="#prices">See prices</a>
+  </div>
+  <div class="copied" id="copied" aria-live="polite"></div>
+  <ul class="facts"><li>Interior from $80</li><li>Full detail $140</li><li>Drop-off Mon–Sat, 9–11am</li><li>Apple Cash · Zelle · Cash</li></ul>
+</div></div>
+
+<section id="prices" class="band"><div class="inner">
+  <p class="eyebrow">Service menu</p>
+  <h2>Pick your detail</h2>
+  <p class="sub">Simple prices, no surprise add-ons. Every car is done by hand with P&amp;S professional products.</p>
+  <div class="menu">
+    <article class="svc">
+      <div class="top"><h3>Interior</h3></div>
+      <div class="price"><sup>$</sup>80</div>
+      <ul><li>Full interior and trunk vacuum</li><li>Dash, console and door panels wiped down</li><li>Cup holders cleaned</li><li>Windows and floor mats cleaned</li><li>Light stain removal</li><li>Headliner spot cleaning</li></ul>
+      <div class="time">Ready the same day</div>
+    </article>
+    <article class="svc best">
+      <div class="top"><h3>Full Detail</h3><span class="tag">Whole car</span></div>
+      <div class="price"><sup>$</sup>140</div>
+      <ul><li>Everything in the interior detail</li><li>Everything in the exterior wash</li><li>Inside and out in one drop-off</li></ul>
+      <div class="time">Ready the same day, sometimes by evening</div>
+    </article>
+    <article class="svc">
+      <div class="top"><h3>Exterior</h3></div>
+      <div class="price"><sup>$</sup>60</div>
+      <ul><li>Hand wash</li><li>Wheels and tires cleaned</li><li>Tire shine</li><li>Door jambs cleaned</li><li>Bug removal</li><li>Outside windows</li><li>Spray wax protection</li></ul>
+      <div class="time">Ready the same day</div>
+    </article>
+  </div>
+  <p class="note"><b>Prices are for a car in normal condition.</b> Heavy pet hair, deep stains or a very dirty car can cost more. Text me a photo first and I'll give you an exact price before you drop off. No surprises at pickup.</p>
+</div></section>
+
+<section id="how" class="band carbon"><div class="inner">
+  <p class="eyebrow">How it works</p>
+  <h2>Drop it off. Pick it up clean.</h2>
+  <p class="sub">I'm not a mobile detailer. Everything is set up in my garage, so your car comes to me.</p>
+  <div class="ticket">
+    <div class="stub"><span class="n">1</span><h3>Text me</h3><p>Tell me your car and which detail you want. I'll send the drop-off times I have open.</p></div>
+    <div class="stub"><span class="n">2</span><h3>Drop off</h3><p>Monday to Saturday, between 9 and 11am, at my garage in Melrose Park. I send the address when you book.</p></div>
+    <div class="stub"><span class="n">3</span><h3>I detail it</h3><p>Same order and same care on every car. I text you the moment it's done.</p></div>
+    <div class="stub"><span class="n">4</span><h3>Pick up + pay</h3><p>Same day. Pay with Apple Cash, Zelle or cash.</p></div>
+  </div>
+</div></section>
+
+<section id="details" class="band"><div class="inner">
+  <div class="split">
+    <div class="info">
+      <p class="eyebrow">The details</p>
+      <dl>
+        <dt>Drop-off</dt><dd>Monday – Saturday, 9–11am</dd>
+        <dt>Pickup</dt><dd>Same day. I text you when it's ready.</dd>
+        <dt>Where</dt><dd>Melrose Park, IL (garage-based; address sent when you book)</dd>
+        <dt>Payment</dt><dd>Apple Cash, Zelle or cash</dd>
+        <dt>Book</dt><dd>Call or text 224-545-7135, or message Carbon Force Detailing on Nextdoor</dd>
+      </dl>
+    </div>
+    <div class="info">
+      <p class="eyebrow">Why Carbon Force</p>
+      <ul class="why">
+        <li><span class="ico"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c1-4 4-6 8-6s7 2 8 6"/></svg></span><b>One person, full attention</b><span>Your car isn't one of twenty in a line. I do every car myself.</span></li>
+        <li><span class="ico"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 3h6M10 3v5l-5 9a2 2 0 0 0 2 3h10a2 2 0 0 0 2-3l-5-9V3"/></svg></span><b>Pro-grade products</b><span>I use P&amp;S detailing products on every job.</span></li>
+        <li><span class="ico"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12h4l3 7 4-14 3 7h4"/></svg></span><b>Straight answers</b><span>Price up front. If a stain won't come out, I'll tell you instead of overcharging.</span></li>
+      </ul>
+    </div>
+  </div>
+</div></section>
+
+<section id="faq" class="band carbon"><div class="inner">
+  <p class="eyebrow">Questions</p>
+  <h2>Good to know</h2>
+  <div class="faq">
+    <details><summary>Do you come to me?</summary><p>No, I'm drop-off only. My setup is in my garage in Melrose Park, so you bring the car to me between 9 and 11am, Monday to Saturday.</p></details>
+    <details><summary>How long does it take?</summary><p>You get it back the same day. A full detail can take until the evening. I text you as soon as it's done.</p></details>
+    <details><summary>Can you get this stain out?</summary><p>Text me a photo and I'll tell you honestly. Fresh spills usually come out well. Old, set-in stains sometimes don't, and I'd rather tell you that up front.</p></details>
+    <details><summary>My car has a lot of dog hair. Is that extra?</summary><p>Sometimes. Send a photo before you book and I'll quote you an exact price, so there are no surprises when you pick it up.</p></details>
+    <details><summary>What don't you do?</summary><p>Right now I don't do paint correction, polishing, ceramic coatings, carpet extraction or mobile service. If your car needs one of those, I'll tell you.</p></details>
+    <details><summary>How do I pay?</summary><p>Apple Cash, Zelle or cash when you pick up your car.</p></details>
+  </div>
+</div></section>
+
+<section class="closing band"><div class="inner">
+  <p class="eyebrow">Ready when you are</p>
+  <h2>Book your detail</h2>
+  <div class="cta">
+    <div class="phone"><div><small>Call or text</small><span class="num">224-545-7135</span></div><a class="btn" href="tel:+12245457135">Call</a></div>
+  </div>
+  <p class="sub" style="margin:0">Or search <b style="color:var(--white)">Carbon Force Detailing</b> on Nextdoor and send a message.</p>
+</div></section>
+</main>
+
+<footer class="band"><div class="inner"><span>© Carbon Force Detailing · Melrose Park, IL</span><span>Garage-based · Drop-off only · 224-545-7135</span></div></footer>
+
+<script>
+(function () {
+  var btn = document.getElementById("copybtn"), out = document.getElementById("copied"), num = document.getElementById("num");
+  btn.addEventListener("click", function () {
+    var done = function () { out.textContent = "Number copied. Paste it into your phone app."; btn.textContent = "Copied"; setTimeout(function () { btn.textContent = "Copy"; }, 2000); };
+    var fallback = function () { var r = document.createRange(); r.selectNodeContents(num); var s = getSelection(); s.removeAllRanges(); s.addRange(r); out.textContent = "Number selected. Tap Copy in the menu."; };
+    try { navigator.clipboard.writeText("224-545-7135").then(done, fallback); } catch (e) { fallback(); }
+  });
+})();
+</script>
