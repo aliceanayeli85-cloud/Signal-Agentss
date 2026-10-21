@@ -79,6 +79,11 @@ section .inner { padding-block: 88px }
 .fine::before { content: ""; width: 3px; background: var(--red) }
 .fine b { color: var(--paper); font-weight: 600 }
 
+.addons { margin-top: 40px; border-top: 1px solid var(--rule-2); padding-top: 18px }
+.addons ul { list-style: none; margin: 14px 0 0; padding: 0; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0 28px }
+.addons li { padding: 11px 0; border-bottom: 1px solid var(--rule); font-size: 15px }
+@media (max-width: 860px) { .addons ul { grid-template-columns: repeat(2, minmax(0, 1fr)) } }
+@media (max-width: 420px) { .addons ul { grid-template-columns: 1fr } }
 /* process */
 .steps { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0; counter-reset: s; border-top: 1px solid var(--rule-2) }
 .step { padding: 26px 26px 0 0; position: relative }
@@ -161,6 +166,8 @@ footer .inner { display: flex; flex-wrap: wrap; justify-content: space-between; 
     <ul><li>Two-bucket hand wash</li><li>Wheels and tires cleaned</li><li>Tire shine</li><li>Door jambs cleaned</li><li>Bug removal</li><li>Outside windows</li><li>Spray wax protection</li></ul>
     <div class="price">$60<small>Same day</small></div></article>
   <p class="fine"><span><b>Prices are for a car in normal condition.</b> Heavy pet hair, deep stains or a very dirty car can cost more. Text a photo first and you'll get an exact price before you drop off, so there's nothing new at pickup.</span></p>
+  <div class="addons"><div class="label">Add-ons · ask for a price</div><ul>
+    <li>Pet hair removal</li><li>Odor bomb treatment</li><li>Headliner cleaning</li><li>Engine bay cleaning</li><li>Spray ceramic sealant</li><li>Salt removal</li><li>Wax &amp; sealant protection</li><li>Wheel &amp; tire deep clean</li></ul></div>
 </div></section>
 
 <section id="process" class="band"><div class="inner">
@@ -200,7 +207,7 @@ footer .inner { display: flex; flex-wrap: wrap; justify-content: space-between; 
     </div>
     <div>
       <details><summary>Is dog hair extra?</summary><p>Sometimes. Send a photo before you book and you'll get an exact price, so there are no surprises at pickup.</p></details>
-      <details><summary>What services don't you offer?</summary><p>Right now: no paint correction, polishing, ceramic coatings, carpet extraction or mobile service. If your car needs one of those, you'll be told up front.</p></details>
+      <details><summary>What services don't you offer?</summary><p>Right now: no paint correction, polishing, full ceramic coatings, carpet extraction or mobile service. Ceramic coating and paint correction are coming once training is finished. If your car needs one of those, you'll be told up front.</p></details>
       <details><summary>How do I pay?</summary><p>Apple Cash, Zelle or cash when you pick up your car.</p></details>
     </div>
   </div>

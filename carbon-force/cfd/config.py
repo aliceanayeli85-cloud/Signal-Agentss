@@ -23,7 +23,7 @@ BANNED_CLAIMS = [
     "i come to you",
     "at your home",
     "at your location",
-    "ceramic",
+    "ceramic coating",
     "paint correction",
     "polish",
     "buffing",
