@@ -1,0 +1,992 @@
+<title>Carbon Force Command Center</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:ital,wght@0,600;0,700;1,700;1,800&family=Public+Sans:wght@400;500;600;700&display=swap">
+<style>
+/* Layout: one-column phone app, sticky brand bar, fixed bottom tab bar. Theme: Carbon Force flyer - carbon black, race red, white, slanted heavy condensed type. */
+:root {
+  --bg: #0b0b0d; --surface: #16161a; --sunk: #222228; --fg: #f4f4f6; --muted: #a3a3ad; --line: #2d2d35;
+  --accent: #e3262f; --accent-hi: #ff4148; --accent-fg: #ffffff; --ok: #4fcf83; --warn: #f5ab3c; --bad: #ff8f87;
+  --display: "Barlow Condensed", "Arial Narrow", Impact, system-ui, sans-serif;
+  --body: "Public Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --r: 12px; color-scheme: dark;
+}
+* { box-sizing: border-box }
+[hidden] { display: none !important }
+body { background: var(--bg); color: var(--fg); font: 16px/1.45 var(--body); margin: 0;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 0 calc(84px + env(safe-area-inset-bottom, 0px)); }
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 10; background: var(--bg) }
+.wrap { max-width: 720px; margin: 0 auto; display: flex; flex-direction: column; gap: 14px }
+header.top { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5; background: var(--bg); padding-block: 12px 8px;
+  display: flex; align-items: baseline; justify-content: space-between; gap: 8px; border-bottom: 1px solid var(--line) }
+.brand { font: italic 800 24px/1 var(--display); letter-spacing: .01em; text-transform: uppercase; color: var(--fg) }
+.brand em { font-style: italic; color: var(--accent) }
+.brand small { display: block; font: 500 11px/1.4 var(--body); color: var(--muted); text-transform: uppercase; letter-spacing: .12em; margin-top: 3px }
+header.top { background-color: var(--bg); background-image: repeating-linear-gradient(45deg, rgba(255,255,255,.025) 0 2px, transparent 2px 6px), repeating-linear-gradient(-45deg, rgba(255,255,255,.02) 0 2px, transparent 2px 6px); border-bottom: 2px solid var(--accent) !important }
+.sync { font-size: 12px; color: var(--muted) }
+h1 { font: italic 800 34px/1 var(--display); margin: 8px 0 0; text-wrap: balance; letter-spacing: .01em; text-transform: uppercase }
+h2 { font: italic 700 21px/1.15 var(--display); margin: 0 0 8px; letter-spacing: .03em; text-transform: uppercase }
+h3 { font-size: 15px; margin: 12px 0 4px }
+p { margin: 0 0 8px }
+.muted, .hint { color: var(--muted) } .hint { font-size: 13px; display: block; font-weight: 400; margin-top: 2px }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); padding: 14px; min-width: 0 }
+.card.warn { box-shadow: inset 4px 0 0 var(--warn) } .card.bad { box-shadow: inset 4px 0 0 var(--accent) } .card.ok { box-shadow: inset 4px 0 0 var(--ok) }
+.stack { display: flex; flex-direction: column; gap: 14px }
+.row { display: flex; flex-wrap: wrap; gap: 8px }
+.row > * { flex: 1 1 140px; min-width: 0 }
+ul.list { list-style: none; padding: 0; margin: 0 }
+ul.list li { padding: 10px 0; border-bottom: 1px solid var(--line); display: flex; justify-content: space-between; gap: 10px; align-items: flex-start }
+ul.list li:last-child { border-bottom: 0 }
+ul.list .main { min-width: 0; flex: 1 }
+ol.todo { margin: 0; padding-left: 22px } ol.todo li { margin: 6px 0 }
+.pill { display: inline-block; font-size: 12px; font-weight: 600; padding: 2px 8px; border-radius: 99px; border: 1px solid currentColor; white-space: nowrap }
+.p-warn { color: var(--warn) } .p-ok { color: var(--ok) } .p-bad { color: var(--bad) } .p-mute { color: var(--muted) }
+.p-solid { background: var(--ok); color: #06210f; border-color: var(--ok) }
+.big { font: italic 800 40px/1 var(--display); font-variant-numeric: tabular-nums }
+.nums { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px }
+.nums div { background: var(--sunk); border-radius: 8px; padding: 10px }
+.nums b { display: block; font: italic 700 26px/1.1 var(--display); font-variant-numeric: tabular-nums }
+.nums span { font-size: 13px; color: var(--muted) }
+label { display: block; font-weight: 600; font-size: 14px }
+input, select, textarea { display: block; width: 100%; margin-top: 4px; padding: 10px; font: 16px var(--body);
+  color: var(--fg); background: var(--bg); border: 1px solid var(--line); border-radius: 8px }
+textarea { min-height: 120px; resize: vertical }
+input[type=checkbox] { display: inline-block; width: 20px; height: 20px; margin: 0 8px 0 0; vertical-align: middle }
+form.f { display: flex; flex-direction: column; gap: 10px }
+button, .btn { font: 700 15px var(--body); letter-spacing: .01em; border-radius: 8px; padding: 11px 14px; border: 1px solid var(--accent);
+  background: var(--accent); color: var(--accent-fg); cursor: pointer; text-decoration: none; display: inline-block; text-align: center }
+button.ghost { background: transparent; color: var(--fg); border-color: var(--line) }
+button.small { padding: 7px 10px; font-size: 14px }
+button.danger { background: transparent; color: var(--bad); border-color: var(--bad) }
+button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible, summary:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px }
+.btns { display: flex; flex-wrap: wrap; gap: 8px }
+a { color: var(--accent) }
+a.rowlink { color: var(--fg); font-weight: 600; text-decoration: none }
+.copy { position: relative; margin: 6px 0 4px }
+.copy pre { white-space: pre-wrap; word-wrap: break-word; margin: 0; font: 15px/1.45 var(--body); background: var(--sunk);
+  border-radius: 8px; padding: 12px 12px 48px }
+.copy button { position: absolute; right: 8px; bottom: 8px }
+details { border-top: 1px solid var(--line); padding: 8px 0 }
+details:first-of-type { border-top: 0 }
+summary { cursor: pointer; font-weight: 600; padding: 4px 0; list-style-position: outside }
+.chips { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 4px }
+.chips button { flex: 0 0 auto; padding: 6px 12px; font-size: 14px; background: var(--surface); color: var(--fg); border-color: var(--line); border-radius: 99px }
+.chips button.on { background: var(--accent); color: var(--accent-fg); border-color: var(--accent) }
+.tablewrap { overflow-x: auto } table { border-collapse: collapse; width: 100%; font-size: 14px; font-variant-numeric: tabular-nums }
+th, td { text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--line); white-space: nowrap }
+nav.tabs { position: fixed; left: 0; right: 0; bottom: 0; z-index: 6; background: var(--surface); border-top: 1px solid var(--line);
+  display: grid; grid-template-columns: repeat(6, 1fr);
+  padding: 4px max(8px, env(safe-area-inset-right, 0px)) calc(4px + env(safe-area-inset-bottom, 0px)) max(8px, env(safe-area-inset-left, 0px)) }
+nav.tabs button { background: transparent; border: 0; color: var(--muted); padding: 8px 2px; font-size: 12px; border-radius: 8px; display: flex; flex-direction: column; align-items: center; gap: 2px }
+nav.tabs button svg { width: 22px; height: 22px; stroke: currentColor; fill: none; stroke-width: 1.8 }
+nav.tabs button.on { color: var(--accent-hi) }
+.toast { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(80px + env(safe-area-inset-bottom, 0px)); z-index: 20;
+  background: var(--fg); color: var(--bg); padding: 10px 14px; border-radius: 8px; max-width: calc(100% - 32px); font-size: 15px; box-shadow: 0 4px 16px rgba(0,0,0,.2) }
+.toast.err { background: var(--accent); color: #fff }
+.back { background: none; border: 0; color: var(--accent); padding: 4px 0; font-weight: 600 }
+.morelist button { width: 100%; text-align: left; background: var(--surface); color: var(--fg); border-color: var(--line); padding: 14px }
+.empty { color: var(--muted); padding: 6px 0 }
+.timer { font: italic 800 68px/1 var(--display); font-variant-numeric: tabular-nums; letter-spacing: .02em }
+.timer.over { color: var(--warn) }
+.stepname { font: italic 800 40px/1 var(--display); text-transform: uppercase; letter-spacing: .01em; text-wrap: balance; margin: 0 }
+.eyebrow { display: block; font: 700 11px/1.3 var(--body); text-transform: uppercase; letter-spacing: .14em; color: var(--muted); margin-bottom: 4px }
+.jobhead { display: flex; justify-content: space-between; align-items: end; gap: 10px; margin-top: 8px }
+.stepcount { font: italic 700 18px/1 var(--display); color: var(--muted) } .stepcount b { font-size: 34px; color: var(--accent) }
+.stepcard { display: flex; flex-direction: column; gap: 12px; border-top: 3px solid var(--accent) }
+.why { color: var(--muted); margin: 0 }
+.clock { display: flex; align-items: center; justify-content: space-between; gap: 12px; background: var(--sunk); border-radius: 10px; padding: 12px 14px }
+.goal { text-align: right; font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: .1em } .goal b { font: italic 700 26px/1 var(--display); color: var(--fg); letter-spacing: 0 }
+.small { font-size: 14px; margin: 0 }
+.checks { display: flex; flex-direction: column; gap: 6px }
+button.check { display: flex; align-items: center; gap: 12px; width: 100%; text-align: left; background: var(--sunk); color: var(--fg); border: 1px solid var(--line); padding: 12px; font-weight: 500 }
+button.check .box { flex: 0 0 26px; height: 26px; border: 2px solid var(--muted); border-radius: 6px; display: grid; place-items: center; font-weight: 800; color: var(--accent-fg) }
+button.check.on { color: var(--muted); text-decoration: line-through; border-color: var(--accent) } button.check.on .box { background: var(--accent); border-color: var(--accent) }
+.donewhen, .dont { border-radius: 10px; padding: 10px 12px; font-weight: 600 }
+.donewhen { background: color-mix(in srgb, var(--ok) 14%, transparent); border: 1px solid color-mix(in srgb, var(--ok) 45%, transparent) }
+.donewhen .eyebrow { color: var(--ok) }
+.dont { background: color-mix(in srgb, var(--warn) 12%, transparent); border: 1px solid color-mix(in srgb, var(--warn) 40%, transparent); font-weight: 500 }
+.dont .eyebrow { color: var(--warn) }
+.tools { display: flex; flex-wrap: wrap; gap: 6px } .tool { font-size: 13px; padding: 4px 10px; border-radius: 99px; background: var(--sunk); color: var(--muted); border: 1px solid var(--line) }
+button.huge.ready { background: var(--ok); border-color: var(--ok); color: #06210f }
+.hero { border-top: 3px solid var(--accent) }
+.finish { border-top: 3px solid var(--ok) }
+ol.habits { list-style: none; counter-reset: h; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 10px }
+ol.habits li { counter-increment: h; display: grid; grid-template-columns: 34px 1fr; column-gap: 8px }
+ol.habits li::before { content: counter(h); grid-row: span 2; font: italic 800 30px/1 var(--display); color: var(--accent) }
+ol.habits span { color: var(--muted); font-size: 14px }
+ul.tight { margin: 6px 0; padding-left: 20px } ul.tight li { margin: 3px 0 }
+details .donewhen, details .dont { margin-top: 8px; font-size: 14px }
+.bar { height: 8px; background: var(--sunk); border-radius: 99px; overflow: hidden } .bar i { display: block; height: 100%; background: var(--accent) }
+button.huge { width: 100%; padding: 18px; font-size: 19px }
+.confirm { background: var(--sunk); border-radius: 8px; padding: 10px; display: flex; flex-direction: column; gap: 8px }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important } }
+</style>
+
+<header class="top"><div class="brand">Carbon Force <em>Detailing</em><small>Garage-based · Melrose Park</small></div><div class="sync" id="sync">Connecting…</div></header>
+<main class="wrap" id="view"><div class="card"><h2>Loading your business data</h2><p class="muted">Your leads, bookings and posts load from your private Claude storage. If this stays here, reopen the link while signed in to Claude.</p></div></main>
+<nav class="tabs" id="tabs" aria-label="Sections"></nav>
+<div id="toastbox"></div>
+
+<script type="application/json" id="d-posts">__POSTS__</script>
+<script type="application/json" id="d-replies">__REPLIES__</script>
+<script type="application/json" id="d-plan">__PLAN__</script>
+<script>
+(function () {
+"use strict";
+const J = (id) => JSON.parse(document.getElementById(id).textContent);
+const POSTS = J("d-posts"), REPLIES = J("d-replies"), PLAN = J("d-plan");
+
+// ---------------------------------------------------------------- fixed business facts
+const BUSINESS = "Carbon Force Detailing";
+const SERVICES = { interior: { label: "Interior detail", price: 80 }, exterior: { label: "Exterior cleaning", price: 60 }, full: { label: "Full interior + exterior package", price: 140 } };
+const SERVICE_CHOICES = ["interior", "exterior", "full", "unsure"];
+const svcLabel = (k) => SERVICES[k] ? `${SERVICES[k].label} ($${SERVICES[k].price})` : "Not sure yet";
+const BANNED = ["mobile", "we come to you", "i come to you", "at your home", "at your location", "ceramic coating", "paint correction", "polish", "buffing", "extraction", "shampoo extract", "fully booked", "booked solid", "only 1 spot", "only one spot", "spots left", "limited spots", "certified", "insured", "#1", "best in"];
+const STATUSES = ["New Lead", "Replied", "Quote Sent", "Follow-Up Due", "Booked", "Completed", "Lost"];
+const SOURCES = ["facebook_page", "facebook_group", "facebook_marketplace", "instagram", "google_business_profile", "google_search", "flyer", "referral", "repeat_customer", "partner", "nextdoor", "walk_by_or_sign", "other"];
+const METHODS = ["text", "call", "facebook_messenger", "instagram_dm", "email", "in_person", "other"];
+const PAY = ["cash", "zelle", "venmo", "cash_app", "card", "other"];
+const OPP_TYPES = ["facebook_group", "facebook_page", "google_business_profile", "local_search", "partnership", "directory", "referral_program", "community_event", "other"];
+const OPP_STATUS = ["to_research", "researched", "join_requested", "joined", "contacted", "posted", "active_partner", "no_response", "declined", "not_a_fit"];
+const RULES = { promo_allowed: "Business posts allowed (keep it neighborly)", promo_day_only: "Business posts only on the promo day/thread", recommendations_only: "No ads; answer recommendation requests only", no_business: "No business posts - just be a member", unknown: "Rules not checked yet - read them before posting" };
+const SETTINGS = [
+  ["booking_line", "How customers book", "Text or call 708-555-0000 to book", true],
+  ["phone", "Business phone", "708-555-0000", true],
+  ["area_line", "Public location wording (no street address)", "Melrose Park, near North Ave & 25th", true],
+  ["hours_line", "Drop-off hours you actually keep", "Drop-off Mon-Sat, 8-10am", true],
+  ["owner_first_name", "Your first name for messages", "", false],
+  ["payment_methods", "Payment you accept", "Cash, Zelle", true],
+  ["interior_includes", "What the $80 interior actually includes", "vacuum seats/carpet/trunk, wipe down dash, console, door panels, cup holders, inside glass", true],
+  ["exterior_includes", "What the $60 exterior actually includes", "hand wash, wheels and tires, dry, outside glass", true],
+  ["turnaround_line", "Honest turnaround wording", "Drop off in the morning, I text you when it's ready", true],
+  ["private_address", "Exact drop-off address (only goes in booking confirmations)", "", false],
+  ["review_link", "Review link once you have one", "", false],
+  ["max_jobs_per_day", "Max cars you can do in one day", "2", true],
+  ["product_cost", "Product cost per car ($)", "30", false],
+  ["launch_date", "Day 1 of your 7-day plan", "", false],
+];
+const POST_FIELDS = { facebook: "Facebook Page", instagram: "Instagram caption", story: "Story frames", reel_script: "Reel script (no voice, text on screen)", group_version: "Community-group version" };
+const PUBLISH_STEPS = {
+  "Facebook Page": ["Open your Facebook Page (not your personal profile).", "Create post, paste the Facebook text, add your real photo(s) or video.", "Read it once out loud and fix anything that doesn't sound like you.", "Post it, then come back and tap Mark published."],
+  "Instagram": ["Instagram: + then Post, Reel or Story.", "Pick your real photo or clip. For Reels, add the on-screen text from the script.", "Paste the caption (3-5 hashtags max).", "Share, then tap Mark published."],
+  "Community groups": ["Read the group rules again (they change).", "Only post if the group's rule type allows it today (see Prospecting).", "Paste the group version with one real photo.", "Don't post the same thing in lots of groups on the same day."],
+};
+
+// ---------------------------------------------------------------- helpers
+const esc = (v) => String(v == null ? "" : v).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const pad = (n) => String(n).padStart(2, "0");
+const iso = (d) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+const parse = (s) => { const [y, m, d] = s.split("-").map(Number); return new Date(y, m - 1, d); };
+const today = () => iso(new Date());
+const plusDays = (n, start) => { const d = start ? parse(start) : new Date(); d.setDate(d.getDate() + n); return iso(d); };
+const DAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"], MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+const fdate = (s) => { if (!s) return "-"; const d = parse(s); return `${DAYS[d.getDay()]} ${MONTHS[d.getMonth()]} ${d.getDate()}`; };
+const ftime = (t) => { if (!t) return ""; let [h, m] = t.split(":").map(Number); const ap = h < 12 ? "am" : "pm"; h = h % 12 || 12; return m ? `${h}:${pad(m)}${ap}` : `${h}${ap}`; };
+const money = (x) => "$" + (Number(x) || 0).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const nice = (s) => String(s || "").replace(/_/g, " ");
+const isDate = (s) => /^\d{4}-\d{2}-\d{2}$/.test(s || "");
+class VErr extends Error {}
+const need = (cond, msg) => { if (!cond) throw new VErr(msg); };
+const num = (v, label) => { v = String(v == null ? "" : v).replace(/[$,\s]/g, ""); if (!v) return null; const n = Math.round(Number(v) * 100) / 100; need(isFinite(n) && n >= 0 && n <= 10000, `${label} must be a number like 80 or 80.00.`); return n; };
+const clean = (v, max = 500) => String(v == null ? "" : v).replace(/[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]/g, "").trim().slice(0, max);
+const opts = (vals, sel, labeler) => vals.map((v) => `<option value="${esc(v)}"${String(v) === String(sel ?? "") ? " selected" : ""}>${esc(labeler ? labeler(v) : nice(v) || "-")}</option>`).join("");
+
+function toast(msg, err) {
+  const box = document.getElementById("toastbox");
+  box.innerHTML = `<div class="toast${err ? " err" : ""}" role="status">${esc(msg)}</div>`;
+  clearTimeout(toast.t); toast.t = setTimeout(() => { box.innerHTML = ""; }, err ? 5000 : 2500);
+}
+
+// ---------------------------------------------------------------- state + storage
+const S = { leads: new Map(), slots: new Map(), appts: new Map(), jobs: new Map(), posts: new Map(), opps: new Map(), effort: new Map(), timings: new Map(), briefs: new Map(), settings: {}, active: null, loaded: new Set() };
+let db = null, readOnly = false;
+const COLS = ["leads", "slots", "appts", "jobs", "posts", "opps", "effort", "timings", "briefs"];
+
+async function put(col, id, body) {
+  if (!db) throw new VErr("Storage isn't connected. Reopen the link while signed in to Claude.");
+  if (readOnly) throw new VErr("Only the owner can change this.");
+  const data = JSON.parse(JSON.stringify(body)); delete data.id;
+  await db.collection(col).doc(id).set(data);
+  S[col].set(id, Object.assign({ id }, data)); // show it right away
+}
+const newId = (col) => db.collection(col).doc().id;
+const all = (col) => Array.from(S[col].values());
+const settings = () => S.settings || {};
+const maxPerDay = () => Math.max(1, parseInt(settings().max_jobs_per_day, 10) || 2);
+
+// ---------------------------------------------------------------- text filling + checks
+function values(extra) {
+  const v = Object.assign({}, settings(), { business: BUSINESS, price_interior: "$80", price_exterior: "$60", price_full: "$140" });
+  v.price_interior = "$" + SERVICES.interior.price; v.price_exterior = "$" + SERVICES.exterior.price; v.price_full = "$" + SERVICES.full.price;
+  return Object.assign(v, extra || {});
+}
+function fill(text, extra) {
+  const v = values(extra);
+  return String(text || "").replace(/\{(\w+)\}/g, (m, k) => (v[k] ? String(v[k]) : `[SET ${k.toUpperCase()} IN SETUP]`));
+}
+const negateMobile = (t) => String(t || "").toLowerCase().replace(/(not|no|isn't|aren't|don't do|can't do)\s+(a\s+)?mobile/g, "");
+function banned(text) {
+  const low = negateMobile(text);
+  return BANNED.filter((p) => new RegExp("(^|[^a-z])" + p.replace(/[.*+?^${}()|[\]\\#]/g, "\\$&") + "(?![a-z])").test(low));
+}
+function postView(base) {
+  const o = S.posts.get(base.id) || {};
+  const p = Object.assign({}, base, { status: o.status || "draft", approved: o.approved || null, scheduled: o.scheduled || null, published: o.published || null, where: o.where || "", notes: o.notes || "" });
+  for (const f in POST_FIELDS) if (o.edits && typeof o.edits[f] === "string") p[f] = o.edits[f];
+  return p;
+}
+function postProblems(p) {
+  const allow = String(p.allow_terms || "").split(",").map((s) => s.trim().toLowerCase()).filter(Boolean);
+  const out = [];
+  for (const f in POST_FIELDS) {
+    if (!p[f]) continue;
+    const t = fill(p[f]);
+    const miss = Array.from(new Set((t.match(/\[SET (\w+) IN SETUP\]/g) || []).map((m) => m.slice(5, -9).toLowerCase())));
+    if (miss.length) out.push(`${POST_FIELDS[f]}: fill in Setup first (${miss.join(", ")})`);
+    if (t.includes("[TYPE")) out.push(`${POST_FIELDS[f]}: replace the [TYPE ...] parts with real details`);
+    const c = banned(t).filter((x) => !allow.includes(x));
+    if (c.length) out.push(`${POST_FIELDS[f]}: has a claim you haven't confirmed (${c.join(", ")})`);
+  }
+  return out;
+}
+function openSlots(daysAhead) {
+  const t = today(), end = plusDays(daysAhead || 14);
+  return all("slots").filter((s) => s.status === "open" && s.date >= t && s.date <= end).sort((a, b) => (a.date + a.time).localeCompare(b.date + b.time));
+}
+function openTimesText() {
+  const s = openSlots(14).slice(0, 5);
+  return s.length ? s.map((x) => `- ${fdate(x.date)}, drop-off ${ftime(x.time)}`).join("\n") : "[NO OPEN SLOTS ENTERED - ADD REAL SLOTS ON THE BOOK TAB FIRST]";
+}
+function renderReply(id, lead, appt) {
+  const t = REPLIES.find((r) => r.id === id);
+  const extra = { open_times: openTimesText(), name: lead && lead.name ? lead.name.split(/\s+/)[0].replace(/[{}]/g, "") : "there" };
+  const svc = (appt && appt.service) || (lead && lead.service);
+  extra.service_label = SERVICES[svc] ? SERVICES[svc].label.toLowerCase() : "cleaning";
+  if (appt) { const sl = S.slots.get(appt.slot) || {}; Object.assign(extra, { appt_date: fdate(sl.date), appt_time: ftime(sl.time), appt_service: SERVICES[appt.service].label, appt_price: "$" + appt.price }); }
+  return fill(t.text, extra);
+}
+
+// ---------------------------------------------------------------- lead logic
+const ev = (lead, type, note, d) => { lead.events = (lead.events || []).concat([{ d: d || today(), t: type, n: clean(note, 200) }]).slice(-80); };
+function status(l) { // Follow-up due is shown from the date; nothing is written in the background
+  if ((l.status === "Replied" || l.status === "Quote Sent") && l.next && l.next <= today()) return "Follow-Up Due";
+  return l.status;
+}
+function leadFromForm(f, base) {
+  const l = Object.assign({}, base || {});
+  l.name = clean(f.name, 120); need(l.name, "Name or nickname is required.");
+  l.method = METHODS.includes(f.method) ? f.method : "text";
+  l.contact = clean(f.contact, 200); l.consent = f.consent === "on"; l.consentNote = clean(f.consentNote, 200);
+  need(SOURCES.includes(f.source), "Pick where they found you.");
+  l.source = f.source; l.sourceDetail = clean(f.sourceDetail, 200); l.vehicle = clean(f.vehicle, 120);
+  l.service = SERVICE_CHOICES.includes(f.service) ? f.service : "unsure";
+  l.quote = num(f.quote, "Quoted price"); l.notes = clean(f.notes, 2000);
+  return l;
+}
+async function createLead(f) {
+  const inquiry = isDate(f.inquiry) ? f.inquiry : today();
+  need(inquiry <= today(), "Inquiry date can't be in the future.");
+  const l = leadFromForm(f);
+  Object.assign(l, { inquiry, status: "New Lead", next: inquiry, created: new Date().toISOString(), events: [] });
+  ev(l, "inquiry", "via " + l.source, inquiry);
+  const id = newId("leads"); await put("leads", id, l); return id;
+}
+async function leadAct(id, fn) { const l = JSON.parse(JSON.stringify(S.leads.get(id))); need(l, "That lead is gone."); fn(l); await put("leads", id, l); }
+
+// ---------------------------------------------------------------- booking logic
+async function addSlot(f) {
+  need(isDate(f.date), "Pick a date."); need(f.date >= today(), "You can't open a slot in the past.");
+  need(/^\d{2}:\d{2}$/.test(f.time || ""), "Pick a drop-off time.");
+  if (f.pickup) need(f.pickup > f.time, "Pick-up has to be after drop-off.");
+  need(!all("slots").some((s) => s.date === f.date && s.time === f.time && s.status !== "closed"), "You already have a slot at that time.");
+  await put("slots", newId("slots"), { date: f.date, time: f.time, pickup: f.pickup || "", status: "open", note: clean(f.note, 200) });
+}
+async function propose(leadId, slotId, service, price) {
+  const slot = S.slots.get(slotId); need(slot, "Pick one of your open slots.");
+  need(slot.status === "open", "That slot is no longer open."); need(slot.date >= today(), "That slot is in the past.");
+  need(SERVICES[service], "Pick a service.");
+  const lead = S.leads.get(leadId);
+  let amt = num(price, "Price"); if (amt == null) amt = lead.quote || SERVICES[service].price;
+  const sameDay = all("appts").filter((a) => (a.status === "proposed" || a.status === "confirmed") && (S.slots.get(a.slot) || {}).date === slot.date).length;
+  need(sameDay < maxPerDay(), `You already have ${sameDay} car(s) that day - your daily max. Change it in Setup if you really can take another.`);
+  await put("appts", newId("appts"), { lead: leadId, slot: slotId, service, price: amt, status: "proposed", created: new Date().toISOString() });
+  await put("slots", slotId, Object.assign({}, slot, { status: "held" }));
+  await leadAct(leadId, (l) => { l.quote = amt; l.service = service; l.next = plusDays(1); ev(l, "time_offered", `${slot.date} ${slot.time}`); });
+}
+async function confirmAppt(aid) {
+  const a = S.appts.get(aid); need(a && a.status === "proposed", "Only a held time can be confirmed.");
+  const slot = S.slots.get(a.slot);
+  await put("appts", aid, Object.assign({}, a, { status: "confirmed", confirmed: today() }));
+  await put("slots", a.slot, Object.assign({}, slot, { status: "booked" }));
+  await leadAct(a.lead, (l) => { l.status = "Booked"; l.lastContact = today(); l.next = slot.date > today() ? plusDays(-1, slot.date) : slot.date; ev(l, "booked", `${slot.date} ${slot.time} ${a.service}`); });
+}
+async function cancelAppt(aid, noShow, reason) {
+  const a = S.appts.get(aid); need(a && (a.status === "proposed" || a.status === "confirmed"), "That appointment can't be cancelled.");
+  const slot = S.slots.get(a.slot);
+  await put("appts", aid, Object.assign({}, a, { status: noShow ? "no_show" : "cancelled", notes: clean(reason, 200) }));
+  if (slot) await put("slots", a.slot, Object.assign({}, slot, { status: slot.date >= today() ? "open" : "closed" }));
+  await leadAct(a.lead, (l) => { l.status = "Follow-Up Due"; l.next = plusDays(2); ev(l, noShow ? "no_show" : "cancelled", reason); });
+}
+async function completeJob(aid, f) {
+  const a = S.appts.get(aid); need(a && a.status === "confirmed", "Only a confirmed appointment can be completed.");
+  let price = num(f.price, "Price charged"); if (price == null) price = a.price; need(price > 0, "Price charged must be more than $0.");
+  const paid = num(f.paid, "Amount paid") || 0; need(paid <= price, "Paid is more than the price. Put tips in notes.");
+  need(!paid || PAY.includes(f.method), "Pick how they paid.");
+  const date = isDate(f.date) ? f.date : today(); need(date <= today(), "Completed date can't be in the future.");
+  const service = SERVICES[f.service] ? f.service : a.service;
+  await put("jobs", newId("jobs"), { appt: aid, lead: a.lead, date, service, price, paid, status: paid >= price ? "paid" : paid > 0 ? "partial" : "unpaid", payments: paid ? [{ d: date, a: paid, m: f.method }] : [], notes: clean(f.notes, 500) });
+  await put("appts", aid, Object.assign({}, a, { status: "completed" }));
+  await leadAct(a.lead, (l) => { l.status = "Completed"; l.next = plusDays(1, date); l.repeat = plusDays(35, date); ev(l, "completed", `${service} $${price}`, date); if (paid) ev(l, "payment", `$${paid} ${f.method}`, date); });
+}
+async function recordPayment(jid, amount, method) {
+  const j = JSON.parse(JSON.stringify(S.jobs.get(jid))); need(j, "That job is gone.");
+  const amt = num(amount, "Amount"); need(amt && amt > 0, "Enter an amount more than $0."); need(PAY.includes(method), "Pick a payment method.");
+  const total = Math.round((j.paid + amt) * 100) / 100; need(total <= j.price, "That's more than the price charged.");
+  j.paid = total; j.status = total >= j.price ? "paid" : "partial"; j.payments.push({ d: today(), a: amt, m: method });
+  await put("jobs", jid, j);
+  await leadAct(j.lead, (l) => ev(l, "payment", `$${amt} ${method}`));
+}
+
+// ---------------------------------------------------------------- reports
+const payments = () => all("jobs").flatMap((j) => (j.payments || []).map((p) => Object.assign({ job: j.id }, p)));
+const collected = (a, b) => payments().filter((p) => !a || (p.d >= a && p.d <= b)).reduce((s, p) => s + p.a, 0);
+const owed = () => all("jobs").filter((j) => j.status !== "paid").reduce((s, j) => s + (j.price - j.paid), 0);
+const hasEv = (l, t) => (l.events || []).some((e) => e.t === t);
+const evCount = (t, a, b) => all("leads").reduce((n, l) => n + (l.events || []).filter((e) => e.t === t && e.d >= a && e.d <= b).length, 0);
+function funnel(a, b) {
+  const ls = all("leads").filter((l) => !a || (l.inquiry >= a && l.inquiry <= b));
+  const c = (t) => ls.filter((l) => hasEv(l, t)).length;
+  const f = { leads: ls.length, quoted: c("quote_sent"), booked: c("booked"), completed: c("completed"), lost: ls.filter((l) => l.status === "Lost").length };
+  f.l2b = f.leads ? Math.round(100 * f.booked / f.leads) + "%" : "-"; f.q2b = f.quoted ? Math.round(100 * f.booked / f.quoted) + "%" : "-";
+  return f;
+}
+function channels(a, b) {
+  const by = {};
+  for (const l of all("leads")) {
+    if (a && !(l.inquiry >= a && l.inquiry <= b)) continue;
+    const r = by[l.source] || (by[l.source] = { source: l.source, inquiries: 0, booked: 0, money: 0 });
+    r.inquiries++; if (hasEv(l, "booked")) r.booked++;
+  }
+  for (const j of all("jobs")) { const l = S.leads.get(j.lead); if (l && by[l.source]) by[l.source].money += (j.payments || []).reduce((s, p) => s + p.a, 0); }
+  return Object.values(by).sort((x, y) => y.inquiries - x.inquiries);
+}
+function weekBounds(any) { const d = any ? parse(any) : new Date(); const off = (d.getDay() + 6) % 7; d.setDate(d.getDate() - off); const s = iso(d); return [s, plusDays(6, s)]; }
+function weekly(any) {
+  const [a, b] = weekBounds(any);
+  const posts = POSTS.map(postView).filter((p) => p.status === "published" && p.published >= a && p.published <= b);
+  const ch = channels(a, b);
+  const eff = {}; for (const e of all("effort")) if (e.date >= a && e.date <= b) { const r = eff[e.channel] || (eff[e.channel] = { actions: 0, minutes: 0 }); r.actions++; r.minutes += e.minutes; }
+  const names = Array.from(new Set(Object.keys(eff).concat(ch.map((c) => c.source)))).sort();
+  const effort = names.map((n) => { const e = eff[n] || { actions: 0, minutes: 0 }; const inq = (ch.find((c) => c.source === n) || {}).inquiries || 0; return { channel: n, actions: e.actions, minutes: e.minutes, inquiries: inq, perHour: e.minutes ? Math.round(inq / (e.minutes / 60) * 10) / 10 : null }; });
+  const gaps = all("leads").filter((l) => l.inquiry >= a && l.inquiry <= b).map((l) => { const f = (l.events || []).find((e) => e.t === "reply_sent" || e.t === "quote_sent"); return f ? (parse(f.d) - parse(l.inquiry)) / 864e5 : null; }).filter((x) => x != null);
+  const r = { a, b, posts, ch, effort, inquiries: ch.reduce((s, c) => s + c.inquiries, 0), replies: evCount("reply_sent", a, b), quotes: evCount("quote_sent", a, b), followups: evCount("followup_sent", a, b), booked: evCount("booked", a, b), cancelled: evCount("cancelled", a, b), noShows: evCount("no_show", a, b), jobs: all("jobs").filter((j) => j.date >= a && j.date <= b).length, revenue: collected(a, b), owed: owed(), speed: gaps.length ? Math.round(gaps.reduce((s, x) => s + x, 0) / gaps.length * 10) / 10 : null };
+  r.tips = tips(r); return r;
+}
+function tips(r) {
+  const t = [];
+  if (r.inquiries + r.posts.length + r.effort.reduce((s, e) => s + e.actions, 0) === 0) return ["Nothing was recorded this week, so there's nothing to judge yet. Log posts, leads and marketing time as they happen."];
+  if (!r.posts.length) t.push("No posts were marked published. Approve 2-3 posts on Sunday and publish one every other day.");
+  if (r.speed != null && r.speed >= 1) t.push(`Replies took ${r.speed} day(s) on average. Same-day replies win more jobs - check messages twice a day.`);
+  const newOnes = all("leads").filter((l) => l.status === "New Lead").length; if (newOnes) t.push(`${newOnes} lead(s) still have no reply. Answer them first thing.`);
+  if (r.quotes && !r.booked) t.push("Quotes went out but nobody booked. Send the quote follow-up with real open times.");
+  for (const e of r.effort) if (e.minutes >= 60 && !e.inquiries) t.push(`${nice(e.channel)}: ${e.minutes} min, 0 inquiries. Cut that time in half next week (unless it's a slow-build channel like Google).`);
+  const best = r.effort.filter((e) => e.perHour); if (best.length) { const top = best.sort((x, y) => y.perHour - x.perHour)[0]; t.push(`Best return on time: ${nice(top.channel)} (${top.perHour} inquiries/hour). Do a bit more of that.`); }
+  if (r.jobs && !r.ch.some((c) => c.source === "referral")) t.push("You finished jobs this week - send the referral ask to happy customers.");
+  if (r.inquiries && !r.effort.some((e) => e.minutes)) t.push("Leads came in but no time was logged, so the report can't tell which work paid off. Log minutes on the Plan screen.");
+  if (r.cancelled + r.noShows >= 2) t.push("2+ cancellations or no-shows. Send the reminder the day before every appointment.");
+  return t.length ? t : ["Nothing jumps out. Keep the same routine another week so there's enough to compare."];
+}
+function weeklyText(r) {
+  const L = [`CARBON FORCE DETAILING - WEEK ${r.a} to ${r.b}`, "", `Posts published: ${r.posts.length}`];
+  r.posts.forEach((p) => L.push(`  - ${p.published} ${p.title} (${p.where})`));
+  L.push(`Inquiries: ${r.inquiries}`); r.ch.forEach((c) => L.push(`  - ${nice(c.source)}: ${c.inquiries} (booked so far: ${c.booked})`));
+  L.push(`Replies: ${r.replies}  Quotes: ${r.quotes}  Follow-ups: ${r.followups}`, `Booked: ${r.booked}  Cancelled: ${r.cancelled}  No-shows: ${r.noShows}`, `Jobs completed: ${r.jobs}`, `Revenue collected: ${money(r.revenue)} (still owed: ${money(r.owed)})`, `Avg days to first reply: ${r.speed == null ? "n/a" : r.speed}`, "", "Time by channel:");
+  r.effort.forEach((e) => L.push(`  - ${nice(e.channel)}: ${e.actions} actions, ${e.minutes} min, ${e.inquiries} inquiries, ${e.perHour == null ? "n/a" : e.perHour}/hour`));
+  L.push("", "What to change next week:"); r.tips.forEach((x) => L.push("  - " + x)); L.push("", "Only recorded data counts. Likes and views are not revenue.");
+  return L.join("\n");
+}
+
+// ---------------------------------------------------------------- views
+let view = "today", sub = null, filter = "";
+const ICONS = {
+  today: '<path d="M4 6h16M4 12h16M4 18h10"/>', leads: '<circle cx="9" cy="8" r="3.5"/><path d="M3 20c.8-3.4 3.2-5 6-5s5.2 1.6 6 5M16 5.5a3 3 0 0 1 0 6M21 20c-.5-2.4-1.8-3.8-3.5-4.5"/>',
+  book: '<rect x="3.5" y="5" width="17" height="15" rx="2"/><path d="M3.5 10h17M8 3v4M16 3v4"/>', posts: '<rect x="4" y="4" width="16" height="16" rx="2"/><path d="M4 15l4.5-4.5 4 4 3-3L20 15"/><circle cx="15.5" cy="8.5" r="1.3"/>',
+  work: '<circle cx="12" cy="13" r="7.5"/><path d="M12 9v4l2.5 2M9.5 2.5h5"/>',
+  more: '<circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/>',
+};
+const TABS = [["today", "Today"], ["leads", "Leads"], ["book", "Book"], ["work", "Work"], ["posts", "Posts"], ["more", "More"]];
+const MORE = [["agent", "Marketing agent", "This week's research brief + ask Claude for posts and replies"], ["replies", "Reply templates", "Copy-paste answers for every common question"], ["prospects", "Local prospecting", "Groups, Google, partners, referrals"], ["plan", "Daily plan + cash mode", "7-day routine, log marketing time"], ["weekly", "Weekly report", "What's working, from real numbers"], ["setup", "Setup", "Your booking info, prices wording, backup"]];
+const tabOf = (v) => (["agent", "replies", "prospects", "plan", "weekly", "setup"].includes(v) ? "more" : v);
+
+function pill(s) {
+  const k = { "New Lead": "p-warn", "Follow-Up Due": "p-warn", draft: "p-warn", Booked: "p-ok", approved: "p-ok", confirmed: "p-ok", scheduled: "p-ok", proposed: "p-mute", held: "p-mute", Lost: "p-mute", cancelled: "p-mute", no_show: "p-mute", closed: "p-mute", unpaid: "p-bad", partial: "p-warn", published: "p-solid", Completed: "p-solid", completed: "p-solid", paid: "p-solid", open: "p-ok", booked: "p-ok" }[s] || "p-mute";
+  return `<span class="pill ${k}">${esc(nice(s))}</span>`;
+}
+const copyBox = (t) => `<div class="copy"><pre>${esc(t)}</pre><button type="button" class="small" data-copy>Copy</button></div>`;
+const field = (label, name, val, type, hint, extra) => `<label>${esc(label)}${type === "textarea" ? `<textarea name="${name}" id="f-${name}" ${extra || ""}>${esc(val)}</textarea>` : `<input name="${name}" id="f-${name}" type="${type || "text"}" value="${esc(val)}" ${extra || ""}>`}${hint ? `<span class="hint">${esc(hint)}</span>` : ""}</label>`;
+const sel = (label, name, vals, cur, lab, hint) => `<label>${esc(label)}<select name="${name}" id="f-${name}">${opts(vals, cur, lab)}</select>${hint ? `<span class="hint">${esc(hint)}</span>` : ""}</label>`;
+const go = (v, s) => `data-go="${v}"${s != null ? ` data-sub="${esc(s)}"` : ""}`;
+const empty = (t) => `<p class="empty">${esc(t)}</p>`;
+
+function setupWarning() {
+  const miss = SETTINGS.filter((s) => s[3] && !settings()[s[0]]).map((s) => s[1]);
+  return miss.length ? `<div class="card warn"><h2>Finish Setup first</h2><p>Posts can't be approved and templates show [SET …] markers until you add: ${esc(miss.join(", "))}.</p><button ${go("setup")}>Open Setup</button></div>` : "";
+}
+function leadRow(l, note) {
+  return `<li><div class="main"><a class="rowlink" href="#" ${go("lead", l.id)}>${esc(l.name)}</a><span class="hint">${esc(nice(l.source))} · ${esc(svcLabel(l.service))}${note ? " · " + esc(note) : ""}</span></div>${pill(status(l))}</li>`;
+}
+function apptRow(a) {
+  const s = S.slots.get(a.slot) || {}, l = S.leads.get(a.lead) || { name: "?" };
+  return `<li><div class="main"><a class="rowlink" href="#" ${go("lead", a.lead)}>${esc(l.name)}</a><span class="hint">${esc(fdate(s.date))} ${esc(ftime(s.time))} · ${esc(SERVICES[a.service].label)} · ${money(a.price)}</span></div>${pill(a.status)}</li>`;
+}
+const list = (rows, none) => (rows.length ? `<ul class="list">${rows.join("")}</ul>` : empty(none));
+
+function vToday() {
+  const t = today(), [ws] = weekBounds(), st = settings();
+  let plan;
+  if (st.cash_mode === "yes") plan = `<div class="card bad"><h2>Cash mode is on</h2><ol class="todo">${PLAN.cash_mode.map((s) => `<li>${esc(s.replace(/^\d+\.\s*/, ""))}</li>`).join("")}</ol><button class="ghost small" data-act="cash" data-v="no">Turn cash mode off</button></div>`;
+  else {
+    let n = parse(t).getDay() || 7; // Monday = Day 1 until a launch date is set
+    if (st.launch_date) n = t < st.launch_date ? 0 : ((parse(t) - parse(st.launch_date)) / 864e5 % 7) + 1;
+    const d = PLAN.normal[Math.round(n) - 1];
+    plan = d ? `<div class="card ok"><h2>Day ${Math.round(n)}: ${esc(d.theme)}</h2><ol class="todo"><li><b>Content:</b> ${esc(d.content)}</li><li><b>Get customers:</b> ${esc(d.acquisition)}</li><li><b>Follow up:</b> ${esc(d.followup)}</li><li class="muted"><b>If you have energy:</b> ${esc(d.optional)}</li></ol></div>`
+      : `<div class="card"><h2>Launch starts ${esc(fdate(st.launch_date))}</h2><p class="muted">Use the time to finish Setup and approve your first posts.</p></div>`;
+  }
+  const leads = all("leads");
+  const unanswered = leads.filter((l) => l.status === "New Lead").sort((a, b) => a.inquiry.localeCompare(b.inquiry));
+  const fu = leads.filter((l) => !["New Lead", "Lost", "Completed", "Booked"].includes(l.status) && l.next && l.next <= t);
+  const appts = all("appts").filter((a) => (a.status === "proposed" || a.status === "confirmed") && ((S.slots.get(a.slot) || {}).date || "") >= plusDays(-1)).sort((x, y) => ((S.slots.get(x.slot) || {}).date || "").localeCompare((S.slots.get(y.slot) || {}).date || ""));
+  const remind = appts.filter((a) => a.status === "confirmed" && (S.slots.get(a.slot) || {}).date === plusDays(1) && !a.reminder);
+  const paidDone = new Set(all("jobs").filter((j) => j.status === "paid" && j.date < t).map((j) => j.lead));
+  const review = leads.filter((l) => paidDone.has(l.id) && !l.reviewReq);
+  const repeat = leads.filter((l) => l.status === "Completed" && l.repeat && l.repeat <= t);
+  const oppDue = all("opps").filter((o) => o.nextDate && o.nextDate <= t && !["declined", "not_a_fit"].includes(o.status));
+  const posts = POSTS.map(postView);
+  let todays = posts.filter((p) => p.status === "scheduled" && p.scheduled <= t);
+  if (todays.length < 2) todays = todays.concat(posts.filter((p) => p.status === "approved").slice(0, 2 - todays.length));
+  if (todays.length < 2) todays = todays.concat(posts.filter((p) => p.status === "draft").slice(0, 2 - todays.length));
+  const f = funnel(), ch = channels();
+  const unpaid = all("jobs").filter((j) => j.status !== "paid");
+  const running = S.active && S.active.service ? `<div class="card ok"><h2>Job in progress</h2><p>${esc(SERVICES[S.active.service].label)}${S.active.who ? " · " + esc(S.active.who) : ""}</p><button ${go("work")}>Back to the timer</button></div>` : "";
+  const lb = latestBrief();
+  const briefCard = lb ? `<div class="card"><h2>This week's marketing brief</h2><p>${esc(lb.summary)}</p><button class="ghost small" ${go("agent")}>Open brief + ready posts</button></div>` : "";
+  return `<h1>Today · ${esc(fdate(t))}</h1>${running}${setupWarning()}${plan}${briefCard}
+<div class="card ${unanswered.length ? "bad" : ""}"><h2>New leads, no reply yet (${unanswered.length})</h2>${list(unanswered.map((l) => leadRow(l, "asked " + fdate(l.inquiry))), "None right now.")}<div class="btns" style="margin-top:8px"><button ${go("newlead")}>+ Add someone who messaged you</button></div></div>
+<div class="card ${fu.length ? "warn" : ""}"><h2>Follow-ups due (${fu.length})</h2>${list(fu.map((l) => leadRow(l, "due " + fdate(l.next))), "Nothing due today.")}</div>
+${remind.length ? `<div class="card warn"><h2>Send reminders (tomorrow's drop-offs)</h2>${list(remind.map(apptRow), "")}</div>` : ""}
+${review.length ? `<div class="card warn"><h2>Ask for a review</h2>${list(review.map((l) => leadRow(l)), "")}</div>` : ""}
+${repeat.length ? `<div class="card warn"><h2>Repeat-booking reminders</h2>${list(repeat.map((l) => leadRow(l)), "")}</div>` : ""}
+${oppDue.length ? `<div class="card warn"><h2>Prospecting due</h2>${list(oppDue.map((o) => `<li><div class="main"><a class="rowlink" href="#" ${go("prospects")}>${esc(o.name)}</a><span class="hint">${esc(o.next)}</span></div></li>`), "")}</div>` : ""}
+<div class="card"><h2>Posts for today</h2>${list(todays.map((p) => `<li><div class="main"><a class="rowlink" href="#" ${go("post", p.id)}>Day ${p.day}: ${esc(p.title)}</a><span class="hint">${esc(p.platform)}</span></div>${pill(p.status)}</li>`), "")}<p class="hint">You approve each post, then post it yourself. Nothing posts automatically.</p></div>
+<div class="card"><h2>Appointments</h2>${list(appts.map(apptRow), "No upcoming appointments.")}<h3>Open drop-off slots, next 7 days</h3>${list(openSlots(7).map((s) => `<li><div class="main">${esc(fdate(s.date))}, drop-off ${esc(ftime(s.time))}</div></li>`), "None entered. Add the times you can really take a car on the Book tab.")}</div>
+<div class="card"><h2>Money collected</h2><div class="big">${money(collected(ws, t))}</div><span class="hint">this week (Mon to today)</span>
+<div class="nums" style="margin-top:12px"><div><b>${money(collected())}</b><span>all time</span></div><div><b>${money(owed())}</b><span>still owed to you</span></div><div><b>${all("jobs").length}</b><span>jobs completed</span></div></div>
+${unpaid.length ? `<h3>Unpaid</h3>${list(unpaid.map((j) => `<li><div class="main">${esc((S.leads.get(j.lead) || {}).name)}</div><span>${money(j.price - j.paid)}</span></li>`), "")}` : ""}<p class="hint">Only payments you record count. Quotes, bookings, likes and views don't.</p></div>
+<div class="card"><h2>Leads to bookings</h2><div class="nums"><div><b>${f.leads}</b><span>leads</span></div><div><b>${f.quoted}</b><span>quoted</span></div><div><b>${f.booked}</b><span>booked</span></div><div><b>${f.completed}</b><span>completed</span></div><div><b>${f.l2b}</b><span>lead → booking</span></div><div><b>${f.q2b}</b><span>quote → booking</span></div></div></div>
+<div class="card"><h2>Where inquiries come from</h2>${ch.length ? `<div class="tablewrap"><table><tr><th>Channel</th><th>Inquiries</th><th>Booked</th><th>Collected</th></tr>${ch.map((c) => `<tr><td>${esc(nice(c.source))}</td><td>${c.inquiries}</td><td>${c.booked}</td><td>${money(c.money)}</td></tr>`).join("")}</table></div>` : empty("No leads recorded yet.")}</div>`;
+}
+
+function leadFields(l) {
+  l = l || {};
+  return `${field("Name or nickname", "name", l.name, "text", "First name is fine", 'required autocomplete="off"')}
+<div class="row">${sel("Contact method", "method", METHODS, l.method || "text")}${field("Phone / handle / email", "contact", l.contact, "text", "", 'autocomplete="off"')}</div>
+<div class="row">${sel("Where did they find you?", "source", SOURCES, l.source || "facebook_page")}${field("Which group or post?", "sourceDetail", l.sourceDetail)}</div>
+<div class="row">${sel("Service they want", "service", SERVICE_CHOICES, l.service || "unsure", svcLabel)}${field("Vehicle", "vehicle", l.vehicle, "text", "e.g. 2017 Honda CR-V")}</div>
+${field("Quoted price", "quote", l.quote == null ? "" : l.quote, "text", "Leave blank until you quote", 'inputmode="decimal"')}
+<label><input type="checkbox" name="consent" id="f-consent" ${l.consent ? "checked" : ""}>They messaged me first / OK to text them about this job</label>
+${field("Consent note", "consentNote", l.consentNote, "text", 'e.g. "texted me first 10/19"')}
+${field("Notes", "notes", l.notes, "textarea")}`;
+}
+function vNewLead() {
+  return `<button class="back" ${go("leads")}>‹ Leads</button><h1>Someone messaged you</h1><div class="card"><form class="f" data-form="newlead">${field("Date they asked", "inquiry", today(), "date")}${leadFields()}<button type="submit">Add lead</button></form></div>`;
+}
+function vLeads() {
+  const ls = all("leads").filter((l) => !filter || status(l) === filter);
+  const order = { "New Lead": 0, "Follow-Up Due": 1, "Quote Sent": 2, Replied: 3, Booked: 4, Completed: 5, Lost: 6 };
+  ls.sort((a, b) => order[status(a)] - order[status(b)] || b.inquiry.localeCompare(a.inquiry));
+  return `<h1>Leads</h1><button ${go("newlead")}>+ Add someone who messaged you</button>
+<div class="chips" role="group" aria-label="Filter">${["", ...STATUSES].map((s) => `<button data-filter="${esc(s)}" class="${filter === s ? "on" : ""}">${esc(s || "All")}</button>`).join("")}</div>
+<div class="card">${list(ls.map((l) => leadRow(l, (l.next ? "next " + fdate(l.next) : "asked " + fdate(l.inquiry)) + (l.quote != null ? " · " + money(l.quote) : ""))), "No leads yet. When someone messages you, add them here first - it's how you learn what's working.")}</div>`;
+}
+function vLead(id) {
+  const l = S.leads.get(id); if (!l) return `<button class="back" ${go("leads")}>‹ Leads</button>${empty("That lead isn't here.")}`;
+  const svcDefault = SERVICES[l.service] ? l.service : "full";
+  const replies = ["price", "location", "come_to_me", "full_package", "availability", "pet_or_stain", "quote_followup", "no_reply_1", "no_reply_2", "review_request", "referral_ask", "repeat_offer"];
+  const appts = all("appts").filter((a) => a.lead === id).sort((a, b) => (b.created || "").localeCompare(a.created || ""));
+  const jobs = all("jobs").filter((j) => j.lead === id);
+  const slots = openSlots(21);
+  const apptHtml = appts.map((a) => {
+    const s = S.slots.get(a.slot) || {}; let acts = "";
+    if (a.status === "proposed") acts = `<div class="btns"><button class="small" data-act="confirm" data-id="${a.id}">They said yes - confirm</button><button class="small ghost" data-act="release" data-id="${a.id}">Release slot</button></div>`;
+    if (a.status === "confirmed") acts = `<div class="btns"><button class="small ghost" data-act="reminder" data-id="${a.id}">${a.reminder ? "Reminder sent ✓" : "Reminder sent"}</button><button class="small danger" data-ask="cancel-${a.id}">Cancelled</button><button class="small danger" data-ask="noshow-${a.id}">No-show</button></div>
+<div class="confirm" data-confirm="cancel-${a.id}" hidden><form class="f" data-form="cancel" data-id="${a.id}">${field("Reason (optional)", "reason", "")}<div class="btns"><button type="submit" class="small danger">Yes, cancel it</button><button type="button" class="small ghost" data-ask="">Keep it</button></div></form></div>
+<div class="confirm" data-confirm="noshow-${a.id}" hidden><p>Mark as a no-show?</p><div class="btns"><button class="small danger" data-act="noshow" data-id="${a.id}">Yes, no-show</button><button type="button" class="small ghost" data-ask="">Keep it</button></div></div>
+<details data-key="done-${a.id}"><summary>Job done - record it</summary><form class="f" data-form="complete" data-id="${a.id}"><div class="row">${sel("Service done", "service", Object.keys(SERVICES), a.service, svcLabel)}${field("Price charged", "price", a.price, "text", "", 'inputmode="decimal"')}</div><div class="row">${field("Amount paid now", "paid", a.price, "text", "0 if not paid yet", 'inputmode="decimal"')}${sel("Paid with", "method", [""].concat(PAY), "")}</div>${field("Completed date", "date", today(), "date")}${field("Notes", "notes", "")}<button type="submit">Mark completed</button></form></details>`;
+    const msgs = a.status === "proposed" || a.status === "confirmed" ? `<details data-key="msgs-${a.id}"><summary>Messages for this appointment</summary>${["booking_confirmation", "reminder", "ready_pickup", "reschedule"].map((r) => `<h3>${esc(REPLIES.find((x) => x.id === r).title)}</h3>${copyBox(renderReply(r, l, a))}`).join("")}</details>` : "";
+    return `<div class="card"><h2>${esc(fdate(s.date))} ${esc(ftime(s.time))}</h2><p>${esc(SERVICES[a.service].label)} · ${money(a.price)} ${pill(a.status)}</p>${acts}${msgs}</div>`;
+  }).join("");
+  const after = jobs.length ? `<div class="card"><h2>After the job</h2>${jobs.map((j) => `<p>${esc(fdate(j.date))}: ${esc(SERVICES[j.service].label)} · charged ${money(j.price)}, paid ${money(j.paid)} ${pill(j.status)}</p>${j.status !== "paid" ? `<form class="f" data-form="pay" data-id="${j.id}"><div class="row">${field("Payment received", "amount", j.price - j.paid, "text", "", 'inputmode="decimal"')}${sel("Method", "method", PAY, "cash")}</div><button type="submit" class="small">Record payment</button></form>` : ""}`).join("")}
+<div class="btns">${l.reviewReq ? `<span class="hint">Review asked ${esc(fdate(l.reviewReq))}</span>` : `<button class="small" data-act="reviewreq" data-id="${id}">Review request sent</button>`}${l.reviewGot ? `<span class="hint">Review received ✓</span>` : `<button class="small ghost" data-act="reviewgot" data-id="${id}">They left a review</button>`}<button class="small ghost" data-act="repeat" data-id="${id}">Repeat offer sent</button></div><p class="hint">Next repeat reminder: ${esc(fdate(l.repeat))}</p></div>` : "";
+  return `<button class="back" ${go("leads")}>‹ Leads</button><h1>${esc(l.name)}</h1>
+<p>${pill(status(l))} <span class="muted">asked ${esc(fdate(l.inquiry))} via ${esc(nice(l.source))}${l.sourceDetail ? " (" + esc(l.sourceDetail) + ")" : ""} · ${esc(nice(l.method))}: ${esc(l.contact || "-")} · consent: ${l.consent ? "yes" : "not recorded"} · next follow-up: <b>${esc(fdate(l.next))}</b></span></p>
+<div class="card"><h2>1 · Reply</h2><p class="hint">Copy, paste into your messages app, send it yourself. Then record it below.</p>${replies.map((r) => { const t = REPLIES.find((x) => x.id === r); return `<details data-key="r-${r}"><summary>${esc(t.title)}</summary><span class="hint">${esc(t.when)}</span>${copyBox(renderReply(r, l))}<span class="hint">Then: ${esc(t.next_step)}</span></details>`; }).join("")}</div>
+<div class="card"><h2>2 · Record what you did</h2><div class="btns"><button class="small" data-act="replied" data-id="${id}">I replied</button><button class="small ghost" data-act="followup" data-id="${id}" data-v="4">I sent a follow-up</button><button class="small ghost" data-act="followup" data-id="${id}" data-v="0">Final follow-up sent</button></div>
+<h3>Quote</h3><form class="f" data-form="quote" data-id="${id}"><div class="row">${sel("Service", "service", Object.keys(SERVICES), svcDefault, svcLabel)}${field("Price (blank = standard)", "price", "", "text", "", 'inputmode="decimal"')}</div><button type="submit" class="small">I sent this quote</button></form>
+<h3>Offer a drop-off time</h3>${slots.length ? `<form class="f" data-form="offer" data-id="${id}">${sel("Your open slot", "slot", slots.map((s) => s.id), slots[0].id, (sid) => { const s = S.slots.get(sid); return `${fdate(s.date)} - ${ftime(s.time)}`; })}<div class="row">${sel("Service", "service", Object.keys(SERVICES), svcDefault, svcLabel)}${field("Price (blank = quote)", "price", "", "text", "", 'inputmode="decimal"')}</div><button type="submit" class="small">Hold this slot for them</button><span class="hint">Holding doesn't book it. Confirm only after they say yes.</span></form>` : `<p class="muted">No open slots. <a href="#" ${go("book")}>Add your real available times</a> first.</p>`}</div>
+${apptHtml}${after}
+<div class="card"><details data-key="edit-${id}"><summary>Edit lead</summary><form class="f" data-form="editlead" data-id="${id}">${leadFields(l)}<div class="row">${sel("Status", "status", STATUSES, l.status)}${field("Next follow-up", "next", l.next || "", "date")}</div><div class="row">${field("Repeat reminder date", "repeat", l.repeat || "", "date")}${field("Lost reason", "lostReason", l.lostReason)}</div><button type="submit">Save changes</button></form></details></div>
+<div class="card"><h2>History</h2>${list((l.events || []).slice().reverse().map((e) => `<li><div class="main">${esc(fdate(e.d))} · ${esc(nice(e.t))} <span class="hint">${esc(e.n)}</span></div></li>`), "")}</div>`;
+}
+
+function vBook() {
+  const slots = all("slots").filter((s) => s.date >= plusDays(-7)).sort((a, b) => (a.date + a.time).localeCompare(b.date + b.time));
+  const live = all("appts").filter((a) => a.status === "proposed" || a.status === "confirmed").sort((x, y) => ((S.slots.get(x.slot) || {}).date || "").localeCompare((S.slots.get(y.slot) || {}).date || ""));
+  const jobs = all("jobs").sort((a, b) => b.date.localeCompare(a.date));
+  return `<h1>Booking</h1><div class="card warn"><p><b>Drop-off only, at times you approved.</b> Add the times you can really take a car. On a lead, hold one and send it. Confirm when they say yes. Max ${maxPerDay()} car(s) a day (change in Setup).</p></div>
+<div class="card"><h2>Add an open drop-off time</h2><form class="f" data-form="slot"><div class="row">${field("Date", "date", plusDays(1), "date")}${field("Drop-off time", "time", "08:30", "time")}</div><div class="row">${field("Expected pick-up (optional)", "pickup", "", "time")}${field("Note", "note", "")}</div><button type="submit">Add slot</button></form></div>
+<div class="card"><h2>Upcoming appointments</h2>${list(live.map(apptRow), "None yet.")}</div>
+<div class="card"><h2>Your slots</h2>${list(slots.map((s) => { const a = all("appts").find((x) => x.slot === s.id && ["proposed", "confirmed", "completed"].includes(x.status)); const who = a ? (S.leads.get(a.lead) || {}).name : ""; return `<li><div class="main">${esc(fdate(s.date))} ${esc(ftime(s.time))}${s.pickup ? " → " + esc(ftime(s.pickup)) : ""}<span class="hint">${who ? esc(who) : esc(s.note || "")}</span></div><div class="btns">${pill(s.status)}${s.status === "open" ? `<button class="small ghost" data-act="closeslot" data-id="${s.id}">Close</button>` : ""}</div></li>`; }), "No slots yet.")}</div>
+<div class="card"><h2>Completed jobs</h2>${list(jobs.map((j) => `<li><div class="main"><a class="rowlink" href="#" ${go("lead", j.lead)}>${esc((S.leads.get(j.lead) || {}).name)}</a><span class="hint">${esc(fdate(j.date))} · ${esc(SERVICES[j.service].label)} · charged ${money(j.price)} · paid ${money(j.paid)}</span></div>${pill(j.status)}</li>`), "No completed jobs yet.")}</div>`;
+}
+
+function vPosts() {
+  const ps = POSTS.map(postView).filter((p) => !filter || p.status === filter);
+  const count = (s) => POSTS.map(postView).filter((p) => p.status === s).length;
+  return `<h1>30-day posts</h1><p class="muted">draft → you approve → you post it yourself → mark published. Skip seasonal ones that don't fit the week.</p>
+<div class="chips">${["", "draft", "approved", "scheduled", "published"].map((s) => `<button data-filter="${s}" class="${filter === s ? "on" : ""}">${esc(s || "All")}${s ? " " + count(s) : ""}</button>`).join("")}</div>
+<div class="card">${list(ps.map((p) => `<li><div class="main"><a class="rowlink" href="#" ${go("post", p.id)}>Day ${p.day}: ${esc(p.title)}</a><span class="hint">${esc(p.pillar)} · ${esc(p.platform)}${p.season !== "any" ? " · " + esc(p.season) : ""}${p.needs_real_photos ? " · needs your real photos" : ""}</span></div>${pill(p.status)}</li>`), "Nothing with that status.")}</div>`;
+}
+function vPost(id) {
+  const base = POSTS.find((p) => p.id === id); if (!base) return `<button class="back" ${go("posts")}>‹ Posts</button>${empty("Not found.")}`;
+  const p = postView(base), probs = postProblems(p);
+  const steps = []; if (p.facebook) steps.push("Facebook Page"); if (p.instagram || p.story || p.reel_script) steps.push("Instagram"); if (p.group_version) steps.push("Community groups");
+  let acts = "";
+  if (p.status === "draft") acts = `<form class="f" data-form="approve" data-id="${id}">${p.needs_real_photos ? `<label><input type="checkbox" name="photos" id="f-photos">I have my own real photos/video for this</label>` : ""}<button type="submit">Approve</button></form>`;
+  else if (p.status === "published") acts = `<p>Published ${esc(fdate(p.published))} · ${esc(p.where)}</p>`;
+  else acts = `<form class="f" data-form="publish" data-id="${id}">${field("Where you posted it", "where", "", "text", "e.g. facebook page, instagram, a group name", "required")}${field("Date posted", "date", today(), "date")}<button type="submit">Mark published (I posted it)</button></form>
+<form class="f" data-form="schedule" data-id="${id}">${field("Plan to post on", "date", p.scheduled || today(), "date")}<button type="submit" class="ghost small">Schedule (just a reminder)</button></form><button class="ghost small" data-act="todraft" data-id="${id}">Back to draft</button>`;
+  return `<button class="back" ${go("posts")}>‹ Posts</button><h1>${esc(p.title)}</h1><p>${pill(p.status)} <span class="muted">Day ${p.day} · ${esc(p.platform)} · ${esc(p.format)}</span></p>
+<div class="card"><p><b>Purpose:</b> ${esc(p.purpose)}</p><p><b>Call to action:</b> ${esc(p.cta)}</p><p><b>Visual:</b> ${esc(p.visual)}</p>${p.needs_real_photos ? "<p><b>Needs your genuine photos or video.</b> Never stock photos or someone else's work.</p>" : ""}<h3>Shot list</h3><pre style="white-space:pre-wrap;font:inherit;margin:0">${esc(p.shots)}</pre></div>
+${p.status === "draft" && probs.length ? `<div class="card warn"><h2>Before you can approve</h2><ul>${probs.map((x) => `<li>${esc(x)}</li>`).join("")}</ul></div>` : ""}
+<div class="card"><h2>Ready to paste</h2>${Object.keys(POST_FIELDS).filter((f) => p[f]).map((f) => `<h3>${esc(POST_FIELDS[f])}</h3>${copyBox(fill(p[f]))}`).join("")}</div>
+<div class="card"><h2>Approve / publish</h2>${acts}</div>
+<div class="card"><h2>How to post it</h2>${steps.map((s) => `<h3>${esc(s)}</h3><ol class="todo">${PUBLISH_STEPS[s].map((x) => `<li>${esc(x)}</li>`).join("")}</ol>`).join("")}</div>
+${p.status !== "published" ? `<div class="card"><details data-key="pedit-${id}"><summary>Edit the wording</summary><p class="hint">{price_full}, {booking_line} and the rest fill in from Setup. Editing an approved post sends it back to draft.</p><form class="f" data-form="postedit" data-id="${id}">${Object.keys(POST_FIELDS).map((f) => field(POST_FIELDS[f], f, p[f], "textarea")).join("")}<button type="submit">Save wording</button></form></details></div>` : ""}`;
+}
+
+function vReplies() {
+  const groups = {}; REPLIES.forEach((r) => (groups[r.group] = groups[r.group] || []).push(r));
+  return `<button class="back" ${go("more")}>‹ More</button><h1>Reply templates</h1><p class="muted">Filled with your Setup info and your real open slots. Open one from a lead to fill in their name. You send every message yourself.</p>
+${Object.keys(groups).map((g) => `<div class="card"><h2>${esc(g)}</h2>${groups[g].map((r) => `<details data-key="t-${r.id}"><summary>${esc(r.title)}</summary><span class="hint">${esc(r.when)}</span>${copyBox(renderReply(r.id))}<span class="hint">Then: ${esc(r.next_step)}</span></details>`).join("")}</div>`).join("")}`;
+}
+
+function oppFields(o) {
+  o = o || {};
+  return `<div class="row">${sel("Type", "type", OPP_TYPES, o.type || "facebook_group")}${sel("Status", "status", OPP_STATUS, o.status || "to_research")}</div>${field("Name", "name", o.name, "text", "", "required")}${field("Link or PUBLIC contact", "contact", o.contact)}
+${sel("Group rules", "rule", Object.keys(RULES), o.rule || "unknown", (k) => RULES[k])}${field("Rules notes", "rulesNotes", o.rulesNotes, "textarea")}<div class="row">${field("Next action", "next", o.next)}${field("Next action date", "nextDate", o.nextDate || "", "date")}</div>${field("Outcome so far", "outcome", o.outcome)}${field("Where this info came from", "info", o.info)}`;
+}
+function vProspects() {
+  const rank = (s) => OPP_STATUS.indexOf(s);
+  const os = all("opps").sort((a, b) => ((a.nextDate && a.nextDate <= today()) ? 0 : 1) - ((b.nextDate && b.nextDate <= today()) ? 0 : 1) || rank(a.status) - rank(b.status) || (a.order || 0) - (b.order || 0));
+  return `<button class="back" ${go("more")}>‹ More</button><h1>Local prospecting</h1>
+<div class="card warn"><p>Follow every platform's and group's rules. Public business contacts only. No scraping, buying leads or mass messages. Only change a status after <b>you</b> did it. Nothing here has been contacted or created yet unless you marked it.</p><p class="hint">Rule type decides what to post: promo allowed / promo day → the post's group version. Recommendations only → the "recommendation" reply. No business → don't post.</p></div>
+<div class="card"><details data-key="oppnew"><summary>+ Add an opportunity</summary><form class="f" data-form="oppnew">${oppFields()}<button type="submit">Add</button></form></details></div>
+${os.length ? os.map((o) => `<div class="card"><p><b>${esc(o.name)}</b> ${pill(o.status)}</p><p class="hint">${esc(nice(o.type))} · found ${esc(fdate(o.found))} · ${esc(o.contact)}</p><p><b>Next:</b> ${esc(o.next || "-")}${o.nextDate ? " (" + esc(fdate(o.nextDate)) + ")" : ""}</p><p class="hint"><b>Rules:</b> ${esc(RULES[o.rule] || "")}. ${esc(o.rulesNotes)}</p>${o.outcome ? `<p><b>Outcome:</b> ${esc(o.outcome)}</p>` : ""}<details data-key="opp-${o.id}"><summary>Update</summary><form class="f" data-form="opp" data-id="${o.id}">${oppFields(o)}<button type="submit">Save</button></form></details></div>`).join("") : `<div class="card">${empty("No opportunities yet. Add the first one above.")}</div>`}`;
+}
+
+function vPlan() {
+  const cash = settings().cash_mode === "yes";
+  const eff = all("effort").sort((a, b) => b.date.localeCompare(a.date)).slice(0, 12);
+  return `<button class="back" ${go("more")}>‹ More</button><h1>Daily plan</h1>
+<div class="card"><h2>Log marketing time</h2><p class="hint">Rough minutes are fine. The weekly report compares time spent to inquiries by channel.</p><form class="f" data-form="effort"><div class="row">${field("Date", "date", today(), "date")}${sel("Channel", "channel", SOURCES, "facebook_page")}</div><div class="row">${field("What you did", "activity", "", "text", "", "required")}${field("Minutes", "minutes", "15", "number", "", 'inputmode="numeric" min="0" max="600"')}</div><button type="submit">Log it</button></form>${list(eff.map((e) => `<li><div class="main">${esc(e.activity)}<span class="hint">${esc(fdate(e.date))} · ${esc(nice(e.channel))}</span></div><span>${e.minutes} min</span></li>`), "")}</div>
+<div class="card bad"><h2>Cash mode ${cash ? "(on)" : "(off)"}</h2><p class="hint">For weeks you need paying jobs now. It replaces the day plan on Today.</p><ol class="todo">${PLAN.cash_mode.map((s) => `<li>${esc(s.replace(/^\d+\.\s*/, ""))}</li>`).join("")}</ol><button data-act="cash" data-v="${cash ? "no" : "yes"}">Turn cash mode ${cash ? "off" : "on"}</button></div>
+<h2>7-day routine</h2>${PLAN.normal.map((d) => `<div class="card"><h2>Day ${d.day}: ${esc(d.theme)}</h2><ol class="todo"><li><b>Content:</b> ${esc(d.content)}</li><li><b>Get customers:</b> ${esc(d.acquisition)}</li><li><b>Follow up:</b> ${esc(d.followup)}</li><li class="muted"><b>Optional:</b> ${esc(d.optional)}</li></ol></div>`).join("")}`;
+}
+
+let reportWeek = null;
+function vWeekly() {
+  const r = weekly(reportWeek);
+  return `<button class="back" ${go("more")}>‹ More</button><h1>Week of ${esc(fdate(r.a))}</h1><div class="btns"><button class="small ghost" data-act="week" data-v="-7">‹ Previous</button><button class="small ghost" data-act="week" data-v="7">Next ›</button></div>
+<div class="card ok"><h2>What to change next week</h2><ul>${r.tips.map((t) => `<li>${esc(t)}</li>`).join("")}</ul></div>
+<div class="card"><div class="nums"><div><b>${r.posts.length}</b><span>posts published</span></div><div><b>${r.inquiries}</b><span>inquiries</span></div><div><b>${r.quotes}</b><span>quotes sent</span></div><div><b>${r.booked}</b><span>booked</span></div><div><b>${r.jobs}</b><span>jobs done</span></div><div><b>${money(r.revenue)}</b><span>collected</span></div></div></div>
+<div class="card"><h2>Full report</h2>${copyBox(weeklyText(r))}</div>`;
+}
+
+function vSetup() {
+  const st = settings();
+  return `<button class="back" ${go("more")}>‹ More</button><h1>Setup</h1><div class="card warn"><p>The grey examples are only hints. Nothing is saved until you type your own real details. Never put passwords here.</p></div>
+<div class="card"><form class="f" data-form="settings">${SETTINGS.map(([k, label, hint, req]) => field(label, k, st[k] || "", k === "launch_date" ? "date" : "text", req ? "Required before approving posts" : "", hint ? `placeholder="${esc(hint)}"` : "")).join("")}<button type="submit">Save setup</button></form></div>
+<div class="card"><h2>Backup</h2><p>Your data is saved in your private Claude storage for this page. For an extra copy, save a backup file to your phone once a week.</p><button data-act="backup" id="backupbtn">Save backup file</button></div>
+<div class="card"><h2>Privacy</h2><p class="hint">Only you (the owner) can read or change this data, even if the page is ever shared. Don't share this page's link with anyone.</p></div>`;
+}
+
+function vMore() {
+  return `<h1>More</h1><div class="stack morelist">${MORE.map(([v, t, d]) => `<button ${go(v)}><b>${esc(t)}</b><span class="hint">${esc(d)}</span></button>`).join("")}</div>`;
+}
+
+// ---------------------------------------------------------------- work mode: one step at a time, timed
+// Goal minutes are starting targets for a medium-dirty car; your own averages replace them as you log jobs.
+// Product names are P&S examples - use whatever you actually own, at the label's dilution.
+const S_ = (k, name, min, why, todo, done, dont, tools) => ({ k, name, min, why, todo, done, dont, tools });
+const STEPS = {
+  exterior: [
+    S_("x-setup", "Setup", 5, "Every trip away from the car costs minutes.", ["2 buckets: one soap, one rinse", "Wash mitt + wheel brushes", "Wheel/tire cleaner, bug remover", "Big drying towel + spray wax", "Tire shine + applicator", "Before photos: same 3 spots"], "You won't have to walk away from the car once.", "Don't start rinsing before everything is in reach.", ["Brake Buster", "Absolute Wash", "Bead Maker"]),
+    S_("x-wheels", "Spray wheels + walk away", 5, "Chemicals work while you do something else.", ["Wheel cleaner on all 4 wheels and tires", "Bug remover on the bumper and mirrors", "Don't scrub yet"], "Everything is soaking.", "Don't scrub now - the soak does it for free.", ["Brake Buster"]),
+    S_("x-prerinse", "Pre-rinse", 10, "Loose dirt off now = faster, safer wash.", ["Top to bottom", "One lap around the car"], "Loose dirt and mud are off.", "Don't blast one spot for minutes.", []),
+    S_("x-wheelscrub", "Scrub + rinse wheels", 15, "The soak did the hard part.", ["One brush pass per wheel", "One brush pass per tire", "Rinse all 4"], "Wheels and tires look clean from standing height.", "Don't chase every speck in the lug nuts.", ["Wheel brush", "Tire brush"]),
+    S_("x-wash", "Hand wash", 20, "Top down, one lap: dirt only goes down.", ["Roof", "Glass", "Hood + trunk", "Upper sides", "Lower sides + bumpers last", "Rinse mitt in bucket 2 after each panel"], "Every panel washed once, in order.", "No circles, no jumping side to side.", ["Absolute Wash", "Wash mitt"]),
+    S_("x-dry", "Rinse + dry with wax", 15, "Two steps become one.", ["Rinse top down", "Mist spray wax on the wet panel", "Lay towel flat, drag toward you", "Panel by panel, same order as the wash"], "Whole car dry, no water spots.", "Don't rub in small circles. Drag.", ["Bead Maker", "Drying towel"]),
+    S_("x-jambs", "Door jambs", 10, "Customers notice them when they open the door.", ["Open door", "Damp towel on the jamb", "Close, next door"], "All 4 jambs wiped, one lap.", "Don't open and close the same door twice.", []),
+    S_("x-glass", "Outside glass", 5, "Two towels = no streaks = no redo.", ["Damp towel cleans", "Dry towel buffs", "All glass, one pass"], "No streaks when you look from an angle.", "Don't use a wet, used towel on glass.", ["Glass towel x2"]),
+    S_("x-tires", "Tire shine", 5, "Last, so it never slings on clean paint.", ["Thin coat with applicator", "All 4 tires"], "Even shine, no drips on the wheel.", "Don't glob it on - thin is faster and looks better.", ["Tire shine", "Applicator"]),
+    S_("x-photos", "After photos", 5, "Your next Nextdoor post.", ["Same 3 spots and angles as before photos", "Blur the plate later"], "3 after photos taken.", "Don't skip it - photos get you clients.", []),
+  ],
+  interior: [
+    S_("i-setup", "Setup", 5, "Every trip away from the car costs minutes.", ["Caddy at the door", "Vacuum + crevice + brush tool", "Stiff carpet brush, detail brushes", "Interior cleaner, glass cleaner, carpet cleaner", "Towels folded in quarters (8 sides each)", "Trash bag hung on the door", "Before photos of the worst spots"], "You won't have to walk away from the car once.", "Don't start until the caddy is full.", ["Xpress Interior", "Carpet Bomber"]),
+    S_("i-empty", "Empty + pre-spray", 10, "Stains soak while you vacuum.", ["Trash in the bag", "Personal items in the bin", "All mats out", "Check door + seat-back pockets", "SPRAY every stain now and leave it"], "Car empty and stains soaking.", "Don't scrub stains now.", ["Carpet Bomber"]),
+    S_("i-mats", "Floor mats", 10, "They dry while you do everything else.", ["Rubber: spray, scrub, rinse", "Carpet: cleaner + brush or drill brush", "Lean them up to dry"], "Mats drying and you've moved on.", "Don't wait for them to dry.", ["Carpet Bomber", "Drill brush"]),
+    S_("i-brush", "Brush before vacuum", 15, "Loosened dirt comes up in ONE vacuum pass.", ["Stiff brush across carpet, one direction", "Brush the seats", "Pet hair: rubber brush or hair stone into piles", "Detail brush: vents, seams, console gaps, top down"], "All the dirt is loose and on the floor.", "Don't vacuum first - it takes 3 passes.", ["Stiff brush", "Pet hair brush"]),
+    S_("i-vac", "Vacuum, one lap", 30, "Never go back over a spot.", ["Driver side", "Rear driver", "Rear passenger", "Front passenger", "Trunk", "Seat forward: behind. Seat back: in front.", "Crevice tool on seams in the same pass"], "You went around once.", "Don't switch tools back and forth.", ["Crevice tool", "Brush tool"]),
+    S_("i-wipe", "Wipe-down", 30, "Scrub and wipe in one move.", ["Spray ON the brush or towel, not the dash", "Dash", "Steering wheel", "Console + cup holders", "Every door panel in a row", "Flip to a clean towel side"], "Every hard surface touched once.", "Don't spray the dash - overspray hits the glass.", ["Xpress Interior", "Detail brush"]),
+    S_("i-stains", "Stains", 15, "They've been soaking since step 2.", ["Agitate with a brush", "Blot with a towel", "Headliner: spray the TOWEL, dab", "3 minutes max per stain"], "Soaked stains treated; stubborn ones noted for the customer.", "Don't fight one stain for 20 minutes.", ["Carpet Bomber"]),
+    S_("i-glass", "Inside glass", 10, "Last, so nothing lands on it after.", ["Damp towel cleans, dry towel buffs", "Windshield", "Side + rear windows", "Mirrors", "Screens: dry towel only"], "No streaks from an angle.", "Don't wipe glass with your wipe-down towel.", ["Glass towel x2"]),
+    S_("i-final", "Final check", 10, "Done means done.", ["Mats back in", "Touch-up vacuum on the driver floor", "Check cup holders", "Check driver floor", "Check dash", "After photos, same spots"], "Those 3 spots look perfect. Stop.", "No extra rounds nobody pays for.", []),
+  ],
+};
+// Full package: exterior first (no water drips into a clean interior; mats dry in the sun), then interior.
+STEPS.full = STEPS.exterior.filter((s) => s.k !== "x-photos").concat(STEPS.interior.filter((s) => s.k !== "i-setup"));
+const STEP_BY_KEY = {}; Object.values(STEPS).forEach((arr) => arr.forEach((s) => { STEP_BY_KEY[s.k] = s; }));
+const CONDITION = { light: ["Light (pretty clean)", 0.8], medium: ["Medium (normal)", 1], heavy: ["Heavy (pet hair, stains, trash)", 1.4] };
+const KIT = ["Vacuum charged or plugged in, with crevice + brush tools", "Stiff carpet brush + detail brushes + pet hair brush", "Interior cleaner, carpet cleaner, glass cleaner - bottles filled", "Wheel cleaner, soap, spray wax, tire shine", "Towels for the whole job, sorted: interior / glass / drying", "2 buckets + wash mitt + wheel brushes", "Trash bags + a bin for the customer's things", "Phone stand for photos", "Water + snack, so you don't stop mid-job"];
+const HABITS = [
+  ["Spray first, scrub later", "Wheels, bugs and stains soak while you do something else."],
+  ["Brush before you vacuum", "One vacuum pass instead of three."],
+  ["One lap, same order every car", "The app tells you what's next. No deciding."],
+  ["Every step has a \"done when\"", "When it's true, tap Next. No extra rounds."],
+  ["Never stop mid-job", "Kit packed the night before, towels for the whole car, water ready."],
+];
+const fmt = (sec) => { sec = Math.max(0, Math.round(sec)); const h = Math.floor(sec / 3600), m = Math.floor(sec % 3600 / 60), s = sec % 60; return h ? `${h}:${pad(m)}:${pad(s)}` : `${m}:${pad(s)}`; };
+const fmtMin = (sec) => { const m = Math.round(sec / 60); return m >= 60 ? `${Math.floor(m / 60)}h ${m % 60}m` : `${m}m`; };
+const goalFor = (step, cond) => Math.round(step.min * 60 * (CONDITION[cond] || CONDITION.medium)[1]);
+const jobGoal = (service, cond) => STEPS[service].reduce((s, st) => s + goalFor(st, cond), 0);
+const productCost = () => { const n = Number(String(settings().product_cost || "").replace(/[$,\s]/g, "")); return isFinite(n) && n >= 0 ? n : 0; };
+const perHour = (service, sec) => sec >= 600 ? money((SERVICES[service].price - productCost()) / (sec / 3600)) : "-"; // under 10 min = test run, not a real rate
+function stepStats() {
+  const st = {};
+  for (const t of all("timings")) for (const d of t.steps || []) { if (d.skipped || !STEP_BY_KEY[d.k]) continue; const r = st[d.k] || (st[d.k] = { n: 0, sum: 0 }); r.n++; r.sum += d.sec; }
+  return st;
+}
+let activeQ = Promise.resolve(), lastFinish = null;
+function saveActive(a) { // one write at a time to the running-job document
+  if (!db) return Promise.reject(new VErr("Storage isn't connected."));
+  S.active = a; const snap = JSON.parse(JSON.stringify(a));
+  activeQ = activeQ.catch(() => {}).then(() => db.doc("config/activejob").set(snap)); return activeQ;
+}
+function clearActive() { S.active = null; activeQ = activeQ.catch(() => {}).then(() => db.doc("config/activejob").delete()); return activeQ; }
+const stepElapsed = (a, now) => ((a.pausedAt || now) - a.stepStart) / 1000;
+
+function vWorkRunning(a) {
+  const steps = STEPS[a.service], cur = steps[a.i];
+  const goal = goalFor(cur, a.condition), now = Date.now(), el = stepElapsed(a, now);
+  const total = ((a.pausedAt || now) - a.jobStart) / 1000;
+  const checks = (a.checks && a.checks[a.i]) || [];
+  const allDone = cur.todo.every((_, i) => checks[i]);
+  return `<div class="jobhead"><span class="eyebrow">${esc(SERVICES[a.service].label)}${a.who ? " · " + esc(a.who) : ""} · ${esc(CONDITION[a.condition][0])}</span>
+<div class="stepcount"><b>${a.i + 1}</b>/${steps.length}</div></div>
+<div class="bar"><i style="width:${Math.round(100 * a.i / steps.length)}%"></i></div>
+<div class="card stepcard">
+<p class="stepname">${esc(cur.name)}</p><p class="why">${esc(cur.why)}</p>
+<div class="clock"><div class="timer${el > goal ? " over" : ""}" id="worktimer" data-goal="${goal}">${fmt(el)}</div><div class="goal">goal<br><b>${fmtMin(goal)}</b></div></div>
+<p class="muted small">Whole job <span id="worktotal">${fmt(total)}</span> of ${fmtMin(jobGoal(a.service, a.condition))} goal${a.pausedAt ? " · <b class='p-warn'>PAUSED</b>" : ""}</p>
+<div class="checks">${cur.todo.map((t, i) => `<button type="button" class="check${checks[i] ? " on" : ""}" data-act="workcheck" data-v="${i}" aria-pressed="${checks[i] ? "true" : "false"}"><span class="box">${checks[i] ? "✓" : ""}</span>${esc(t)}</button>`).join("")}</div>
+<div class="donewhen"><span class="eyebrow">Done when</span>${esc(cur.done)}</div>
+<div class="dont"><span class="eyebrow">Time-waster</span>${esc(cur.dont)}</div>
+${cur.tools.length ? `<div class="tools">${cur.tools.map((t) => `<span class="tool">${esc(t)}</span>`).join("")}</div>` : ""}
+${a.pausedAt ? `<button class="huge" data-act="workresume">Resume</button>` : `<button class="huge${allDone ? " ready" : ""}" data-act="worknext">${allDone ? "✓ " : ""}${a.i + 1 < steps.length ? "Done - next step" : "Done - finish job"}</button>`}
+<div class="btns">${a.pausedAt ? "" : `<button class="ghost small" data-act="workpause">Pause</button>`}<button class="ghost small" data-act="workskip">Skip step</button><button class="danger small" data-ask="workcancel">Cancel job</button></div>
+<div class="confirm" data-confirm="workcancel" hidden><p>Throw away this job's timing?</p><div class="btns"><button class="small danger" data-act="workcancel">Yes, cancel</button><button class="small ghost" data-ask="">Keep going</button></div></div>
+</div>
+<div class="card"><h2>Coming up</h2>${list(steps.slice(a.i + 1).map((s, j) => `<li><div class="main"><span class="muted">${a.i + j + 2}.</span> ${esc(s.name)}</div><span class="muted">${fmtMin(goalFor(s, a.condition))}</span></li>`), "This is the last step.")}</div>`;
+}
+function vFinish(r) {
+  const goal = jobGoal(r.service, r.condition), beat = r.total <= goal;
+  const sorted = r.steps.filter((d) => !d.skipped && STEP_BY_KEY[d.k]).map((d) => ({ d, over: d.sec - goalFor(STEP_BY_KEY[d.k], r.condition) })).sort((x, y) => y.over - x.over);
+  const worst = sorted[0];
+  return `<div class="card finish ${beat ? "ok" : "warn"}"><span class="eyebrow">Job done</span><p class="stepname">${fmtMin(r.total)}</p>
+<p>${beat ? "You beat the goal of " + fmtMin(goal) + "." : "Goal was " + fmtMin(goal) + ". Every job gets you closer."}</p>
+<div class="nums"><div><b>${perHour(r.service, r.total)}</b><span>per hour after ${money(productCost())} products</span></div>${worst ? `<div><b>${esc(STEP_BY_KEY[worst.d.k].name)}</b><span>${worst.over > 0 ? "biggest time sink (+" + fmtMin(worst.over) + ")" : "slowest step"}</span></div>` : ""}</div>
+${worst && worst.over > 0 ? `<p class="hint">Next job, focus only on "${esc(STEP_BY_KEY[worst.d.k].name)}": ${esc(STEP_BY_KEY[worst.d.k].dont)}</p>` : ""}
+<div class="btns">${r.appt ? `<button ${go("lead", r.lead)}>Record payment on the lead</button>` : ""}<button class="ghost" data-act="finishok">Close</button></div></div>`;
+}
+function vGuide(service) {
+  return STEPS[service].map((s, i) => `<details data-key="g-${service}-${s.k}"><summary>${i + 1}. ${esc(s.name)} <span class="muted">· ${s.min}m</span></summary>
+<p class="why">${esc(s.why)}</p><ul class="tight">${s.todo.map((t) => `<li>${esc(t)}</li>`).join("")}</ul>
+<div class="donewhen"><span class="eyebrow">Done when</span>${esc(s.done)}</div><div class="dont"><span class="eyebrow">Time-waster</span>${esc(s.dont)}</div></details>`).join("");
+}
+let guideSvc = "interior";
+function vWork() {
+  const a = S.active;
+  if (a && a.service && STEPS[a.service]) return vWorkRunning(a);
+  const t = today();
+  const todays = all("appts").filter((x) => x.status === "confirmed" && (S.slots.get(x.slot) || {}).date <= t);
+  const st = stepStats();
+  const jobs = all("timings").sort((x, y) => (y.date || "").localeCompare(x.date || ""));
+  const bySvc = Object.keys(SERVICES).map((k) => { const js = jobs.filter((j) => j.service === k); if (!js.length) return null; const avg = js.reduce((s, j) => s + j.total, 0) / js.length; const best = Math.min.apply(null, js.map((j) => j.total)); return `<li><div class="main">${esc(SERVICES[k].label)}<span class="hint">${js.length} job(s) · best ${fmtMin(best)} · goal ${fmtMin(jobGoal(k, "medium"))} · ${perHour(k, avg)}/hr after products</span></div><b>${fmtMin(avg)}</b></li>`; }).filter(Boolean);
+  const over = Object.keys(st).map((k) => ({ k, avg: st[k].sum / st[k].n, goal: STEP_BY_KEY[k].min * 60 })).sort((x, y) => (y.avg - y.goal) - (x.avg - x.goal));
+  return `${lastFinish ? vFinish(lastFinish) : ""}<h1>Work</h1>
+<div class="card hero"><h2>Start a job</h2><form class="f" data-form="workstart">
+${todays.length ? sel("Which appointment?", "appt", [""].concat(todays.map((x) => x.id)), todays[0].id, (id) => { if (!id) return "Practice / not in the app"; const x = S.appts.get(id); return `${(S.leads.get(x.lead) || {}).name} - ${SERVICES[x.service].label}`; }) : `<input type="hidden" name="appt" value="">`}
+${sel("Service", "service", Object.keys(SERVICES), todays.length ? todays[0].service : "full", (k) => `${SERVICES[k].label} · goal ${fmtMin(jobGoal(k, "medium"))}`)}
+${sel("How dirty is it?", "condition", Object.keys(CONDITION), "medium", (k) => CONDITION[k][0])}
+<button type="submit" class="huge">Start job</button></form>
+<p class="hint">One step at a time with a checklist and a timer. It keeps running if your phone locks.</p></div>
+<div class="card"><h2>Your times</h2>${bySvc.length ? list(bySvc, "") : empty("No timed jobs yet. Time your next car - even a practice one on your own car.")}
+${over.length ? `<h3>Where the time goes</h3>${list(over.slice(0, 5).map((o) => `<li><div class="main">${esc(STEP_BY_KEY[o.k].name)}<span class="hint">goal ${fmtMin(o.goal)}</span></div><b class="${o.avg > o.goal ? "p-warn" : "p-ok"}">${fmtMin(o.avg)}</b></li>`), "")}<p class="hint">Top line = your biggest time sink. Fix that one step next job.</p>` : ""}</div>
+<div class="card"><h2>5 habits that save the most time</h2><ol class="habits">${HABITS.map((h) => `<li><b>${esc(h[0])}</b><span>${esc(h[1])}</span></li>`).join("")}</ol></div>
+<div class="card"><h2>Step-by-step guide</h2><div class="chips">${["interior", "exterior", "full"].map((k) => `<button data-act="guide" data-v="${k}" class="${guideSvc === k ? "on" : ""}">${esc(k === "full" ? "Full (exterior first)" : nice(k))}</button>`).join("")}</div>${vGuide(guideSvc)}</div>
+<div class="card"><details data-key="kit"><summary>Night-before kit checklist</summary><div class="checks">${KIT.map((k, i) => `<button type="button" class="check${kitChecks[i] ? " on" : ""}" data-act="kit" data-v="${i}"><span class="box">${kitChecks[i] ? "✓" : ""}</span>${esc(k)}</button>`).join("")}</div></details></div>
+${jobs.length ? `<div class="card"><h2>Recent jobs</h2>${list(jobs.slice(0, 8).map((j) => `<li><div class="main">${esc(fdate(j.date))} · ${esc(SERVICES[j.service].label)}<span class="hint">${esc((CONDITION[j.condition] || CONDITION.medium)[0])}${j.who ? " · " + esc(j.who) : ""}</span></div><b>${fmtMin(j.total)}</b></li>`), "")}</div>` : ""}`;
+}
+let kitChecks = (() => { try { return JSON.parse(localStorage.getItem("cf-kit") || "[]"); } catch (_) { return []; } })();
+async function workStart(f) {
+  need(SERVICES[f.service], "Pick a service.");
+  need(!S.active || !S.active.service, "A job is already running.");
+  const appt = f.appt ? S.appts.get(f.appt) : null, now = Date.now();
+  lastFinish = null;
+  await saveActive({ service: f.service, condition: CONDITION[f.condition] ? f.condition : "medium", appt: appt ? appt.id : "", lead: appt ? appt.lead : "", who: appt ? (S.leads.get(appt.lead) || {}).name || "" : "", i: 0, jobStart: now, stepStart: now, pausedAt: null, done: [], checks: {} });
+}
+async function workNext(skip) {
+  const a = JSON.parse(JSON.stringify(S.active)); need(a && a.service, "No job running.");
+  const steps = STEPS[a.service], now = Date.now();
+  if (a.pausedAt) { a.stepStart += now - a.pausedAt; a.jobStart += now - a.pausedAt; a.pausedAt = null; }
+  a.done.push({ k: steps[a.i].k, sec: Math.round((now - a.stepStart) / 1000), skipped: !!skip });
+  if (a.i + 1 < steps.length) { a.i++; a.stepStart = now; await saveActive(a); window.scrollTo(0, 0); return null; }
+  const total = Math.round(a.done.filter((d) => !d.skipped).reduce((s, d) => s + d.sec, 0));
+  const rec = { date: today(), service: a.service, condition: a.condition, appt: a.appt, lead: a.lead || "", who: a.who, steps: a.done, total };
+  await put("timings", newId("timings"), rec);
+  await clearActive();
+  lastFinish = rec; window.scrollTo(0, 0);
+  return rec;
+}
+async function workPause(on) {
+  const a = JSON.parse(JSON.stringify(S.active)); need(a && a.service, "No job running.");
+  const now = Date.now();
+  if (on && !a.pausedAt) a.pausedAt = now;
+  if (!on && a.pausedAt) { a.stepStart += now - a.pausedAt; a.jobStart += now - a.pausedAt; a.pausedAt = null; }
+  await saveActive(a);
+}
+function workCheck(idx) {
+  const a = JSON.parse(JSON.stringify(S.active)); if (!a || !a.service) return;
+  a.checks = a.checks || {}; const c = a.checks[a.i] = a.checks[a.i] || [];
+  c[idx] = !c[idx];
+  saveActive(a).catch(() => toast("Couldn't save that tick.", true));
+  render(true);
+}
+setInterval(() => { // refresh only the clock, so nothing else gets redrawn
+  const el = document.getElementById("worktimer"), a = S.active;
+  if (!el || !a || !a.service) return;
+  const now = Date.now(), sec = stepElapsed(a, now);
+  el.textContent = fmt(sec); el.classList.toggle("over", sec > Number(el.dataset.goal));
+  const tot = document.getElementById("worktotal"); if (tot) tot.textContent = fmt(((a.pausedAt || now) - a.jobStart) / 1000);
+}, 1000);
+
+// ---------------------------------------------------------------- marketing agent
+// The weekly brief is written by a scheduled Claude research run into the "briefs" collection.
+// The assistant below drafts on demand; you still review and post everything yourself.
+const ASK_CHIPS = [
+  ["Nextdoor post for this week", "Write one Nextdoor Business Page post for this week. Pick an angle that fits the season and isn't one I've already used. Under 90 words."],
+  ["Reply to a message", "A customer sent me this message. Write my reply (short, friendly, drop-off only, real prices, never promise a time I haven't opened):\n\n[paste their message here]"],
+  ["Ideas to get clients this week", "Give me 5 specific things I can do this week to get paying clients in Melrose Park using only Nextdoor, flyers and in-person visits. Rank them by how likely they are to bring a booking. One line each."],
+  ["Before/after caption", "Write a short Nextdoor caption for a real before/after photo. Details of the job: [type what the car was like]"],
+  ["Help me price a dirty car", "A customer described their car like this: [paste]. Should I quote my standard price or more? Give me a short honest reply I can send asking for photos first."],
+];
+function agentContext() {
+  const st = settings(), f = funnel(), ch = channels();
+  const brief = latestBrief();
+  const usedTitles = POSTS.map(postView).filter((p) => p.status === "published").map((p) => p.title);
+  return [
+    `You are the marketing assistant for ${BUSINESS}, a one-person, garage-based car detailing business in Melrose Park, IL. Customers DROP OFF their car; it is NOT mobile.`,
+    `Services and prices (the only ones offered): Interior $80 (${st.interior_includes || "see owner"}); Exterior $60 (${st.exterior_includes || "see owner"}); Full interior + exterior $140. Prices may be quoted higher for very dirty cars only after seeing photos.`,
+    `Booking: ${st.booking_line || "call or text"}. Hours: ${st.hours_line || "ask"}. Payment: ${st.payment_methods || "ask"}. Turnaround: ${st.turnaround_line || "same day"}.`,
+    "Marketing channel: a free Nextdoor Business Page (no personal-profile promotion, no paid ads or Opportunity Alerts), flyers on community boards, in-person visits to local businesses. No Facebook profile.",
+    "Add-ons offered (price on request): pet hair removal, odor bomb treatment, headliner cleaning, engine bay cleaning, spray ceramic sealant, salt removal, wax & sealant protection, wheel & tire deep clean. Hard rules: never claim mobile service (coming later, once the owner's vehicle is repaired), a full ceramic coating or paint correction (owner is still training), polishing, paint correction, extraction, being insured/certified/#1, being fully booked or having limited spots. Never invent reviews, testimonials, customer stories or results. Write like a real local owner: plain, specific, a little funny sometimes, no hashtags on Nextdoor, at most one emoji. Use [brackets] for any detail the owner must fill in with something true.",
+    `Real numbers so far: ${f.leads} leads, ${f.booked} booked, ${f.completed} completed, ${money(collected())} collected. Leads by channel: ${ch.map((c) => `${nice(c.source)} ${c.inquiries}`).join(", ") || "none yet"}.`,
+    usedTitles.length ? `Posts already published: ${usedTitles.join("; ")}.` : "No posts marked published yet.",
+    brief ? `This week's research brief: ${brief.summary}` : "",
+    "Answer in plain text the owner can copy. Keep it short.",
+  ].filter(Boolean).join("\n");
+}
+const latestBrief = () => all("briefs").sort((a, b) => (b.week || "").localeCompare(a.week || ""))[0] || null;
+let sampleFn = null, askBusy = false, askAnswer = "", askErr = "", askCtl = null;
+function vAgent() {
+  const b = latestBrief();
+  const briefHtml = b ? `<div class="card ok"><h2>This week's brief · ${esc(fdate(b.week))}</h2><p>${esc(b.summary)}</p>
+<h3>Do this week</h3><ol class="todo">${(b.actions || []).map((a) => `<li>${esc(a)}</li>`).join("")}</ol></div>
+<div class="card"><h2>Posts ready for Nextdoor</h2><p class="hint">Post from your Business Page. Fill in any [brackets] with something true first.</p>${(b.posts || []).map((p) => { const c = banned(negateMobile(p.text)); return `<h3>${esc(p.when ? p.when + ": " : "")}${esc(p.title)}</h3>${p.photo ? `<span class="hint">Photo: ${esc(p.photo)}</span>` : ""}${copyBox(p.text)}${c.length ? `<p class="p-bad">Check before posting: mentions ${esc(c.join(", "))}</p>` : ""}`; }).join("")}</div>
+<div class="card"><details data-key="research"><summary>What the research found</summary>${list((b.research || []).map((r) => `<li><div class="main"><b>${esc(r.title)}</b><span class="hint">${esc(r.detail)}${r.source ? " · " + esc(r.source) : ""}</span></div></li>`), "")}</details></div>`
+    : `<div class="card"><h2>Weekly brief</h2>${empty("Your first brief arrives with the next weekly research run.")}</div>`;
+  const older = all("briefs").sort((x, y) => (y.week || "").localeCompare(x.week || "")).slice(1, 6);
+  return `<button class="back" ${go("more")}>‹ More</button><h1>Marketing agent</h1>
+<p class="muted">Every Monday morning Claude researches your area (season, weather, local prices, what's working in your numbers) and leaves a brief here with posts ready to copy. It never posts or messages anyone for you.</p>
+${briefHtml}
+<div class="card"><h2>Ask Claude</h2>${sampleFn ? `<div class="chips">${ASK_CHIPS.map((c, i) => `<button data-act="askchip" data-v="${i}">${esc(c[0])}</button>`).join("")}</div>
+<form class="f" data-form="ask"><label>What do you need?<textarea name="q" id="f-askq" placeholder="e.g. Write a Nextdoor post about salt season">${esc(askDraft)}</textarea></label>
+<div class="btns"><button type="submit" ${askBusy ? "disabled" : ""}>${askBusy ? "Writing…" : "Ask"}</button>${askBusy ? `<button type="button" class="ghost" data-act="askstop">Stop</button>` : ""}</div></form>
+${askErr ? `<p class="p-bad">${esc(askErr)}</p>` : ""}${askAnswer ? `<h3>Answer</h3><div id="askout">${copyBox(askAnswer)}</div>${banned(negateMobile(askAnswer)).length ? `<p class="p-bad">Check before using: mentions ${esc(banned(negateMobile(askAnswer)).join(", "))}</p>` : ""}<p class="hint">Read it, fix anything that isn't true, then post or send it yourself.</p>` : `<div id="askout"></div>`}`
+    : empty("The assistant isn't available in this view. Open the page from its claude.ai link while signed in.")}</div>
+${older.length ? `<div class="card"><h2>Past briefs</h2>${list(older.map((x) => `<li><div class="main">${esc(fdate(x.week))}<span class="hint">${esc(x.summary)}</span></div></li>`), "")}</div>` : ""}`;
+}
+let askDraft = "";
+async function ask(q) {
+  q = clean(q, 4000); need(q, "Type what you need first.");
+  need(sampleFn, "The assistant isn't available in this view.");
+  askDraft = q; askBusy = true; askErr = ""; askAnswer = ""; render(true);
+  askCtl = new AbortController();
+  try {
+    const r = await sampleFn([{ role: "user", content: agentContext() + "\n\nOWNER'S REQUEST:\n" + q }], {
+      cache: false, signal: askCtl.signal, modelTier: "default",
+      onText: ({ text }) => { askAnswer = text; const out = document.getElementById("askout"); if (out) out.innerHTML = copyBox(text); },
+    });
+    askAnswer = r.text;
+  } catch (e) {
+    if (e && e.text) askAnswer = e.text;
+    askErr = !e || e.code === "cancelled" ? "" : e.code === "not_granted" ? "You declined the assistant for this page. You can allow it from the page's Permissions menu." : e.code === "rate_limited" ? "Too many requests right now. Try again in a few minutes." : "Couldn't get an answer. Try again.";
+  } finally { askBusy = false; askCtl = null; render(true); }
+}
+
+// ---------------------------------------------------------------- render loop
+let pendingRender = false;
+function render(force) {
+  const root = document.getElementById("view");
+  const a = document.activeElement;
+  if (!force && a && root.contains(a) && /INPUT|TEXTAREA|SELECT/.test(a.tagName)) { pendingRender = true; return; } // don't wipe what you're typing
+  pendingRender = false;
+  const open = new Set(Array.from(root.querySelectorAll("details[open]")).map((d) => d.dataset.key));
+  const fn = { today: vToday, leads: vLeads, newlead: vNewLead, lead: () => vLead(sub), book: vBook, posts: vPosts, post: () => vPost(sub), replies: vReplies, prospects: vProspects, plan: vPlan, weekly: vWeekly, setup: vSetup, more: vMore, work: vWork, agent: vAgent }[view] || vToday;
+  root.innerHTML = gate || fn();
+  root.querySelectorAll("details[data-key]").forEach((d) => { if (open.has(d.dataset.key)) d.open = true; });
+  document.getElementById("tabs").innerHTML = TABS.map(([v, l]) => `<button ${go(v)} class="${tabOf(view) === v || (view === "newlead" && v === "leads") || (view === "lead" && v === "leads") || (view === "post" && v === "posts") ? "on" : ""}" aria-label="${l}"><svg viewBox="0 0 24 24" aria-hidden="true">${ICONS[v]}</svg>${l}</button>`).join("");
+}
+document.addEventListener("focusout", () => setTimeout(() => { if (pendingRender) render(); }, 150));
+
+function navigate(v, s) { view = v; sub = s == null ? null : s; filter = ""; render(true); window.scrollTo(0, 0); }
+
+async function run(fn, okMsg) {
+  try { await fn(); if (okMsg) toast(okMsg); render(true); }
+  catch (e) { toast(e instanceof VErr ? e.message : "Couldn't save that. Check your connection and try again.", true); if (!(e instanceof VErr)) console.error(e); }
+}
+
+document.addEventListener("click", (e) => {
+  const t = e.target.closest("[data-go],[data-act],[data-copy],[data-filter],[data-ask]");
+  if (!t) return;
+  if (t.hasAttribute("data-go")) { e.preventDefault(); return navigate(t.dataset.go, t.dataset.sub); }
+  if (t.hasAttribute("data-filter")) { filter = t.dataset.filter; return render(true); }
+  if (t.hasAttribute("data-ask")) { document.querySelectorAll("[data-confirm]").forEach((c) => { c.hidden = c.dataset.confirm !== t.dataset.ask; }); return; }
+  if (t.hasAttribute("data-copy")) {
+    const pre = t.parentNode.querySelector("pre"), text = pre.innerText;
+    const done = () => { t.textContent = "Copied"; setTimeout(() => { t.textContent = "Copy"; }, 1500); };
+    const fallback = () => { const r = document.createRange(); r.selectNodeContents(pre); const s = getSelection(); s.removeAllRanges(); s.addRange(r); toast("Text selected - tap Copy in the menu"); };
+    try { navigator.clipboard.writeText(text).then(done, fallback); } catch (_) { fallback(); }
+    return;
+  }
+  const id = t.dataset.id, v = t.dataset.v;
+  const acts = {
+    replied: () => run(() => leadAct(id, (l) => { if (l.status === "New Lead" || l.status === "Follow-Up Due") l.status = "Replied"; l.lastContact = today(); l.next = plusDays(2); ev(l, "reply_sent"); }), "Reply logged. Follow-up set for 2 days from now."),
+    followup: () => run(() => leadAct(id, (l) => { l.lastContact = today(); l.next = Number(v) ? plusDays(Number(v)) : null; if (l.status === "Follow-Up Due") l.status = "Replied"; ev(l, "followup_sent"); }), Number(v) ? "Follow-up logged." : "Final follow-up logged. If they don't answer, mark them Lost."),
+    confirm: () => run(() => confirmAppt(id), "Confirmed. Send the booking confirmation message."),
+    release: () => run(() => cancelAppt(id, false, "slot released"), "Slot released."),
+    noshow: () => run(() => cancelAppt(id, true, ""), "No-show logged."),
+    reminder: () => run(async () => { const a = S.appts.get(id); await put("appts", id, Object.assign({}, a, { reminder: today() })); await leadAct(a.lead, (l) => ev(l, "reminder_sent")); }, "Reminder logged."),
+    closeslot: () => run(async () => { const s = S.slots.get(id); need(s && s.status === "open", "Only open slots can be closed."); await put("slots", id, Object.assign({}, s, { status: "closed" })); }, "Slot closed."),
+    reviewreq: () => run(() => leadAct(id, (l) => { l.reviewReq = today(); l.next = null; ev(l, "review_requested"); }), "Review request logged."),
+    reviewgot: () => run(() => leadAct(id, (l) => { l.reviewGot = true; ev(l, "review_received"); }), "Review logged."),
+    repeat: () => run(() => leadAct(id, (l) => { l.repeat = plusDays(60); ev(l, "repeat_offer_sent"); }), "Repeat offer logged. Next reminder in 60 days."),
+    todraft: () => run(() => putPost(id, { status: "draft", approved: null, scheduled: null }), "Back to draft."),
+    cash: () => run(() => saveSettings({ cash_mode: v }), v === "yes" ? "Cash mode on." : "Cash mode off."),
+    week: () => { reportWeek = plusDays(Number(v), weekBounds(reportWeek)[0]); render(true); },
+    backup: () => saveBackup(),
+    askchip: () => { askDraft = ASK_CHIPS[Number(v)][1]; render(true); const ta = document.getElementById("f-askq"); if (ta) ta.focus(); },
+    askstop: () => { if (askCtl) askCtl.abort(); },
+    worknext: () => run(() => workNext(false)),
+    workcheck: () => workCheck(Number(v)),
+    finishok: () => { lastFinish = null; render(true); },
+    guide: () => { guideSvc = v; render(true); },
+    kit: () => { kitChecks[Number(v)] = !kitChecks[Number(v)]; try { localStorage.setItem("cf-kit", JSON.stringify(kitChecks)); } catch (_) {} render(true); },
+    workskip: () => run(() => workNext(true)),
+    workpause: () => run(() => workPause(true), "Paused. Tap Resume when you're back."),
+    workresume: () => run(() => workPause(false)),
+    workcancel: () => run(clearActive, "Job timer cancelled."),
+  };
+  if (acts[t.dataset.act]) acts[t.dataset.act]();
+});
+
+async function putPost(id, patch) { const o = Object.assign({ status: "draft" }, S.posts.get(id) || {}, patch); await put("posts", id, o); }
+async function saveSettings(patch) { if (!db) throw new VErr("Storage isn't connected."); const next = Object.assign({}, S.settings, patch); await db.doc("config/settings").set(next); S.settings = next; }
+
+document.addEventListener("submit", (e) => {
+  const form = e.target.closest("form[data-form]"); if (!form) return;
+  e.preventDefault();
+  const f = {}; new FormData(form).forEach((val, k) => { f[k] = typeof val === "string" ? val : ""; });
+  const id = form.dataset.id;
+  const handlers = {
+    workstart: () => run(() => workStart(f), "Timer started. One step at a time."),
+    ask: () => { ask(f.q).catch((err) => toast(err.message || "Couldn't ask.", true)); },
+    newlead: () => run(async () => { const nid = await createLead(f); view = "lead"; sub = nid; }, "Lead added. Reply now - fast replies win jobs."),
+    editlead: () => run(() => leadAct(id, (l) => { const n = leadFromForm(f, l); need(STATUSES.includes(f.status), "Pick a status."); if (f.status === "Lost" && l.status !== "Lost") ev(n, "lost", f.lostReason); n.status = f.status; n.next = isDate(f.next) ? f.next : null; n.repeat = isDate(f.repeat) ? f.repeat : null; n.lostReason = clean(f.lostReason, 200); Object.assign(l, n); }), "Saved."),
+    quote: () => run(() => leadAct(id, (l) => { need(SERVICES[f.service], "Pick a service."); let p = num(f.price, "Price"); if (p == null) p = SERVICES[f.service].price; l.status = "Quote Sent"; l.service = f.service; l.quote = p; l.lastContact = today(); l.next = plusDays(2); ev(l, "quote_sent", `${SERVICES[f.service].label} $${p}`); }), "Quote logged. Follow-up in 2 days."),
+    offer: () => run(() => propose(id, f.slot, f.service, f.price), "Slot held. Send them the time, then confirm when they say yes."),
+    cancel: () => run(() => cancelAppt(id, false, f.reason), "Cancelled. The slot is open again if it's in the future."),
+    complete: () => run(() => completeJob(id, f), "Job recorded. Ask for a review tomorrow."),
+    pay: () => run(() => recordPayment(id, f.amount, f.method), "Payment recorded."),
+    slot: () => run(() => addSlot(f), "Slot added."),
+    approve: () => run(async () => { const p = postView(POSTS.find((x) => x.id === id)); if (p.needs_real_photos) need(f.photos === "on", "This post needs your real photos or video. Tick the box once you have them."); const probs = postProblems(p); need(!probs.length, "Can't approve yet: " + probs.join("; ")); await putPost(id, { status: "approved", approved: today() }); }, "Approved. Post it yourself, then mark it published."),
+    publish: () => run(async () => { const where = clean(f.where, 200); need(where, "Say where you posted it."); const d = isDate(f.date) ? f.date : today(); need(d <= today(), "Use Schedule for a future date."); await putPost(id, { status: "published", published: d, where }); }, "Marked published."),
+    schedule: () => run(async () => { need(isDate(f.date), "Pick a date."); await putPost(id, { status: "scheduled", scheduled: f.date }); }, "Scheduled (reminder only - post it yourself on the day)."),
+    postedit: () => run(async () => { const base = POSTS.find((x) => x.id === id), cur = postView(base); need(cur.status !== "published", "Already published - edit it on the platform."); const edits = {}; let changed = false; for (const k in POST_FIELDS) { edits[k] = clean(f[k], 4000); if (edits[k] !== cur[k]) changed = true; } await putPost(id, Object.assign({ edits }, changed && cur.status !== "draft" ? { status: "draft", approved: null } : {})); }, "Wording saved."),
+    oppnew: () => run(() => put("opps", newId("opps"), oppFromForm(f, { found: today(), order: Date.now() })), "Added."),
+    opp: () => run(() => put("opps", id, oppFromForm(f, S.opps.get(id))), "Updated."),
+    effort: () => run(async () => { const m = parseInt(f.minutes, 10); need(m >= 0 && m <= 600, "Minutes must be 0-600."); need(clean(f.activity), "Say what you did."); need(SOURCES.includes(f.channel), "Pick a channel."); await put("effort", newId("effort"), { date: isDate(f.date) ? f.date : today(), channel: f.channel, activity: clean(f.activity, 200), minutes: m }); }, "Logged."),
+    settings: () => run(async () => { const patch = {}; for (const [k] of SETTINGS) patch[k] = clean(f[k], 200); if (patch.max_jobs_per_day) { const n = parseInt(patch.max_jobs_per_day, 10); need(n >= 1 && n <= 10, "Max cars per day must be 1-10."); patch.max_jobs_per_day = String(n); } if (patch.launch_date) need(isDate(patch.launch_date), "Launch date must be a date."); await saveSettings(patch); }, "Setup saved."),
+  };
+  if (handlers[form.dataset.form]) handlers[form.dataset.form]();
+});
+function oppFromForm(f, base) {
+  const o = Object.assign({}, base || {}); o.name = clean(f.name, 200); need(o.name, "Name is required.");
+  o.type = OPP_TYPES.includes(f.type) ? f.type : "other"; o.status = OPP_STATUS.includes(f.status) ? f.status : "to_research"; o.rule = RULES[f.rule] ? f.rule : "unknown";
+  o.contact = clean(f.contact, 300); o.rulesNotes = clean(f.rulesNotes, 1000); o.next = clean(f.next, 300); o.nextDate = isDate(f.nextDate) ? f.nextDate : null; o.outcome = clean(f.outcome, 500); o.info = clean(f.info, 300);
+  return o;
+}
+
+let downloads = null;
+async function saveBackup() {
+  const data = { saved: new Date().toISOString(), settings: S.settings };
+  COLS.forEach((c) => { data[c] = all(c); });
+  if (!downloads) return toast("Saving files isn't available in this view. Your data is still stored safely.", true);
+  try { await downloads.save({ filename: `carbon-force-backup-${today()}.json`, data: JSON.stringify(data, null, 1) }); }
+  catch (e) { toast("Backup wasn't saved.", true); }
+}
+
+// ---------------------------------------------------------------- boot
+let gate = "";
+(function boot() {
+  const h = (location.hash || "").slice(1);
+  if (["agent", "today", "leads", "book", "work", "posts", "replies", "prospects", "plan", "weekly", "setup", "more"].includes(h)) view = h;
+  render(true);
+})();
+(async function connect() {
+  const sync = document.getElementById("sync");
+  if (!window.claude || !window.claude.use) { sync.textContent = "Offline copy"; gate = `<div class="card bad"><h2>Open this from Claude</h2><p>This page saves your data in your Claude account, so it only works when opened from its claude.ai link while you're signed in.</p></div>`; return render(true); }
+  const [d, u, dl, sm] = await Promise.all([claude.use("db"), claude.use("user"), claude.use("downloads"), claude.use("sample")]);
+  downloads = dl; sampleFn = sm;
+  if (u) { try { if (!(await u.isOwner())) { readOnly = true; gate = `<div class="card bad"><h2>Private business tool</h2><p>This page belongs to someone else, and its data is private.</p></div>`; sync.textContent = ""; return render(true); } } catch (_) {} }
+  if (!d) { sync.textContent = "Not connected"; gate = `<div class="card bad"><h2>Storage isn't connected</h2><p>Reopen this page from its claude.ai link while signed in. Your data is safe - it just can't load in this view.</p></div>`; return render(true); }
+  db = d; gate = "";
+  const done = (name) => { S.loaded.add(name); sync.textContent = S.loaded.size >= COLS.length + 1 ? "Saved ✓" : "Loading…"; render(); };
+  const fail = (e) => { sync.textContent = "Connection lost - reload"; console.warn(e && e.code); };
+  COLS.forEach((c) => db.collection(c).onSnapshot((snap) => { S[c] = new Map(snap.docs.map((x) => [x.id, Object.assign({ id: x.id }, x.data())])); done(c); }, fail));
+  db.doc("config/activejob").onSnapshot((snap) => { S.active = snap.exists ? Object.assign({}, snap.data()) : null; render(); }, fail);
+  db.doc("config/settings").onSnapshot((snap) => { S.settings = snap.exists ? Object.assign({}, snap.data()) : {}; done("settings"); }, fail);
+})();
+})();
+</script>

@@ -1,0 +1,146 @@
+[
+  {
+    "opp_type": "facebook_page",
+    "name": "Create the Carbon Force Detailing Facebook Page",
+    "url_or_contact": "facebook.com/pages/create",
+    "rule_type": "unknown",
+    "rules_notes": "Free. Category: Car Wash or Automotive Service (pick the closest real one). Set the address to hidden or show only the general area. Do NOT tick any 'service area / we travel to you' option.",
+    "next_action": "Create the Page, add your existing logo + flyer, fill About with prices and 'drop-off only'.",
+    "source_of_info": "Planning item - not created yet."
+  },
+  {
+    "opp_type": "other",
+    "name": "Prepare the Instagram account",
+    "url_or_contact": "instagram.com",
+    "rule_type": "unknown",
+    "rules_notes": "Free. See playbooks/instagram-setup.md for the bio, highlights and first 3 posts. Switch to a free Professional (Business) account.",
+    "next_action": "Pick the handle, create the account, post the first 3 approved posts before telling people about it.",
+    "source_of_info": "Planning item - not created yet."
+  },
+  {
+    "opp_type": "google_business_profile",
+    "name": "Google Business Profile - check eligibility FIRST",
+    "url_or_contact": "business.google.com  |  rules: support.google.com/business/answer/3038177",
+    "rule_type": "unknown",
+    "rules_notes": "Google's guidelines say a profile that SHOWS an address needs permanent signage with the business name at that address. A service-area profile (hidden address) is meant for businesses that travel to customers - you don't, so don't pick that just to hide your address. Options: (1) put up permanent signage (check Village rules first) and show the address, or (2) skip GBP for now and focus on Facebook/Instagram/referrals. Name must be exactly 'Carbon Force Detailing' - no keywords.",
+    "next_action": "Decide on signage (call Village Hall about home-business rules), then create the profile if eligible.",
+    "source_of_info": "Google Business Profile guidelines, checked Oct 2026."
+  },
+  {
+    "opp_type": "other",
+    "name": "Village of Melrose Park - home business rules",
+    "url_or_contact": "Village Hall 708-343-4000 (Mon-Fri 9-5)  |  melrosepark.org",
+    "rule_type": "unknown",
+    "rules_notes": "I couldn't find Melrose Park's home-occupation / business license rules online. Ask whether a home-based drop-off business needs a license and whether a small sign is allowed. Not legal advice - just the right question to ask.",
+    "next_action": "Call Village Hall and write down what they say.",
+    "source_of_info": "melrosepark.org Home & Property page lists the phone number."
+  },
+  {
+    "opp_type": "facebook_group",
+    "name": "Village of Melrose Park official Facebook group/page",
+    "url_or_contact": "Find via melrosepark.org (the Village promoted its Facebook group and Instagram page in 2022)",
+    "rule_type": "unknown",
+    "rules_notes": "Official village group - expect strict rules. Assume no ads until you read the rules.",
+    "next_action": "Find it, read the rules, record the rule type. Join as a resident.",
+    "source_of_info": "melrosepark.org news post (2022)."
+  },
+  {
+    "opp_type": "facebook_group",
+    "name": "Search Facebook: Melrose Park community groups",
+    "url_or_contact": "Facebook search: 'Melrose Park IL', 'Melrose Park neighbors', 'Melrose Park moms', 'Melrose Park buy sell'",
+    "rule_type": "unknown",
+    "rules_notes": "Add each real group you find as its OWN opportunity with its name and link, then record its rule type. Public groups only; don't scrape member lists.",
+    "next_action": "Search, add 2-3 real groups as separate rows.",
+    "source_of_info": "Search task - no specific groups verified yet."
+  },
+  {
+    "opp_type": "facebook_group",
+    "name": "Search Facebook: nearby town groups (short drive to drop off)",
+    "url_or_contact": "Search: Stone Park, Maywood, Bellwood, Franklin Park, Elmwood Park, River Grove, Northlake, Berkeley, Broadview, Westchester, River Forest",
+    "rule_type": "unknown",
+    "rules_notes": "Closest towns first - people won't drive far for a drop-off. Many groups have a weekly business-promo thread; use that instead of a standalone post.",
+    "next_action": "Find 1 group per town for the closest 4 towns; add each as a row.",
+    "source_of_info": "Search task - no specific groups verified yet."
+  },
+  {
+    "opp_type": "directory",
+    "name": "Nextdoor business page (free)",
+    "url_or_contact": "business.nextdoor.com",
+    "rule_type": "unknown",
+    "rules_notes": "Free business page. Neighbors can recommend you. Don't post ads in the main neighborhood feed - use the business page. Don't buy Nextdoor ads.",
+    "next_action": "Create the free page once Facebook Page is live.",
+    "source_of_info": "Planning item - not created yet."
+  },
+  {
+    "opp_type": "local_search",
+    "name": "Bing Places + Apple Business Connect (free)",
+    "url_or_contact": "bingplaces.com  |  businessconnect.apple.com",
+    "rule_type": "unknown",
+    "rules_notes": "Free listings. Same eligibility question as Google: they show where customers come to you. Do after the Village/signage question is answered.",
+    "next_action": "Wait until GBP decision is made, then list consistently (same name, phone, wording everywhere).",
+    "source_of_info": "Planning item."
+  },
+  {
+    "opp_type": "directory",
+    "name": "Yelp business page (free) - careful with reviews",
+    "url_or_contact": "biz.yelp.com",
+    "rule_type": "unknown",
+    "rules_notes": "Yelp does not allow asking customers for reviews. Never send the review-request template with a Yelp link. Ignore Yelp's ad sales calls.",
+    "next_action": "Optional. Claim/create a free page later.",
+    "source_of_info": "Yelp content guidelines."
+  },
+  {
+    "opp_type": "partnership",
+    "name": "Melrose Park Chamber of Commerce & Community Development",
+    "url_or_contact": "mpcccd.org  |  (708) 343-9500",
+    "rule_type": "unknown",
+    "rules_notes": "Membership has dues (see mpcccd.org/benefits-dues) - that costs money, so decide before joining. Chamber events/newsletters may still be useful to know about.",
+    "next_action": "Look at dues and upcoming events. Don't join until you decide it's worth the money.",
+    "source_of_info": "Chamber newsletters on melrosepark.org (2025-2026)."
+  },
+  {
+    "opp_type": "partnership",
+    "name": "Nearby independent auto repair / tire shops (3)",
+    "url_or_contact": "Find on Google Maps within ~10 min. Use their PUBLIC business phone or walk in.",
+    "rule_type": "unknown",
+    "rules_notes": "They don't detail, so it's not competition. Ask to leave flyers or if they ever get asked about cleaning. One personal ask each - no mass messaging.",
+    "next_action": "Pick 3 real shops, add each as its own row, visit one this week.",
+    "source_of_info": "Category idea - no specific business contacted."
+  },
+  {
+    "opp_type": "partnership",
+    "name": "Small used-car lots (sellers want clean cars)",
+    "url_or_contact": "Google Maps 'used car dealer' near Melrose Park. Public business contact only.",
+    "rule_type": "unknown",
+    "rules_notes": "Pitch: you clean cars before they list them, drop-off at your garage. Be clear about your daily max - don't promise volume you can't handle.",
+    "next_action": "Add 2 real lots as rows; visit one in person.",
+    "source_of_info": "Category idea - no specific business contacted."
+  },
+  {
+    "opp_type": "community_event",
+    "name": "Community bulletin boards (library, laundromats, grocery stores)",
+    "url_or_contact": "Melrose Park Public Library and local businesses with public boards",
+    "rule_type": "unknown",
+    "rules_notes": "Ask staff before pinning a flyer. Note which places allow it.",
+    "next_action": "Bring 10 flyers on your next errand run; ask at 2 places.",
+    "source_of_info": "Category idea - verify each board's policy in person."
+  },
+  {
+    "opp_type": "community_event",
+    "name": "Village-wide garage sales (3rd weekend, May-Sept)",
+    "url_or_contact": "melrosepark.org newsletter",
+    "rule_type": "unknown",
+    "rules_notes": "Off-season now. Next spring: lots of neighbors out on foot - a flyer stack and your garage looking sharp.",
+    "next_action": "Revisit in April.",
+    "source_of_info": "Village spring 2026 newsletter."
+  },
+  {
+    "opp_type": "referral_program",
+    "name": "Past-customer referrals and repeat bookings",
+    "url_or_contact": "Your own customer list in this app",
+    "rule_type": "unknown",
+    "rules_notes": "Only message people who've done business with you. Use the referral and repeat templates. Don't promise a referral reward unless you've decided on one.",
+    "next_action": "After every completed job: review request (day after), referral ask (a few days later), repeat reminder (~5 weeks).",
+    "source_of_info": "Built into the Leads workflow."
+  }
+]
