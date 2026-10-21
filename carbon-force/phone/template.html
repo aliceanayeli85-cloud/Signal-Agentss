@@ -121,6 +121,18 @@ details .donewhen, details .dont { margin-top: 8px; font-size: 14px }
 button.huge { width: 100%; padding: 18px; font-size: 19px }
 .confirm { background: var(--sunk); border-radius: 8px; padding: 10px; display: flex; flex-direction: column; gap: 8px }
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important } }
+.next { border-top: 3px solid var(--accent); display: flex; flex-direction: column; gap: 6px; align-items: flex-start }
+.nextwhat { font: italic 800 26px/1.05 var(--display); text-transform: uppercase; margin: 0; text-wrap: balance }
+.tiles { grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)) }
+.journey { display: flex; flex-wrap: wrap; gap: 4px; margin: 6px 0 } .journey span { font-size: 12px; padding: 3px 8px; border-radius: 99px; background: var(--sunk); color: var(--muted); border: 1px solid var(--line) } .journey span.on { background: var(--accent); color: var(--accent-fg); border-color: var(--accent) }
+dl.kv { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr); gap: 8px 14px; margin: 0 } dl.kv dt { color: var(--muted); font-size: 14px } dl.kv dd { margin: 0; font-weight: 600 }
+label.tick { display: flex; align-items: center; gap: 8px; font-weight: 500 } label.tick input { flex: 0 0 auto }
+fieldset.addons { border: 1px solid var(--line); border-radius: 8px; padding: 8px 12px; display: flex; flex-direction: column; gap: 6px; margin: 0 } fieldset.addons legend { font-weight: 600; font-size: 14px; padding: 0 4px }
+.check.auto { display: flex; align-items: center; gap: 12px; background: var(--sunk); border: 1px solid var(--line); border-radius: 8px; padding: 12px } .check.auto .box { flex: 0 0 26px; height: 26px; border: 2px solid var(--muted); border-radius: 6px; display: grid; place-items: center; font-weight: 800 } .check.auto.on .box { background: var(--ok); border-color: var(--ok); color: #06210f }
+.searchbox input { margin-top: 4px }
+.jobbox { border-top: 1px solid var(--line); padding-top: 8px; margin-top: 8px } .jobbox:first-of-type { border-top: 0; margin-top: 0; padding-top: 0 }
+body.busy button[type=submit] { opacity: .6; pointer-events: none }
+@media (max-width: 420px) { dl.kv { grid-template-columns: 1fr } dl.kv dd { margin-bottom: 6px } }
 </style>
 
 <header class="top"><div class="brand">Carbon Force <em>Detailing</em><small>Garage-based · Melrose Park</small></div><div class="sync" id="sync">Connecting…</div></header>
@@ -137,16 +149,26 @@ button.huge { width: 100%; padding: 18px; font-size: 19px }
 const J = (id) => JSON.parse(document.getElementById(id).textContent);
 const POSTS = J("d-posts"), REPLIES = J("d-replies"), PLAN = J("d-plan");
 
-// ---------------------------------------------------------------- fixed business facts
+// ---------------------------------------------------------------- business facts (editable: More > Services & prices)
 const BUSINESS = "Carbon Force Detailing";
+// Live service definitions. Rebuilt from config/business whenever it changes; these are only the fallbacks.
 const SERVICES = { interior: { label: "Interior detail", price: 80 }, exterior: { label: "Exterior cleaning", price: 60 }, full: { label: "Full interior + exterior package", price: 140 } };
+const SVC_KEYS = ["interior", "exterior", "full"];
 const SERVICE_CHOICES = ["interior", "exterior", "full", "unsure"];
 const svcLabel = (k) => SERVICES[k] ? `${SERVICES[k].label} ($${SERVICES[k].price})` : "Not sure yet";
 const BANNED = ["mobile", "we come to you", "i come to you", "at your home", "at your location", "ceramic coating", "paint correction", "polish", "buffing", "extraction", "shampoo extract", "fully booked", "booked solid", "only 1 spot", "only one spot", "spots left", "limited spots", "certified", "insured", "#1", "best in"];
-const STATUSES = ["New Lead", "Replied", "Quote Sent", "Follow-Up Due", "Booked", "Completed", "Lost"];
-const SOURCES = ["facebook_page", "facebook_group", "facebook_marketplace", "instagram", "google_business_profile", "google_search", "flyer", "referral", "repeat_customer", "partner", "nextdoor", "walk_by_or_sign", "other"];
-const METHODS = ["text", "call", "facebook_messenger", "instagram_dm", "email", "in_person", "other"];
-const PAY = ["cash", "zelle", "venmo", "cash_app", "card", "other"];
+// Customer journey. "Identified"/"Contacted" are people YOU reached out to; "New Lead" = they asked you.
+const STATUSES = ["Identified", "Contacted", "New Lead", "Replied", "Quote Sent", "Follow-Up Due", "Booked", "Completed", "Lost"];
+const OPEN_STATUSES = ["Identified", "Contacted", "New Lead", "Replied", "Quote Sent", "Follow-Up Due"];
+const BASE_SOURCES = ["nextdoor", "facebook_page", "facebook_group", "facebook_marketplace", "instagram", "google_business_profile", "google_search", "flyer", "walk_by_or_sign", "referral", "partner", "repeat_customer", "other"];
+const SOURCE_LABELS = { nextdoor: "Nextdoor", facebook_page: "Facebook business page", facebook_group: "Local Facebook groups", facebook_marketplace: "Facebook Marketplace", instagram: "Instagram", google_business_profile: "Google Business Profile", google_search: "Google search / website", flyer: "Flyers", walk_by_or_sign: "Garage sign / walk-by", referral: "Referrals", partner: "Local business partners", repeat_customer: "Repeat customers", other: "Other" };
+const METHODS = ["text", "call", "nextdoor_message", "facebook_messenger", "instagram_dm", "email", "in_person", "other"];
+const PAY = ["cash", "zelle", "apple_cash", "venmo", "cash_app", "card", "other"];
+const PAY_LABELS = { cash: "Cash", zelle: "Zelle", apple_cash: "Apple Cash", venmo: "Venmo", cash_app: "Cash App", card: "Card", other: "Other" };
+const LOST_REASONS = ["no_response", "price", "needs_mobile", "service_not_offered", "chose_someone_else", "timing", "other"];
+const CONDITIONS = { light: "Light (pretty clean)", medium: "Medium (normal)", heavy: "Heavy (pet hair, stains, trash)" };
+const SIZES = { car: "Car / sedan", small_suv: "Small SUV / crossover", large: "Large SUV / truck / van" };
+const EXPENSE_CATS = ["supplies", "equipment", "marketing", "fees", "other"];
 const OPP_TYPES = ["facebook_group", "facebook_page", "google_business_profile", "local_search", "partnership", "directory", "referral_program", "community_event", "other"];
 const OPP_STATUS = ["to_research", "researched", "join_requested", "joined", "contacted", "posted", "active_partner", "no_response", "declined", "not_a_fit"];
 const RULES = { promo_allowed: "Business posts allowed (keep it neighborly)", promo_day_only: "Business posts only on the promo day/thread", recommendations_only: "No ads; answer recommendation requests only", no_business: "No business posts - just be a member", unknown: "Rules not checked yet - read them before posting" };
@@ -156,15 +178,60 @@ const SETTINGS = [
   ["area_line", "Public location wording (no street address)", "Melrose Park, near North Ave & 25th", true],
   ["hours_line", "Drop-off hours you actually keep", "Drop-off Mon-Sat, 8-10am", true],
   ["owner_first_name", "Your first name for messages", "", false],
-  ["payment_methods", "Payment you accept", "Cash, Zelle", true],
-  ["interior_includes", "What the $80 interior actually includes", "vacuum seats/carpet/trunk, wipe down dash, console, door panels, cup holders, inside glass", true],
-  ["exterior_includes", "What the $60 exterior actually includes", "hand wash, wheels and tires, dry, outside glass", true],
+  ["payment_methods", "Payment you accept (wording for customers)", "Cash, Zelle", true],
   ["turnaround_line", "Honest turnaround wording", "Drop off in the morning, I text you when it's ready", true],
   ["private_address", "Exact drop-off address (only goes in booking confirmations)", "", false],
   ["review_link", "Review link once you have one", "", false],
-  ["max_jobs_per_day", "Max cars you can do in one day", "2", true],
-  ["product_cost", "Product cost per car ($)", "30", false],
   ["launch_date", "Day 1 of your 7-day plan", "", false],
+];
+// Defaults for config/business. Anything marked "verify" is a safe placeholder, not a fact about the business.
+const DEFAULT_BIZ = {
+  services: {
+    interior: { label: "Interior detail", price: 80, minutes: 300, supply: null, supplyEstimated: true, includes: [], excludes: ["Carpet/seat extraction", "Ceramic coating", "Paint correction or polishing", "Mobile service"], description: "For crumbs, dust, spills and everyday mess inside." },
+    exterior: { label: "Exterior cleaning", price: 60, minutes: 150, supply: null, supplyEstimated: true, includes: [], excludes: ["Spray wax (add-on)", "Ceramic coating", "Paint correction or polishing", "Mobile service"], description: "For road grime, brake dust, bugs and pollen." },
+    full: { label: "Full interior + exterior package", price: 140, minutes: 450, supply: null, supplyEstimated: true, includes: ["Everything in the interior detail", "Everything in the exterior cleaning"], excludes: ["Spray wax (add-on)", "Carpet/seat extraction", "Ceramic coating", "Paint correction or polishing", "Mobile service"], description: "The interior and exterior in one drop-off." },
+  },
+  addons: [
+    { id: "pet_hair", name: "Pet hair removal", price: null, supply: null, minutes: null },
+    { id: "odor", name: "Odor bomb treatment", price: null, supply: null, minutes: null },
+    { id: "headliner", name: "Headliner cleaning", price: null, supply: null, minutes: null },
+    { id: "engine_bay", name: "Engine bay cleaning", price: null, supply: null, minutes: null },
+    { id: "spray_ceramic", name: "Spray ceramic sealant", price: null, supply: null, minutes: null },
+    { id: "salt", name: "Salt removal", price: null, supply: null, minutes: null },
+    { id: "wax", name: "Spray wax / sealant protection", price: null, supply: null, minutes: null },
+    { id: "wheel_deep", name: "Wheel & tire deep clean", price: null, supply: null, minutes: null },
+  ],
+  condition: { light: 0, medium: 0, heavy: null }, // null = quote after photos
+  costs: { ownerRate: null, overheadMonthly: null, fees: { cash: 0, zelle: 0, apple_cash: 0, venmo: null, cash_app: null, card: null, other: null } },
+  capacity: { workDays: [1, 2, 3, 4, 5, 6], hoursPerDay: 9, maxJobs: 1 },
+  targets: { monthlyRevenue: null, prospect: 3, postsPerWeek: 2 },
+  sla: { replyHours: 2, quoteFollowDays: 2, followupGapDays: 3, maxFollowups: 2 },
+  assumptions: { avgJob: null, inquiryToQuote: 0.5, quoteToBook: 0.3 },
+  channels: [],
+  replyOverrides: {},
+  policies: {
+    deposit: "DRAFT - decide before using: No deposit is required right now. You pay when you pick up your car.",
+    cancel: "DRAFT - decide before using: Please text me at least 24 hours ahead if you need to cancel or reschedule.",
+    late: "DRAFT - decide before using: Drop-off is between 9 and 11am. If you can't make it in that window, text me and we'll find another day.",
+    payment: "DRAFT - check before using: Payment is due at pickup by Apple Cash, Zelle or cash.",
+    condition: "DRAFT - decide before using: I take before photos of your car at drop-off so we both know its condition.",
+    keys: "DRAFT - decide before using: Your keys stay with me while the car is in my care and go back only to you or someone you name.",
+    belongings: "DRAFT - decide before using: Please remove valuables before drop-off. I'm not responsible for items left in the car.",
+    damage: "DRAFT - decide before using: If you notice a problem at pickup, tell me before you leave and I'll look at it with you right away.",
+  },
+  policyReviewed: {},
+  readiness: {},
+};
+const POLICY_LABELS = { deposit: "Deposits", cancel: "Cancellations + rescheduling", late: "Late arrivals + no-shows", payment: "Payment methods + due date", condition: "Vehicle condition documentation", keys: "Keys + vehicle custody", belongings: "Belongings + valuables", damage: "Damage reports + disputes" };
+const READINESS = [
+  ["village", "Asked the Village of Melrose Park (708-343-4000) whether a home-based detailing business needs a license or permit"],
+  ["zoning", "Checked home-occupation / zoning rules for customers dropping cars off at a residence"],
+  ["sign", "Checked whether a garage sign is allowed before putting one up"],
+  ["insurance", "Talked to an insurance agent about general liability for the business"],
+  ["garagekeepers", "Asked about coverage for customers' vehicles while they're in your care (often called garagekeepers coverage)"],
+  ["water", "Checked any rules about wash water / runoff where you work"],
+  ["records", "Keep a simple record of income and expenses for taxes (this app helps; ask a tax preparer what you need)"],
+  ["policies", "Reviewed every customer policy in this screen and removed the DRAFT labels"],
 ];
 const POST_FIELDS = { facebook: "Facebook Page", instagram: "Instagram caption", story: "Story frames", reel_script: "Reel script (no voice, text on screen)", group_version: "Community-group version" };
 const PUBLISH_STEPS = {
@@ -198,10 +265,22 @@ function toast(msg, err) {
   clearTimeout(toast.t); toast.t = setTimeout(() => { box.innerHTML = ""; }, err ? 5000 : 2500);
 }
 
+const dayDiff = (a, b) => Math.round((parse(b) - parse(a)) / 864e5); // whole days from a to b, safe across daylight saving
+const monthBounds = (any) => { const d = any ? parse(any) : new Date(); const s = iso(new Date(d.getFullYear(), d.getMonth(), 1)); const e = iso(new Date(d.getFullYear(), d.getMonth() + 1, 0)); return [s, e]; };
+const payLabel = (m) => PAY_LABELS[m] || nice(m);
+const r2 = (x) => Math.round((Number(x) || 0) * 100) / 100;
+const pct = (n, d) => (d ? Math.round(100 * n / d) + "%" : "-");
+const dollars = (x) => (x == null ? "-" : money(x));
+const numOrNull = (v, label, max = 10000) => { v = String(v == null ? "" : v).replace(/[$,\s]/g, ""); if (v === "") return null; const n = Math.round(Number(v) * 100) / 100; need(isFinite(n) && n >= 0 && n <= max, `${label} must be a number from 0 to ${max}.`); return n; };
+const slug = (s) => String(s || "").toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_|_$/g, "").slice(0, 40);
+const digits = (s) => String(s || "").replace(/\D/g, "");
+
 // ---------------------------------------------------------------- state + storage
-const S = { leads: new Map(), slots: new Map(), appts: new Map(), jobs: new Map(), posts: new Map(), opps: new Map(), effort: new Map(), timings: new Map(), briefs: new Map(), settings: {}, active: null, loaded: new Set() };
+const S = { leads: new Map(), slots: new Map(), appts: new Map(), jobs: new Map(), posts: new Map(), opps: new Map(), effort: new Map(), timings: new Map(), briefs: new Map(), expenses: new Map(), experiments: new Map(), daily: new Map(), backups: new Map(), settings: {}, biz: {}, meta: {}, active: null, loaded: new Set() };
 let db = null, readOnly = false;
-const COLS = ["leads", "slots", "appts", "jobs", "posts", "opps", "effort", "timings", "briefs"];
+// Every collection the app owns. Backups export and restore exactly these.
+const COLS = ["leads", "slots", "appts", "jobs", "posts", "opps", "effort", "timings", "briefs", "expenses", "experiments", "daily"];
+const CONFIG_DOCS = ["settings", "business", "meta"];
 
 async function put(col, id, body) {
   if (!db) throw new VErr("Storage isn't connected. Reopen the link while signed in to Claude.");
@@ -213,19 +292,65 @@ async function put(col, id, body) {
 const newId = (col) => db.collection(col).doc().id;
 const all = (col) => Array.from(S[col].values());
 const settings = () => S.settings || {};
-const maxPerDay = () => Math.max(1, parseInt(settings().max_jobs_per_day, 10) || 2);
+
+// Business config = defaults deep-merged with what's saved. Saved values always win.
+function merge(base, over) {
+  if (Array.isArray(base) || Array.isArray(over)) return over !== undefined ? over : base;
+  if (base && typeof base === "object") {
+    const out = Object.assign({}, base);
+    for (const k in (over || {})) out[k] = (base[k] && typeof base[k] === "object" && !Array.isArray(base[k])) ? merge(base[k], over[k]) : over[k];
+    return out;
+  }
+  return over !== undefined ? over : base;
+}
+let BIZ = merge(DEFAULT_BIZ, {});
+const B = () => BIZ;
+function includesFromSettings(key) { // old Setup text, split into a list
+  return String(settings()[key] || "").split(",").map((s) => s.trim()).filter(Boolean)
+    .filter((s) => !/spray wax|^wax|sealant protection/i.test(s)); // wax is an add-on, never included by default
+}
+function rebuildBiz() {
+  BIZ = merge(DEFAULT_BIZ, S.biz || {});
+  const sv = BIZ.services;
+  if (!(S.biz.services && S.biz.services.interior && S.biz.services.interior.includes)) sv.interior.includes = includesFromSettings("interior_includes");
+  if (!(S.biz.services && S.biz.services.exterior && S.biz.services.exterior.includes)) sv.exterior.includes = includesFromSettings("exterior_includes");
+  const fallbackSupply = numOrNullSafe(settings().product_cost);
+  for (const k of SVC_KEYS) {
+    if (sv[k].supply == null && fallbackSupply != null && !(S.biz.services && S.biz.services[k] && "supply" in S.biz.services[k])) { sv[k].supply = fallbackSupply; sv[k].supplyEstimated = true; }
+    Object.assign(SERVICES[k], { label: sv[k].label, price: Number(sv[k].price) || 0 });
+  }
+}
+function numOrNullSafe(v) { try { return numOrNull(v, "x"); } catch (_) { return null; } }
+const maxPerDay = () => Math.max(1, parseInt(B().capacity.maxJobs, 10) || parseInt(settings().max_jobs_per_day, 10) || 1);
+const addonById = (id) => B().addons.find((a) => a.id === id);
+function sources() { return BASE_SOURCES.concat((B().channels || []).map((c) => c.key)); }
+function srcLabel(k) { const c = (B().channels || []).find((x) => x.key === k); return c ? c.label : (SOURCE_LABELS[k] || nice(k)); }
+async function saveBiz(patch) {
+  if (!db) throw new VErr("Storage isn't connected.");
+  const next = merge(S.biz || {}, patch);
+  await db.doc("config/business").set(JSON.parse(JSON.stringify(next)));
+  S.biz = next; rebuildBiz();
+}
+async function saveMeta(patch) { if (!db) return; const next = Object.assign({}, S.meta, patch); await db.doc("config/meta").set(next); S.meta = next; }
 
 // ---------------------------------------------------------------- text filling + checks
 function values(extra) {
-  const v = Object.assign({}, settings(), { business: BUSINESS, price_interior: "$80", price_exterior: "$60", price_full: "$140" });
+  const sv = B().services, pol = B().policies;
+  const v = Object.assign({}, settings(), { business: BUSINESS });
   v.price_interior = "$" + SERVICES.interior.price; v.price_exterior = "$" + SERVICES.exterior.price; v.price_full = "$" + SERVICES.full.price;
+  v.interior_includes = (sv.interior.includes || []).join(", ").toLowerCase() || settings().interior_includes || "";
+  v.exterior_includes = (sv.exterior.includes || []).join(", ").toLowerCase() || "";
+  const priced = B().addons.filter((a) => a.price != null).map((a) => `${a.name} $${a.price}`);
+  v.addons_line = B().addons.length ? (priced.length ? priced.join(", ") : B().addons.map((a) => a.name).join(", ") + " (ask for a price)") : "";
+  v.excludes_line = "paint correction, polishing, full ceramic coatings, carpet extraction or mobile service";
+  for (const k in pol) v["policy_" + k] = String(pol[k] || "").replace(/^DRAFT[^:]*:\s*/i, "");
   return Object.assign(v, extra || {});
 }
 function fill(text, extra) {
   const v = values(extra);
   return String(text || "").replace(/\{(\w+)\}/g, (m, k) => (v[k] ? String(v[k]) : `[SET ${k.toUpperCase()} IN SETUP]`));
 }
-const negateMobile = (t) => String(t || "").toLowerCase().replace(/(not|no|isn't|aren't|don't do|can't do)\s+(a\s+)?mobile/g, "");
+const negateMobile = (t) => String(t || "").toLowerCase().replace(/(not|no|isn't|aren't|don't do|can't do|don't offer)\s+(a\s+)?mobile/g, "");
 function banned(text) {
   const low = negateMobile(text);
   return BANNED.filter((p) => new RegExp("(^|[^a-z])" + p.replace(/[.*+?^${}()|[\]\\#]/g, "\\$&") + "(?![a-z])").test(low));
@@ -258,41 +383,65 @@ function openTimesText() {
   const s = openSlots(14).slice(0, 5);
   return s.length ? s.map((x) => `- ${fdate(x.date)}, drop-off ${ftime(x.time)}`).join("\n") : "[NO OPEN SLOTS ENTERED - ADD REAL SLOTS ON THE BOOK TAB FIRST]";
 }
-function renderReply(id, lead, appt) {
-  const t = REPLIES.find((r) => r.id === id);
+const replyText = (t) => (B().replyOverrides && typeof B().replyOverrides[t.id] === "string" ? B().replyOverrides[t.id] : t.text);
+function renderReply(id, lead, appt, job) {
+  const t = REPLIES.find((r) => r.id === id); if (!t) return "";
   const extra = { open_times: openTimesText(), name: lead && lead.name ? lead.name.split(/\s+/)[0].replace(/[{}]/g, "") : "there" };
   const svc = (appt && appt.service) || (lead && lead.service);
   extra.service_label = SERVICES[svc] ? SERVICES[svc].label.toLowerCase() : "cleaning";
-  if (appt) { const sl = S.slots.get(appt.slot) || {}; Object.assign(extra, { appt_date: fdate(sl.date), appt_time: ftime(sl.time), appt_service: SERVICES[appt.service].label, appt_price: "$" + appt.price }); }
-  return fill(t.text, extra);
+  if (lead && lead.quote != null) extra.quote_price = "$" + lead.quote;
+  if (appt) {
+    const sl = S.slots.get(appt.slot) || {};
+    Object.assign(extra, { appt_date: fdate(sl.date), appt_time: ftime(sl.time), appt_service: SERVICES[appt.service].label, appt_price: "$" + appt.price });
+    if (appt.addons && appt.addons.length) extra.appt_service += " + " + appt.addons.map((x) => (addonById(x) || { name: x }).name).join(", ");
+  }
+  if (job) { const e = jobEcon(job); extra.balance = money(e.balance); extra.job_total = money(e.revenue); }
+  return fill(replyText(t), extra);
 }
 
 // ---------------------------------------------------------------- lead logic
 const ev = (lead, type, note, d) => { lead.events = (lead.events || []).concat([{ d: d || today(), t: type, n: clean(note, 200) }]).slice(-80); };
 function status(l) { // Follow-up due is shown from the date; nothing is written in the background
-  if ((l.status === "Replied" || l.status === "Quote Sent") && l.next && l.next <= today()) return "Follow-Up Due";
+  if (["Replied", "Quote Sent", "Contacted"].includes(l.status) && l.next && l.next <= today()) return "Follow-Up Due";
   return l.status;
 }
+const overdueDays = (l) => (l.next && l.next < today() && OPEN_STATUSES.includes(l.status) ? dayDiff(l.next, today()) : 0);
+function hoursWaiting(l) { const t = l.created ? Date.parse(l.created) : parse(l.inquiry || today()).getTime(); return Math.max(0, (Date.now() - t) / 36e5); }
 function leadFromForm(f, base) {
   const l = Object.assign({}, base || {});
   l.name = clean(f.name, 120); need(l.name, "Name or nickname is required.");
   l.method = METHODS.includes(f.method) ? f.method : "text";
   l.contact = clean(f.contact, 200); l.consent = f.consent === "on"; l.consentNote = clean(f.consentNote, 200);
-  need(SOURCES.includes(f.source), "Pick where they found you.");
+  need(sources().includes(f.source), "Pick where they found you.");
   l.source = f.source; l.sourceDetail = clean(f.sourceDetail, 200); l.vehicle = clean(f.vehicle, 120);
+  l.size = SIZES[f.size] ? f.size : (l.size || ""); l.condition = CONDITIONS[f.condition] ? f.condition : (l.condition || "");
   l.service = SERVICE_CHOICES.includes(f.service) ? f.service : "unsure";
   l.quote = num(f.quote, "Quoted price"); l.notes = clean(f.notes, 2000);
+  l.nextAction = clean(f.nextAction, 200);
   return l;
 }
+function findDuplicates(f, exceptId) {
+  const d = digits(f.contact), nm = clean(f.name, 120).toLowerCase();
+  return all("leads").filter((l) => l.id !== exceptId && ((d.length >= 7 && digits(l.contact) === d) || (nm && (l.name || "").toLowerCase() === nm && (!d || digits(l.contact) === d))));
+}
 async function createLead(f) {
-  const inquiry = isDate(f.inquiry) ? f.inquiry : today();
-  need(inquiry <= today(), "Inquiry date can't be in the future.");
+  const outbound = f.mode === "outbound";
+  const d = isDate(f.date) ? f.date : today();
+  need(d <= today(), "That date can't be in the future.");
+  const dups = findDuplicates(f);
+  need(!dups.length || f.dupok === "on", `Looks like you already have ${dups.map((x) => x.name).join(", ")} with the same name or number. Open that lead instead, or tick "This is a different person".`);
   const l = leadFromForm(f);
-  Object.assign(l, { inquiry, status: "New Lead", next: inquiry, created: new Date().toISOString(), events: [] });
-  ev(l, "inquiry", "via " + l.source, inquiry);
+  Object.assign(l, { created: new Date().toISOString(), events: [], followups: 0 });
+  if (outbound) {
+    Object.assign(l, { status: f.contacted === "on" ? "Contacted" : "Identified", firstContact: f.contacted === "on" ? d : null, inquiry: null, next: plusDays(f.contacted === "on" ? B().sla.followupGapDays : 0, d) });
+    ev(l, f.contacted === "on" ? "contacted" : "identified", "outreach via " + l.source, d);
+  } else {
+    Object.assign(l, { status: "New Lead", inquiry: d, firstContact: d, next: d });
+    ev(l, "inquiry", "via " + l.source, d);
+  }
   const id = newId("leads"); await put("leads", id, l); return id;
 }
-async function leadAct(id, fn) { const l = JSON.parse(JSON.stringify(S.leads.get(id))); need(l, "That lead is gone."); fn(l); await put("leads", id, l); }
+async function leadAct(id, fn) { const cur = S.leads.get(id); need(cur, "That lead is gone."); const l = JSON.parse(JSON.stringify(cur)); fn(l); await put("leads", id, l); }
 
 // ---------------------------------------------------------------- booking logic
 async function addSlot(f) {
@@ -300,115 +449,366 @@ async function addSlot(f) {
   need(/^\d{2}:\d{2}$/.test(f.time || ""), "Pick a drop-off time.");
   if (f.pickup) need(f.pickup > f.time, "Pick-up has to be after drop-off.");
   need(!all("slots").some((s) => s.date === f.date && s.time === f.time && s.status !== "closed"), "You already have a slot at that time.");
+  const wd = parse(f.date).getDay();
+  need(B().capacity.workDays.includes(wd) || f.offday === "on", `${DAYS[wd]} isn't one of your work days (Services & prices > Capacity). Tick "I'm working that day" to add it anyway.`);
   await put("slots", newId("slots"), { date: f.date, time: f.time, pickup: f.pickup || "", status: "open", note: clean(f.note, 200) });
 }
-async function propose(leadId, slotId, service, price) {
+const liveAppts = () => all("appts").filter((a) => a.status === "proposed" || a.status === "confirmed");
+const apptDate = (a) => (S.slots.get(a.slot) || {}).date || "";
+function quoteFor(service, addons, condition, override) {
+  // Price the customer agrees to: service + add-ons + condition adjustment. Unknown prices must be typed in.
+  const sv = B().services[service]; need(sv, "Pick a service.");
+  const missing = [];
+  let total = Number(sv.price) || 0, minutes = Number(sv.minutes) || 0;
+  for (const id of addons) { const a = addonById(id); if (!a) continue; if (a.price == null) missing.push(a.name); else total += Number(a.price); minutes += Number(a.minutes) || 0; }
+  const adj = B().condition[condition];
+  if (condition === "heavy") { minutes = Math.round(minutes * 1.4); if (adj == null) missing.push("heavy-condition extra"); else total += Number(adj); }
+  else if (adj) total += Number(adj);
+  const ov = num(override, "Agreed price");
+  if (ov != null) return { price: ov, minutes, missing: [], computed: r2(total) };
+  need(!missing.length, `No price set for: ${missing.join(", ")}. Type the agreed price, or set prices in More > Services & prices.`);
+  return { price: r2(total), minutes, missing, computed: r2(total) };
+}
+function dayLoad(date, exceptId) {
+  const as = liveAppts().filter((a) => a.id !== exceptId && apptDate(a) === date);
+  return { jobs: as.length, minutes: as.reduce((s, a) => s + (Number(a.minutes) || Number(B().services[a.service].minutes) || 0), 0) };
+}
+async function propose(leadId, slotId, f) {
   const slot = S.slots.get(slotId); need(slot, "Pick one of your open slots.");
   need(slot.status === "open", "That slot is no longer open."); need(slot.date >= today(), "That slot is in the past.");
-  need(SERVICES[service], "Pick a service.");
-  const lead = S.leads.get(leadId);
-  let amt = num(price, "Price"); if (amt == null) amt = lead.quote || SERVICES[service].price;
-  const sameDay = all("appts").filter((a) => (a.status === "proposed" || a.status === "confirmed") && (S.slots.get(a.slot) || {}).date === slot.date).length;
-  need(sameDay < maxPerDay(), `You already have ${sameDay} car(s) that day - your daily max. Change it in Setup if you really can take another.`);
-  await put("appts", newId("appts"), { lead: leadId, slot: slotId, service, price: amt, status: "proposed", created: new Date().toISOString() });
+  need(SERVICES[f.service], "Pick a service.");
+  const lead = S.leads.get(leadId); need(lead, "That lead is gone.");
+  const addons = B().addons.filter((a) => f["addon_" + a.id] === "on").map((a) => a.id);
+  const condition = CONDITIONS[f.condition] ? f.condition : (lead.condition || "medium");
+  const q = quoteFor(f.service, addons, condition, f.price || (lead.quote != null && lead.service === f.service && !addons.length ? lead.quote : ""));
+  const load = dayLoad(slot.date), cap = B().capacity;
+  need(load.jobs < maxPerDay(), `You already have ${load.jobs} car(s) that day - your daily max of ${maxPerDay()}. Change it in Services & prices > Capacity if you really can take another.`);
+  need(load.minutes + q.minutes <= cap.hoursPerDay * 60 || f.overtime === "on", `That day would need about ${Math.round((load.minutes + q.minutes) / 60 * 10) / 10} hours but you set ${cap.hoursPerDay}. Tick "I can work longer that day" to book anyway.`);
+  await put("appts", newId("appts"), { lead: leadId, slot: slotId, service: f.service, addons, condition, vehicle: clean(f.vehicle || lead.vehicle, 120), size: lead.size || "", price: q.price, minutes: q.minutes, status: "proposed", terms: values().policy_deposit || "", created: new Date().toISOString() });
   await put("slots", slotId, Object.assign({}, slot, { status: "held" }));
-  await leadAct(leadId, (l) => { l.quote = amt; l.service = service; l.next = plusDays(1); ev(l, "time_offered", `${slot.date} ${slot.time}`); });
+  await leadAct(leadId, (l) => { l.quote = q.price; l.service = f.service; l.condition = condition; l.next = plusDays(1); ev(l, "time_offered", `${slot.date} ${slot.time} ${money(q.price)}`); });
 }
 async function confirmAppt(aid) {
   const a = S.appts.get(aid); need(a && a.status === "proposed", "Only a held time can be confirmed.");
-  const slot = S.slots.get(a.slot);
+  const slot = S.slots.get(a.slot); need(slot, "That time slot is missing.");
+  const others = liveAppts().filter((x) => x.id !== aid && x.slot === a.slot && x.status === "confirmed");
+  need(!others.length, "Another customer is already confirmed in that slot.");
   await put("appts", aid, Object.assign({}, a, { status: "confirmed", confirmed: today() }));
   await put("slots", a.slot, Object.assign({}, slot, { status: "booked" }));
-  await leadAct(a.lead, (l) => { l.status = "Booked"; l.lastContact = today(); l.next = slot.date > today() ? plusDays(-1, slot.date) : slot.date; ev(l, "booked", `${slot.date} ${slot.time} ${a.service}`); });
+  await leadAct(a.lead, (l) => { l.status = "Booked"; l.lastContact = today(); l.next = slot.date > today() ? plusDays(-1, slot.date) : slot.date; l.nextAction = "Send reminder the day before"; ev(l, "booked", `${slot.date} ${slot.time} ${a.service}`); });
 }
-async function cancelAppt(aid, noShow, reason) {
+async function recordDeposit(aid, f) {
+  const a = S.appts.get(aid); need(a && (a.status === "proposed" || a.status === "confirmed"), "Deposits go on an upcoming appointment.");
+  const amt = num(f.amount, "Deposit"); need(amt && amt > 0, "Enter the deposit amount."); need(amt <= a.price, "Deposit is more than the agreed price.");
+  need(PAY.includes(f.method), "Pick how they paid.");
+  await put("appts", aid, Object.assign({}, a, { deposit: { d: today(), a: amt, m: f.method } }));
+  await leadAct(a.lead, (l) => ev(l, "deposit", `$${amt} ${f.method}`));
+}
+async function cancelAppt(aid, noShow, f) {
+  f = f || {};
   const a = S.appts.get(aid); need(a && (a.status === "proposed" || a.status === "confirmed"), "That appointment can't be cancelled.");
-  const slot = S.slots.get(a.slot);
-  await put("appts", aid, Object.assign({}, a, { status: noShow ? "no_show" : "cancelled", notes: clean(reason, 200) }));
+  const slot = S.slots.get(a.slot), reason = clean(f.reason, 200);
+  await put("appts", aid, Object.assign({}, a, { status: noShow ? "no_show" : "cancelled", notes: reason, depositOutcome: a.deposit ? (f.keep === "on" ? "kept" : "refunded") : "" }));
   if (slot) await put("slots", a.slot, Object.assign({}, slot, { status: slot.date >= today() ? "open" : "closed" }));
+  if (a.deposit && f.keep === "on") { // a kept deposit is real money earned, recorded as its own small job
+    await put("jobs", newId("jobs"), { appt: aid, lead: a.lead, date: today(), service: a.service, kind: "cancellation_fee", price: a.deposit.a, discount: 0, payments: [a.deposit], refunds: [], supplies: 0, suppliesActual: true, laborHours: 0, laborActual: true, otherCost: 0, notes: "Deposit kept per policy" });
+  }
   await leadAct(a.lead, (l) => { l.status = "Follow-Up Due"; l.next = plusDays(2); ev(l, noShow ? "no_show" : "cancelled", reason); });
+}
+
+// ---------------------------------------------------------------- job costing
+const sumA = (arr) => r2((arr || []).reduce((s, p) => s + (Number(p.a) || 0), 0));
+function feeFor(p) { const pctFee = B().costs.fees[p.m]; return pctFee == null ? null : r2(p.a * pctFee / 100); }
+function jobEcon(j) {
+  const discount = Number(j.discount) || 0, refunds = sumA(j.refunds), paidIn = sumA(j.payments);
+  const revenue = r2((Number(j.price) || 0) - discount - refunds);
+  const netPaid = r2(paidIn - refunds);
+  const balance = r2(Math.max(0, revenue - netPaid));
+  const feeList = (j.payments || []).map(feeFor);
+  const fees = feeList.includes(null) ? null : r2(feeList.reduce((s, x) => s + x, 0));
+  const missing = [], estimated = [];
+  if (j.supplies == null) missing.push("supply cost"); else if (!j.suppliesActual) estimated.push("supplies");
+  if (fees == null) missing.push("payment fee % for " + Array.from(new Set((j.payments || []).filter((p) => feeFor(p) == null).map((p) => payLabel(p.m)))).join(", "));
+  const direct = j.supplies == null || fees == null ? null : r2(Number(j.supplies) + (Number(j.otherCost) || 0) + fees);
+  const contribution = direct == null ? null : r2(revenue - direct);
+  const rate = B().costs.ownerRate, hours = j.laborHours == null ? null : Number(j.laborHours);
+  if (hours == null) missing.push("labor hours"); else if (!j.laborActual) estimated.push("labor hours");
+  if (rate == null) missing.push("your hourly labor value (Money > Cost settings)");
+  const labor = hours == null || rate == null ? null : r2(hours * rate);
+  const ohm = B().costs.overheadMonthly;
+  let overhead = null;
+  if (ohm != null) { const [ms, me] = monthBounds(j.date); const n = all("jobs").filter((x) => x.date >= ms && x.date <= me && x.kind !== "cancellation_fee").length || 1; overhead = j.kind === "cancellation_fee" ? 0 : r2(ohm / n); }
+  else missing.push("monthly overhead (enter 0 if none)");
+  const profit = contribution == null || labor == null || overhead == null ? null : r2(contribution - labor - overhead);
+  const st = revenue <= 0 && refunds > 0 ? "refunded" : netPaid >= revenue && revenue > 0 ? "paid" : netPaid > 0 ? "partial" : "unpaid";
+  return { revenue, discount, refunds, paidIn, netPaid, balance, fees, direct, contribution, labor, overhead, profit, hours, missing, estimated, status: st, complete: !missing.length, actual: !missing.length && !estimated.length };
+}
+function jobStatus(j) { return jobEcon(j).status; }
+function timingFor(apptId) { return all("timings").find((t) => t.appt && t.appt === apptId); }
+function supplyEstimate(service, addons) {
+  const sv = B().services[service]; if (!sv || sv.supply == null) return null;
+  let s = Number(sv.supply);
+  for (const id of addons || []) { const a = addonById(id); if (a && a.supply != null) s += Number(a.supply); }
+  return r2(s);
 }
 async function completeJob(aid, f) {
   const a = S.appts.get(aid); need(a && a.status === "confirmed", "Only a confirmed appointment can be completed.");
+  need(!all("jobs").some((j) => j.appt === aid && j.kind !== "cancellation_fee"), "This appointment already has a completed job.");
   let price = num(f.price, "Price charged"); if (price == null) price = a.price; need(price > 0, "Price charged must be more than $0.");
-  const paid = num(f.paid, "Amount paid") || 0; need(paid <= price, "Paid is more than the price. Put tips in notes.");
-  need(!paid || PAY.includes(f.method), "Pick how they paid.");
+  const discount = num(f.discount, "Discount") || 0; need(discount <= price, "Discount can't be more than the price.");
+  const paidNow = num(f.paid, "Amount paid") || 0;
+  need(!paidNow || PAY.includes(f.method), "Pick how they paid.");
+  const payments = []; if (a.deposit) payments.push(a.deposit); if (paidNow) payments.push({ d: isDate(f.date) ? f.date : today(), a: paidNow, m: f.method });
+  need(sumA(payments) <= price - discount + 0.001, "Payments are more than the price after discount. Put tips in notes.");
   const date = isDate(f.date) ? f.date : today(); need(date <= today(), "Completed date can't be in the future.");
   const service = SERVICES[f.service] ? f.service : a.service;
-  await put("jobs", newId("jobs"), { appt: aid, lead: a.lead, date, service, price, paid, status: paid >= price ? "paid" : paid > 0 ? "partial" : "unpaid", payments: paid ? [{ d: date, a: paid, m: f.method }] : [], notes: clean(f.notes, 500) });
+  const supplies = numOrNull(f.supplies, "Supplies used", 2000);
+  const hours = numOrNull(f.hours, "Labor hours", 24);
+  const t = timingFor(aid);
+  const job = { appt: aid, lead: a.lead, date, service, addons: a.addons || [], condition: a.condition || "", price, discount, payments, refunds: [],
+    supplies, suppliesActual: f.suppliesActual === "on", laborHours: hours, laborActual: f.hoursActual === "on" || (!!t && hours != null && Math.abs(hours - t.total / 3600) < 0.05),
+    otherCost: numOrNull(f.other, "Other costs", 2000) || 0, photosBefore: f.photosBefore === "on", photosAfter: f.photosAfter === "on", qc: f.qc === "on", outcome: clean(f.outcome, 200), notes: clean(f.notes, 500) };
+  await put("jobs", newId("jobs"), job);
   await put("appts", aid, Object.assign({}, a, { status: "completed" }));
-  await leadAct(a.lead, (l) => { l.status = "Completed"; l.next = plusDays(1, date); l.repeat = plusDays(35, date); ev(l, "completed", `${service} $${price}`, date); if (paid) ev(l, "payment", `$${paid} ${f.method}`, date); });
+  const e = jobEcon(job);
+  await leadAct(a.lead, (l) => { l.status = "Completed"; l.next = plusDays(1, date); l.nextAction = e.balance > 0 ? "Collect the balance" : "Ask for an honest review"; l.repeat = plusDays(35, date); ev(l, "completed", `${service} $${price}`, date); payments.filter((p) => p !== a.deposit).forEach((p) => ev(l, "payment", `$${p.a} ${p.m}`, p.d)); });
 }
 async function recordPayment(jid, amount, method) {
-  const j = JSON.parse(JSON.stringify(S.jobs.get(jid))); need(j, "That job is gone.");
+  const cur = S.jobs.get(jid); need(cur, "That job is gone.");
+  const j = JSON.parse(JSON.stringify(cur));
   const amt = num(amount, "Amount"); need(amt && amt > 0, "Enter an amount more than $0."); need(PAY.includes(method), "Pick a payment method.");
-  const total = Math.round((j.paid + amt) * 100) / 100; need(total <= j.price, "That's more than the price charged.");
-  j.paid = total; j.status = total >= j.price ? "paid" : "partial"; j.payments.push({ d: today(), a: amt, m: method });
+  const e = jobEcon(j); need(amt <= e.balance + 0.001, `That's more than the ${money(e.balance)} still owed.`);
+  j.payments = (j.payments || []).concat([{ d: today(), a: amt, m: method }]);
   await put("jobs", jid, j);
-  await leadAct(j.lead, (l) => ev(l, "payment", `$${amt} ${method}`));
+  await leadAct(j.lead, (l) => { ev(l, "payment", `$${amt} ${method}`); if (jobEcon(j).balance <= 0) l.nextAction = "Ask for an honest review"; });
+}
+async function recordRefund(jid, f) {
+  const cur = S.jobs.get(jid); need(cur, "That job is gone.");
+  const j = JSON.parse(JSON.stringify(cur));
+  const amt = num(f.amount, "Refund"); need(amt && amt > 0, "Enter the refund amount."); need(amt <= jobEcon(j).netPaid + 0.001, "You can't refund more than they paid.");
+  j.refunds = (j.refunds || []).concat([{ d: today(), a: amt, n: clean(f.note, 200) }]);
+  await put("jobs", jid, j);
+  await leadAct(j.lead, (l) => ev(l, "refund", `$${amt} ${clean(f.note, 100)}`));
+}
+async function editJobCosts(jid, f) {
+  const cur = S.jobs.get(jid); need(cur, "That job is gone.");
+  const j = JSON.parse(JSON.stringify(cur));
+  j.discount = num(f.discount, "Discount") || 0; need(j.discount <= j.price, "Discount can't be more than the price.");
+  j.supplies = numOrNull(f.supplies, "Supplies used", 2000); j.suppliesActual = f.suppliesActual === "on";
+  j.laborHours = numOrNull(f.hours, "Labor hours", 24); j.laborActual = f.hoursActual === "on";
+  j.otherCost = numOrNull(f.other, "Other costs", 2000) || 0;
+  await put("jobs", jid, j);
 }
 
-// ---------------------------------------------------------------- reports
-const payments = () => all("jobs").flatMap((j) => (j.payments || []).map((p) => Object.assign({ job: j.id }, p)));
-const collected = (a, b) => payments().filter((p) => !a || (p.d >= a && p.d <= b)).reduce((s, p) => s + p.a, 0);
-const owed = () => all("jobs").filter((j) => j.status !== "paid").reduce((s, j) => s + (j.price - j.paid), 0);
+// ---------------------------------------------------------------- reports (recorded data only)
+const realJobs = () => all("jobs").filter((j) => j.kind !== "cancellation_fee");
+const payments = () => all("jobs").flatMap((j) => (j.payments || []).map((p) => Object.assign({ job: j.id, lead: j.lead }, p)));
+const refundsAll = () => all("jobs").flatMap((j) => (j.refunds || []).map((p) => Object.assign({ job: j.id, lead: j.lead }, p)));
+const inRange = (d, a, b) => !a || (d >= a && d <= b);
+const collected = (a, b) => r2(payments().filter((p) => inRange(p.d, a, b)).reduce((s, p) => s + p.a, 0) - refundsAll().filter((p) => inRange(p.d, a, b)).reduce((s, p) => s + p.a, 0));
+const owed = () => r2(all("jobs").reduce((s, j) => s + jobEcon(j).balance, 0));
 const hasEv = (l, t) => (l.events || []).some((e) => e.t === t);
-const evCount = (t, a, b) => all("leads").reduce((n, l) => n + (l.events || []).filter((e) => e.t === t && e.d >= a && e.d <= b).length, 0);
+const evIn = (l, types, a, b) => (l.events || []).filter((e) => types.includes(e.t) && inRange(e.d, a, b));
+const evCount = (t, a, b) => all("leads").reduce((n, l) => n + evIn(l, [t], a, b).length, 0);
 function funnel(a, b) {
-  const ls = all("leads").filter((l) => !a || (l.inquiry >= a && l.inquiry <= b));
+  const ls = all("leads").filter((l) => l.inquiry && inRange(l.inquiry, a, b));
   const c = (t) => ls.filter((l) => hasEv(l, t)).length;
   const f = { leads: ls.length, quoted: c("quote_sent"), booked: c("booked"), completed: c("completed"), lost: ls.filter((l) => l.status === "Lost").length };
-  f.l2b = f.leads ? Math.round(100 * f.booked / f.leads) + "%" : "-"; f.q2b = f.quoted ? Math.round(100 * f.booked / f.quoted) + "%" : "-";
+  f.l2b = pct(f.booked, f.leads); f.q2b = pct(f.booked, f.quoted);
   return f;
 }
-function channels(a, b) {
-  const by = {};
+function channelStats(a, b) {
+  // One row per channel: effort, outreach, inquiries, quotes, bookings, jobs, money, cost. Leads are attributed to the channel they came from.
+  const rows = {};
+  const row = (k) => rows[k] || (rows[k] = { source: k, minutes: 0, actions: 0, outreach: 0, inquiries: 0, quotes: 0, booked: 0, completed: 0, revenue: 0, cost: 0, customers: new Set() });
+  for (const e of all("effort")) if (inRange(e.date, a, b)) { const r = row(e.channel); r.minutes += Number(e.minutes) || 0; r.actions++; }
+  for (const x of all("expenses")) if (x.category === "marketing" && x.channel && inRange(x.date, a, b)) row(x.channel).cost += Number(x.amount) || 0;
   for (const l of all("leads")) {
-    if (a && !(l.inquiry >= a && l.inquiry <= b)) continue;
-    const r = by[l.source] || (by[l.source] = { source: l.source, inquiries: 0, booked: 0, money: 0 });
-    r.inquiries++; if (hasEv(l, "booked")) r.booked++;
+    const r = row(l.source || "other");
+    r.outreach += evIn(l, ["contacted"], a, b).length;
+    if (l.inquiry && inRange(l.inquiry, a, b)) r.inquiries++;
+    r.quotes += evIn(l, ["quote_sent"], a, b).length ? 1 : 0;
+    r.booked += evIn(l, ["booked"], a, b).length ? 1 : 0;
   }
-  for (const j of all("jobs")) { const l = S.leads.get(j.lead); if (l && by[l.source]) by[l.source].money += (j.payments || []).reduce((s, p) => s + p.a, 0); }
-  return Object.values(by).sort((x, y) => y.inquiries - x.inquiries);
+  for (const j of all("jobs")) {
+    const l = S.leads.get(j.lead); const r = row(l ? l.source : "other");
+    if (j.kind !== "cancellation_fee" && inRange(j.date, a, b)) { r.completed++; r.customers.add(j.lead); }
+    r.revenue += (j.payments || []).filter((p) => inRange(p.d, a, b)).reduce((s, p) => s + p.a, 0) - (j.refunds || []).filter((p) => inRange(p.d, a, b)).reduce((s, p) => s + p.a, 0);
+  }
+  return Object.values(rows).map((r) => Object.assign(r, { revenue: r2(r.revenue), cost: r2(r.cost), cac: r.customers.size && r.cost ? r2(r.cost / r.customers.size) : null, customersN: r.customers.size, i2b: pct(r.booked, r.inquiries), q2b: pct(r.booked, r.quotes), perHour: r.minutes ? Math.round(r.inquiries / (r.minutes / 60) * 10) / 10 : null }))
+    .filter((r) => r.minutes || r.actions || r.outreach || r.inquiries || r.quotes || r.booked || r.completed || r.revenue || r.cost)
+    .sort((x, y) => y.revenue - x.revenue || y.inquiries - x.inquiries);
+}
+function channelVerdicts(rows) {
+  return rows.map((r) => {
+    let v, why;
+    if (r.inquiries < 3 && !r.booked) { v = "Not enough data"; why = `${r.inquiries} inquiries so far - keep going before judging.`; }
+    else if (r.booked && (r.revenue > r.cost)) { v = "More attention"; why = `${r.booked} booking(s), ${money(r.revenue)} collected${r.cost ? " vs " + money(r.cost) + " spent" : ""}.`; }
+    else if (r.inquiries >= 3 && !r.booked) { v = "Change something"; why = `${r.inquiries} inquiries but no bookings - check replies, price or response time.`; }
+    else if (r.cost > r.revenue) { v = "Change something"; why = `Spent ${money(r.cost)}, collected ${money(r.revenue)}.`; }
+    else { v = "Keep going"; why = "Results are mixed - give it another week."; }
+    return Object.assign({}, r, { verdict: v, why });
+  });
 }
 function weekBounds(any) { const d = any ? parse(any) : new Date(); const off = (d.getDay() + 6) % 7; d.setDate(d.getDate() - off); const s = iso(d); return [s, plusDays(6, s)]; }
+const postsPublished = (a, b) => POSTS.map(postView).filter((p) => p.status === "published" && inRange(p.published, a, b)).length + all("effort").filter((e) => e.kind === "post" && inRange(e.date, a, b)).length;
 function weekly(any) {
   const [a, b] = weekBounds(any);
   const posts = POSTS.map(postView).filter((p) => p.status === "published" && p.published >= a && p.published <= b);
-  const ch = channels(a, b);
-  const eff = {}; for (const e of all("effort")) if (e.date >= a && e.date <= b) { const r = eff[e.channel] || (eff[e.channel] = { actions: 0, minutes: 0 }); r.actions++; r.minutes += e.minutes; }
-  const names = Array.from(new Set(Object.keys(eff).concat(ch.map((c) => c.source)))).sort();
-  const effort = names.map((n) => { const e = eff[n] || { actions: 0, minutes: 0 }; const inq = (ch.find((c) => c.source === n) || {}).inquiries || 0; return { channel: n, actions: e.actions, minutes: e.minutes, inquiries: inq, perHour: e.minutes ? Math.round(inq / (e.minutes / 60) * 10) / 10 : null }; });
-  const gaps = all("leads").filter((l) => l.inquiry >= a && l.inquiry <= b).map((l) => { const f = (l.events || []).find((e) => e.t === "reply_sent" || e.t === "quote_sent"); return f ? (parse(f.d) - parse(l.inquiry)) / 864e5 : null; }).filter((x) => x != null);
-  const r = { a, b, posts, ch, effort, inquiries: ch.reduce((s, c) => s + c.inquiries, 0), replies: evCount("reply_sent", a, b), quotes: evCount("quote_sent", a, b), followups: evCount("followup_sent", a, b), booked: evCount("booked", a, b), cancelled: evCount("cancelled", a, b), noShows: evCount("no_show", a, b), jobs: all("jobs").filter((j) => j.date >= a && j.date <= b).length, revenue: collected(a, b), owed: owed(), speed: gaps.length ? Math.round(gaps.reduce((s, x) => s + x, 0) / gaps.length * 10) / 10 : null };
+  const loggedPosts = all("effort").filter((e) => e.kind === "post" && e.date >= a && e.date <= b);
+  const ch = channelVerdicts(channelStats(a, b));
+  const gaps = all("leads").filter((l) => l.inquiry && l.inquiry >= a && l.inquiry <= b).map((l) => { const f = (l.events || []).find((e) => e.t === "reply_sent" || e.t === "quote_sent"); return f ? dayDiff(l.inquiry, f.d) : null; }).filter((x) => x != null);
+  const jobsDone = realJobs().filter((j) => j.date >= a && j.date <= b);
+  const r = { a, b, posts, loggedPosts, ch, inquiries: ch.reduce((s, c) => s + c.inquiries, 0), outreach: ch.reduce((s, c) => s + c.outreach + c.actions, 0), replies: evCount("reply_sent", a, b), quotes: evCount("quote_sent", a, b), followups: evCount("followup_sent", a, b), booked: evCount("booked", a, b), cancelled: evCount("cancelled", a, b), noShows: evCount("no_show", a, b), jobs: jobsDone.length, revenue: collected(a, b), owed: owed(), speed: gaps.length ? Math.round(gaps.reduce((s, x) => s + x, 0) / gaps.length * 10) / 10 : null, minutes: ch.reduce((s, c) => s + c.minutes, 0), spend: ch.reduce((s, c) => s + c.cost, 0) };
   r.tips = tips(r); return r;
 }
 function tips(r) {
   const t = [];
-  if (r.inquiries + r.posts.length + r.effort.reduce((s, e) => s + e.actions, 0) === 0) return ["Nothing was recorded this week, so there's nothing to judge yet. Log posts, leads and marketing time as they happen."];
-  if (!r.posts.length) t.push("No posts were marked published. Approve 2-3 posts on Sunday and publish one every other day.");
+  if (r.inquiries + r.posts.length + r.loggedPosts.length + r.outreach === 0) return ["Nothing was recorded this week, so there's nothing to judge yet. Log posts, leads and marketing time as they happen."];
+  if (!r.posts.length && !r.loggedPosts.length) t.push("No posts were recorded. Post twice next week and log each one (Plan > Log marketing time > it was a post).");
   if (r.speed != null && r.speed >= 1) t.push(`Replies took ${r.speed} day(s) on average. Same-day replies win more jobs - check messages twice a day.`);
   const newOnes = all("leads").filter((l) => l.status === "New Lead").length; if (newOnes) t.push(`${newOnes} lead(s) still have no reply. Answer them first thing.`);
   if (r.quotes && !r.booked) t.push("Quotes went out but nobody booked. Send the quote follow-up with real open times.");
-  for (const e of r.effort) if (e.minutes >= 60 && !e.inquiries) t.push(`${nice(e.channel)}: ${e.minutes} min, 0 inquiries. Cut that time in half next week (unless it's a slow-build channel like Google).`);
-  const best = r.effort.filter((e) => e.perHour); if (best.length) { const top = best.sort((x, y) => y.perHour - x.perHour)[0]; t.push(`Best return on time: ${nice(top.channel)} (${top.perHour} inquiries/hour). Do a bit more of that.`); }
-  if (r.jobs && !r.ch.some((c) => c.source === "referral")) t.push("You finished jobs this week - send the referral ask to happy customers.");
-  if (r.inquiries && !r.effort.some((e) => e.minutes)) t.push("Leads came in but no time was logged, so the report can't tell which work paid off. Log minutes on the Plan screen.");
+  for (const c of r.ch) if (c.verdict === "Change something") t.push(`${srcLabel(c.source)}: ${c.why}`);
+  for (const c of r.ch) if (c.verdict === "More attention") t.push(`${srcLabel(c.source)} is working: ${c.why} Do a bit more of it.`);
+  if (r.jobs && !r.ch.some((c) => c.source === "referral" && c.inquiries)) t.push("You finished jobs this week - send the referral ask to happy customers.");
+  if (r.inquiries && !r.minutes) t.push("Leads came in but no time was logged, so the report can't tell which work paid off. Log minutes on the Plan screen.");
   if (r.cancelled + r.noShows >= 2) t.push("2+ cancellations or no-shows. Send the reminder the day before every appointment.");
   return t.length ? t : ["Nothing jumps out. Keep the same routine another week so there's enough to compare."];
 }
 function weeklyText(r) {
-  const L = [`CARBON FORCE DETAILING - WEEK ${r.a} to ${r.b}`, "", `Posts published: ${r.posts.length}`];
+  const L = [`CARBON FORCE DETAILING - WEEK ${r.a} to ${r.b}`, "", `Posts: ${r.posts.length} from the library + ${r.loggedPosts.length} logged`];
   r.posts.forEach((p) => L.push(`  - ${p.published} ${p.title} (${p.where})`));
-  L.push(`Inquiries: ${r.inquiries}`); r.ch.forEach((c) => L.push(`  - ${nice(c.source)}: ${c.inquiries} (booked so far: ${c.booked})`));
-  L.push(`Replies: ${r.replies}  Quotes: ${r.quotes}  Follow-ups: ${r.followups}`, `Booked: ${r.booked}  Cancelled: ${r.cancelled}  No-shows: ${r.noShows}`, `Jobs completed: ${r.jobs}`, `Revenue collected: ${money(r.revenue)} (still owed: ${money(r.owed)})`, `Avg days to first reply: ${r.speed == null ? "n/a" : r.speed}`, "", "Time by channel:");
-  r.effort.forEach((e) => L.push(`  - ${nice(e.channel)}: ${e.actions} actions, ${e.minutes} min, ${e.inquiries} inquiries, ${e.perHour == null ? "n/a" : e.perHour}/hour`));
-  L.push("", "What to change next week:"); r.tips.forEach((x) => L.push("  - " + x)); L.push("", "Only recorded data counts. Likes and views are not revenue.");
+  L.push(`Inquiries: ${r.inquiries}`, `Replies: ${r.replies}  Quotes: ${r.quotes}  Follow-ups: ${r.followups}`, `Booked: ${r.booked}  Cancelled: ${r.cancelled}  No-shows: ${r.noShows}`, `Jobs completed: ${r.jobs}`, `Money collected (after refunds): ${money(r.revenue)}   Still owed: ${money(r.owed)}`, `Marketing time: ${r.minutes} min   Marketing spend: ${money(r.spend)}`, `Avg days to first reply: ${r.speed == null ? "n/a" : r.speed}`, "", "Channels:");
+  r.ch.forEach((c) => L.push(`  - ${srcLabel(c.source)}: ${c.minutes} min, ${c.inquiries} inquiries, ${c.quotes} quotes, ${c.booked} booked, ${c.completed} done, ${money(c.revenue)} collected${c.cost ? ", " + money(c.cost) + " spent" : ""} -> ${c.verdict}`));
+  L.push("", "What to change next week:"); r.tips.forEach((x) => L.push("  - " + x)); L.push("", "Only recorded data counts. Likes, views and messages are not revenue.");
   return L.join("\n");
 }
 
+// ---------------------------------------------------------------- what needs attention (priority queue)
+function attentionQueue() {
+  const t = today(), q = [], sla = B().sla;
+  for (const l of all("leads")) {
+    const st = status(l);
+    if (l.status === "New Lead") { const h = hoursWaiting(l); q.push({ pri: 100 + Math.min(h, 99), lead: l.id, title: `Reply to ${l.name}`, why: `Asked ${h < 1 ? "less than an hour" : Math.round(h) + "h"} ago via ${srcLabel(l.source)}`, late: h > sla.replyHours, go: ["lead", l.id] }); continue; }
+    if (["Lost", "Completed", "Booked"].includes(l.status)) continue;
+    if (l.next && l.next <= t) {
+      const od = overdueDays(l), maxed = (l.followups || 0) >= sla.maxFollowups && ["Replied", "Quote Sent", "Contacted"].includes(l.status);
+      const what = l.status === "Identified" ? "Reach out to" : maxed ? "Decide on" : l.status === "Quote Sent" ? "Follow up on quote for" : "Follow up with";
+      q.push({ pri: (l.status === "Quote Sent" ? 85 : l.status === "Identified" || l.status === "Contacted" ? 45 : 80) + od * 2, lead: l.id, title: `${what} ${l.name}`, why: maxed ? `${l.followups} follow-ups sent with no answer - mark Lost or try once more` : (l.nextAction || st) + (od ? ` · ${od} day(s) overdue` : " · due today"), late: od > 0, go: ["lead", l.id] });
+    }
+  }
+  for (const a of liveAppts()) {
+    const d = apptDate(a), l = S.leads.get(a.lead) || { name: "?" };
+    if (d === t && a.status === "confirmed") q.push({ pri: 95, title: `${l.name} drops off today`, why: `${SERVICES[a.service].label} · ${money(a.price)} · start the Work timer`, go: ["lead", a.lead] });
+    if (d === plusDays(1) && a.status === "confirmed" && !a.reminder) q.push({ pri: 90, title: `Remind ${l.name} about tomorrow`, why: "Send the reminder message", go: ["lead", a.lead] });
+    if (a.status === "proposed" && dayDiff((a.created || "").slice(0, 10) || t, t) >= 1) q.push({ pri: 75, title: `Confirm or release ${l.name}'s held time`, why: `${fdate(d)} is held but not confirmed`, late: d <= plusDays(1), go: ["lead", a.lead] });
+    if (d && d < t) q.push({ pri: 72, title: `Close out ${l.name}'s ${fdate(d)} appointment`, why: "Mark it completed, cancelled or no-show", late: true, go: ["lead", a.lead] });
+  }
+  for (const j of all("jobs")) { const e = jobEcon(j); if (e.balance > 0) { const l = S.leads.get(j.lead) || { name: "?" }; q.push({ pri: 70, title: `Collect ${money(e.balance)} from ${l.name}`, why: `Job on ${fdate(j.date)}`, late: dayDiff(j.date, t) > 1, go: ["lead", j.lead] }); } }
+  const paidDone = new Set(realJobs().filter((j) => jobEcon(j).status === "paid" && j.date < t).map((j) => j.lead));
+  for (const l of all("leads")) {
+    if (paidDone.has(l.id) && !l.reviewReq) q.push({ pri: 50, title: `Ask ${l.name} for an honest review`, why: "Their job is done and paid", go: ["lead", l.id] });
+    if (l.status === "Completed" && l.repeat && l.repeat <= t) q.push({ pri: 40, title: `Reconnect with ${l.name}`, why: "About 5 weeks since their last detail", go: ["lead", l.id] });
+  }
+  for (const o of all("opps")) if (o.nextDate && o.nextDate <= t && !["declined", "not_a_fit"].includes(o.status)) q.push({ pri: 35, title: o.name, why: o.next || "Prospecting step due", late: o.nextDate < t, go: ["prospects"] });
+  const hasData = all("leads").length || all("jobs").length;
+  const lb = S.meta.lastBackup;
+  if (hasData && (!lb || dayDiff(lb, t) >= 7)) q.push({ pri: 20, title: "Save a backup file", why: lb ? `Last backup ${fdate(lb)}` : "No backup file saved yet", go: ["setup"] });
+  return q.sort((x, y) => y.pri - x.pri);
+}
+function blockers() {
+  const t = today(), out = [];
+  const miss = SETTINGS.filter((s) => s[3] && !settings()[s[0]]);
+  if (miss.length) out.push(["Setup isn't finished", `Templates show [SET ...] until you add: ${miss.map((s) => s[1]).join(", ")}.`, "setup"]);
+  if (!openSlots(7).length) out.push(["No open drop-off times in the next 7 days", "Customers can't book a time you haven't opened. Add real slots on the Book tab.", "book"]);
+  const recentLeads = all("leads").filter((l) => l.inquiry && dayDiff(l.inquiry, t) <= 14).length;
+  const recentPosts = postsPublished(plusDays(-7), t), recentEffort = all("effort").filter((e) => dayDiff(e.date, t) <= 7).length;
+  if (!recentLeads && !recentPosts && !recentEffort) out.push(["Nobody new has heard from you this week", "No posts or outreach logged in 7 days and no inquiries in 14. Post on Nextdoor and drop flyers.", "plan"]);
+  else if (!recentLeads) out.push(["No new inquiries in 14 days", "Try a different post angle (real before/after photos) or a new channel - see Marketing results.", "marketing"]);
+  const unans = all("leads").filter((l) => l.status === "New Lead").length;
+  if (unans) out.push([`${unans} inquiry(s) without a reply`, "Fast replies win most small jobs.", "leads"]);
+  const q30 = evCount("quote_sent", plusDays(-30), t), b30 = evCount("booked", plusDays(-30), t);
+  if (q30 >= 3 && !b30) out.push(["Quotes aren't turning into bookings", `${q30} quotes in 30 days, 0 bookings. Follow up with real open times, and ask what's holding them back.`, "leads"]);
+  const noPrice = B().addons.filter((a) => a.price == null).length;
+  if (noPrice) out.push(["Add-on prices aren't set", `${noPrice} add-on(s) say "ask for a price", which slows quoting.`, "services"]);
+  return out;
+}
+
+// ---------------------------------------------------------------- daily checklist (goals vs actual)
+function dailyStatus(date) {
+  const d = date || today(), [ws, we] = weekBounds(d);
+  const prospecting = all("effort").filter((e) => e.date === d && e.kind !== "post").length + all("leads").reduce((n, l) => n + evIn(l, ["contacted", "identified"], d, d).length, 0);
+  return [
+    { key: "replies", label: "Reply to every new inquiry", goal: "all", done: all("leads").filter((l) => l.status === "New Lead").length === 0, actual: `${all("leads").filter((l) => l.status === "New Lead").length} waiting`, auto: true },
+    { key: "followups", label: "Send every follow-up that's due", goal: "all", done: !all("leads").some((l) => OPEN_STATUSES.includes(l.status) && l.status !== "New Lead" && l.next && l.next <= d), actual: `${all("leads").filter((l) => OPEN_STATUSES.includes(l.status) && l.status !== "New Lead" && l.next && l.next <= d).length} due`, auto: true },
+    { key: "prospect", label: "Prospecting / outreach actions", goal: B().targets.prospect, done: prospecting >= B().targets.prospect, actual: `${prospecting} done today`, auto: true },
+    { key: "posts", label: "Marketing posts this week", goal: B().targets.postsPerWeek, done: postsPublished(ws, we) >= B().targets.postsPerWeek, actual: `${postsPublished(ws, we)} this week`, auto: true },
+    { key: "admin_money", label: "Record today's payments and costs", manual: true },
+    { key: "admin_slots", label: "Check open drop-off times for the next 7 days", manual: true },
+  ];
+}
+
+// ---------------------------------------------------------------- money
+function moneySummary(a, b) {
+  const js = realJobs().filter((j) => inRange(j.date, a, b));
+  const econ = js.map((j) => Object.assign({ j }, jobEcon(j)));
+  const revenue = r2(econ.reduce((s, e) => s + e.revenue, 0));
+  const withContrib = econ.filter((e) => e.contribution != null), withProfit = econ.filter((e) => e.profit != null);
+  const hours = econ.filter((e) => e.hours != null);
+  const hoursTotal = hours.reduce((s, e) => s + e.hours, 0);
+  const spend = r2(all("expenses").filter((x) => inRange(x.date, a, b)).reduce((s, x) => s + (Number(x.amount) || 0), 0));
+  return {
+    jobs: js.length, revenue, collected: collected(a, b), owed: owed(), spend,
+    avgJob: js.length ? r2(revenue / js.length) : null,
+    avgHours: hours.length ? Math.round(hoursTotal / hours.length * 10) / 10 : null,
+    revPerHour: hoursTotal ? r2(hours.reduce((s, e) => s + e.revenue, 0) / hoursTotal) : null,
+    contribution: withContrib.length ? r2(withContrib.reduce((s, e) => s + e.contribution, 0)) : null, contribN: withContrib.length,
+    profit: withProfit.length ? r2(withProfit.reduce((s, e) => s + e.profit, 0)) : null, profitN: withProfit.length,
+    profitPerHour: withProfit.filter((e) => e.hours).length ? r2(withProfit.reduce((s, e) => s + e.profit, 0) / withProfit.reduce((s, e) => s + (e.hours || 0), 0)) : null,
+    allActual: econ.length > 0 && econ.every((e) => e.actual), missing: Array.from(new Set(econ.flatMap((e) => e.missing))), econ,
+  };
+}
+function cashFlow(weeks) {
+  const out = [], [ws] = weekBounds();
+  for (let i = weeks - 1; i >= 0; i--) {
+    const a = plusDays(-7 * i, ws), b = plusDays(6, a);
+    const inn = r2(payments().filter((p) => inRange(p.d, a, b)).reduce((s, p) => s + p.a, 0));
+    const outx = r2(all("expenses").filter((x) => inRange(x.date, a, b)).reduce((s, x) => s + (Number(x.amount) || 0), 0) + refundsAll().filter((p) => inRange(p.d, a, b)).reduce((s, p) => s + p.a, 0));
+    out.push({ a, inn, out: outx, net: r2(inn - outx) });
+  }
+  return out;
+}
+
+// ---------------------------------------------------------------- growth planner (estimates, clearly labeled)
+function plannerInputs() {
+  const js = realJobs(), f = funnel();
+  const avgMeasured = js.length >= 3 ? r2(js.reduce((s, j) => s + jobEcon(j).revenue, 0) / js.length) : null;
+  const leadsQuoted = all("leads").filter((l) => l.inquiry && hasEv(l, "quote_sent")).length;
+  const i2q = f.leads >= 5 ? leadsQuoted / f.leads : null, q2b = f.quoted >= 5 ? f.booked / f.quoted : null;
+  const as = B().assumptions;
+  return {
+    avgJob: avgMeasured != null ? { v: avgMeasured, src: `measured from ${js.length} jobs` } : { v: as.avgJob != null ? Number(as.avgJob) : SERVICES.full.price, src: as.avgJob != null ? "your assumption" : "assumption: full package price" },
+    i2q: i2q != null ? { v: i2q, src: `measured from ${f.leads} inquiries` } : { v: Number(as.inquiryToQuote), src: "your assumption" },
+    q2b: q2b != null ? { v: q2b, src: `measured from ${f.quoted} quotes` } : { v: Number(as.quoteToBook), src: "your assumption" },
+  };
+}
+function growthPlan(target) {
+  const p = plannerInputs(), cap = B().capacity;
+  const tms = all("timings"); const avgMin = tms.length ? tms.reduce((x, t) => x + (Number(t.total) || 0), 0) / tms.length / 60 : (Number(B().services.full.minutes) || 450);
+  const daysPerMonth = Math.round(cap.workDays.length * 4.33);
+  const perDay = Math.max(1, Math.min(maxPerDay(), Math.floor(cap.hoursPerDay * 60 / Math.max(60, avgMin)) || 1));
+  const capacityJobs = daysPerMonth * perDay;
+  const scen = [["Conservative", 0.7], ["Moderate", 1], ["Ambitious", 1.3]].map(([name, m]) => {
+    const i2q = Math.min(0.95, p.i2q.v * m), q2b = Math.min(0.95, p.q2b.v * m);
+    const jobs = Math.ceil(target / p.avgJob.v), quotes = q2b ? Math.ceil(jobs / q2b) : null, inquiries = quotes && i2q ? Math.ceil(quotes / i2q) : null;
+    return { name, jobs, quotes, inquiries, perWeek: inquiries ? Math.ceil(inquiries / 4.33) : null, fits: jobs <= capacityJobs, i2q, q2b };
+  });
+  return { p, scen, capacityJobs, daysPerMonth, perDay };
+}
+
 // ---------------------------------------------------------------- views
-let view = "today", sub = null, filter = "";
+let view = "today", sub = null, filter = "", search = "", period = "month";
 const ICONS = {
   today: '<path d="M4 6h16M4 12h16M4 18h10"/>', leads: '<circle cx="9" cy="8" r="3.5"/><path d="M3 20c.8-3.4 3.2-5 6-5s5.2 1.6 6 5M16 5.5a3 3 0 0 1 0 6M21 20c-.5-2.4-1.8-3.8-3.5-4.5"/>',
   book: '<rect x="3.5" y="5" width="17" height="15" rx="2"/><path d="M3.5 10h17M8 3v4M16 3v4"/>', posts: '<rect x="4" y="4" width="16" height="16" rx="2"/><path d="M4 15l4.5-4.5 4 4 3-3L20 15"/><circle cx="15.5" cy="8.5" r="1.3"/>',
@@ -416,138 +816,193 @@ const ICONS = {
   more: '<circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/>',
 };
 const TABS = [["today", "Today"], ["leads", "Leads"], ["book", "Book"], ["work", "Work"], ["posts", "Posts"], ["more", "More"]];
-const MORE = [["agent", "Marketing agent", "This week's research brief + ask Claude for posts and replies"], ["replies", "Reply templates", "Copy-paste answers for every common question"], ["prospects", "Local prospecting", "Groups, Google, partners, referrals"], ["plan", "Daily plan + cash mode", "7-day routine, log marketing time"], ["weekly", "Weekly report", "What's working, from real numbers"], ["setup", "Setup", "Your booking info, prices wording, backup"]];
-const tabOf = (v) => (["agent", "replies", "prospects", "plan", "weekly", "setup"].includes(v) ? "more" : v);
+const MORE = [
+  ["money", "Money & profit", "Collected, owed, job costs, profit, cash flow"],
+  ["marketing", "Marketing results", "Which channels bring paying customers + experiments"],
+  ["growth", "Growth planner", "Work backward from a monthly revenue goal"],
+  ["services", "Services & prices", "Prices, what's included, add-ons, durations, capacity"],
+  ["agent", "Marketing agent", "This week's research brief + ask Claude for posts and replies"],
+  ["replies", "Message scripts", "Edit and copy every customer message"],
+  ["prospects", "Local prospecting", "Groups, Google, partners, referrals"],
+  ["plan", "Daily plan + time log", "7-day routine, cash mode, log marketing time"],
+  ["weekly", "Weekly report", "What's working, from real numbers"],
+  ["policies", "Policies & readiness", "Customer policies, licenses, insurance checklist"],
+  ["setup", "Setup + backup", "Booking info, backup and restore"],
+];
+const MORE_VIEWS = MORE.map((m) => m[0]);
+const tabOf = (v) => (MORE_VIEWS.includes(v) ? "more" : v);
 
 function pill(s) {
-  const k = { "New Lead": "p-warn", "Follow-Up Due": "p-warn", draft: "p-warn", Booked: "p-ok", approved: "p-ok", confirmed: "p-ok", scheduled: "p-ok", proposed: "p-mute", held: "p-mute", Lost: "p-mute", cancelled: "p-mute", no_show: "p-mute", closed: "p-mute", unpaid: "p-bad", partial: "p-warn", published: "p-solid", Completed: "p-solid", completed: "p-solid", paid: "p-solid", open: "p-ok", booked: "p-ok" }[s] || "p-mute";
+  const k = { "New Lead": "p-warn", "Follow-Up Due": "p-warn", Identified: "p-mute", Contacted: "p-mute", draft: "p-warn", Booked: "p-ok", approved: "p-ok", confirmed: "p-ok", scheduled: "p-ok", proposed: "p-mute", held: "p-mute", Lost: "p-mute", cancelled: "p-mute", no_show: "p-mute", closed: "p-mute", unpaid: "p-bad", partial: "p-warn", refunded: "p-mute", published: "p-solid", Completed: "p-solid", completed: "p-solid", paid: "p-solid", open: "p-ok", booked: "p-ok", overdue: "p-bad", estimate: "p-warn", incomplete: "p-warn", actual: "p-ok", running: "p-ok", finished: "p-mute" }[s] || "p-mute";
   return `<span class="pill ${k}">${esc(nice(s))}</span>`;
 }
 const copyBox = (t) => `<div class="copy"><pre>${esc(t)}</pre><button type="button" class="small" data-copy>Copy</button></div>`;
-const field = (label, name, val, type, hint, extra) => `<label>${esc(label)}${type === "textarea" ? `<textarea name="${name}" id="f-${name}" ${extra || ""}>${esc(val)}</textarea>` : `<input name="${name}" id="f-${name}" type="${type || "text"}" value="${esc(val)}" ${extra || ""}>`}${hint ? `<span class="hint">${esc(hint)}</span>` : ""}</label>`;
+const field = (label, name, val, type, hint, extra) => `<label>${esc(label)}${type === "textarea" ? `<textarea name="${name}" id="f-${name}" ${extra || ""}>${esc(val)}</textarea>` : `<input name="${name}" id="f-${name}" type="${type || "text"}" value="${esc(val == null ? "" : val)}" ${extra || ""}>`}${hint ? `<span class="hint">${esc(hint)}</span>` : ""}</label>`;
 const sel = (label, name, vals, cur, lab, hint) => `<label>${esc(label)}<select name="${name}" id="f-${name}">${opts(vals, cur, lab)}</select>${hint ? `<span class="hint">${esc(hint)}</span>` : ""}</label>`;
+const check = (label, name, on) => `<label class="tick"><input type="checkbox" name="${name}" id="f-${name}" ${on ? "checked" : ""}>${esc(label)}</label>`;
 const go = (v, s) => `data-go="${v}"${s != null ? ` data-sub="${esc(s)}"` : ""}`;
 const empty = (t) => `<p class="empty">${esc(t)}</p>`;
+const back = (to, label) => `<button class="back" ${go(to)}>‹ ${esc(label)}</button>`;
+const list = (rows, none) => (rows.length ? `<ul class="list">${rows.join("")}</ul>` : empty(none));
+const periodRange = (p) => (p === "week" ? weekBounds() : p === "month" ? monthBounds() : p === "30d" ? [plusDays(-29), today()] : [null, null]);
+const periodChips = (cur, opts2) => `<div class="chips" role="group" aria-label="Period">${(opts2 || [["week", "This week"], ["month", "This month"], ["30d", "Last 30 days"], ["all", "All time"]]).map(([k, l]) => `<button data-act="period" data-v="${k}" class="${cur === k ? "on" : ""}">${esc(l)}</button>`).join("")}</div>`;
 
 function setupWarning() {
   const miss = SETTINGS.filter((s) => s[3] && !settings()[s[0]]).map((s) => s[1]);
-  return miss.length ? `<div class="card warn"><h2>Finish Setup first</h2><p>Posts can't be approved and templates show [SET …] markers until you add: ${esc(miss.join(", "))}.</p><button ${go("setup")}>Open Setup</button></div>` : "";
+  return miss.length ? `<div class="card warn"><h2>Finish Setup first</h2><p>Templates show [SET …] markers until you add: ${esc(miss.join(", "))}.</p><button ${go("setup")}>Open Setup</button></div>` : "";
 }
 function leadRow(l, note) {
-  return `<li><div class="main"><a class="rowlink" href="#" ${go("lead", l.id)}>${esc(l.name)}</a><span class="hint">${esc(nice(l.source))} · ${esc(svcLabel(l.service))}${note ? " · " + esc(note) : ""}</span></div>${pill(status(l))}</li>`;
+  const od = overdueDays(l);
+  return `<li><div class="main"><a class="rowlink" href="#" ${go("lead", l.id)}>${esc(l.name)}</a><span class="hint">${esc(srcLabel(l.source))} · ${esc(svcLabel(l.service))}${note ? " · " + esc(note) : ""}</span></div>${od ? pill("overdue") : ""}${pill(status(l))}</li>`;
 }
 function apptRow(a) {
   const s = S.slots.get(a.slot) || {}, l = S.leads.get(a.lead) || { name: "?" };
-  return `<li><div class="main"><a class="rowlink" href="#" ${go("lead", a.lead)}>${esc(l.name)}</a><span class="hint">${esc(fdate(s.date))} ${esc(ftime(s.time))} · ${esc(SERVICES[a.service].label)} · ${money(a.price)}</span></div>${pill(a.status)}</li>`;
+  return `<li><div class="main"><a class="rowlink" href="#" ${go("lead", a.lead)}>${esc(l.name)}</a><span class="hint">${esc(fdate(s.date))} ${esc(ftime(s.time))} · ${esc(SERVICES[a.service].label)}${a.addons && a.addons.length ? " + " + a.addons.length + " add-on(s)" : ""} · ${money(a.price)}</span></div>${pill(a.status)}</li>`;
 }
-const list = (rows, none) => (rows.length ? `<ul class="list">${rows.join("")}</ul>` : empty(none));
+function qRow(it) {
+  return `<li><div class="main"><a class="rowlink" href="#" ${go(it.go[0], it.go[1])}>${esc(it.title)}</a><span class="hint">${esc(it.why)}</span></div>${it.late ? pill("overdue") : ""}</li>`;
+}
 
 function vToday() {
-  const t = today(), [ws] = weekBounds(), st = settings();
-  let plan;
-  if (st.cash_mode === "yes") plan = `<div class="card bad"><h2>Cash mode is on</h2><ol class="todo">${PLAN.cash_mode.map((s) => `<li>${esc(s.replace(/^\d+\.\s*/, ""))}</li>`).join("")}</ol><button class="ghost small" data-act="cash" data-v="no">Turn cash mode off</button></div>`;
+  const t = today(), [ws, we] = weekBounds(), [ms, me] = monthBounds(), st = settings();
+  const q = attentionQueue(), top = q[0];
+  const todays = liveAppts().filter((a) => apptDate(a) === t && a.status === "confirmed");
+  const load = dayLoad(t), cap = B().capacity, isWorkDay = cap.workDays.includes(parse(t).getDay());
+  const capLeft = isWorkDay ? Math.max(0, maxPerDay() - load.jobs) : 0;
+  const quotes = all("leads").filter((l) => l.status === "Quote Sent");
+  const upcoming = liveAppts().filter((a) => apptDate(a) >= t).sort((x, y) => apptDate(x).localeCompare(apptDate(y)));
+  const unpaid = all("jobs").filter((j) => jobEcon(j).balance > 0);
+  const msum = moneySummary(ms, me);
+  const target = B().targets.monthlyRevenue;
+  const blk = blockers();
+  const daily = dailyStatus(t), dd = S.daily.get(t) || {};
+  const doneN = daily.filter((d) => (d.manual ? (dd.manual || {})[d.key] : d.done)).length;
+  const running = S.active && S.active.service ? `<div class="card ok"><h2>Job in progress</h2><p>${esc(SERVICES[S.active.service].label)}${S.active.who ? " · " + esc(S.active.who) : ""}</p><button ${go("work")}>Back to the timer</button></div>` : "";
+  let plan = "";
+  if (st.cash_mode === "yes") plan = `<details data-key="todayplan"><summary>Cash mode steps</summary><ol class="todo">${PLAN.cash_mode.map((s) => `<li>${esc(s.replace(/^\d+\.\s*/, ""))}</li>`).join("")}</ol></details>`;
   else {
     let n = parse(t).getDay() || 7; // Monday = Day 1 until a launch date is set
-    if (st.launch_date) n = t < st.launch_date ? 0 : ((parse(t) - parse(st.launch_date)) / 864e5 % 7) + 1;
-    const d = PLAN.normal[Math.round(n) - 1];
-    plan = d ? `<div class="card ok"><h2>Day ${Math.round(n)}: ${esc(d.theme)}</h2><ol class="todo"><li><b>Content:</b> ${esc(d.content)}</li><li><b>Get customers:</b> ${esc(d.acquisition)}</li><li><b>Follow up:</b> ${esc(d.followup)}</li><li class="muted"><b>If you have energy:</b> ${esc(d.optional)}</li></ol></div>`
-      : `<div class="card"><h2>Launch starts ${esc(fdate(st.launch_date))}</h2><p class="muted">Use the time to finish Setup and approve your first posts.</p></div>`;
+    if (st.launch_date) n = t < st.launch_date ? 0 : (dayDiff(st.launch_date, t) % 7) + 1;
+    const d = PLAN.normal[n - 1];
+    if (d) plan = `<details data-key="todayplan"><summary>Day ${n} routine: ${esc(d.theme)}</summary><ol class="todo"><li><b>Content:</b> ${esc(d.content)}</li><li><b>Get customers:</b> ${esc(d.acquisition)}</li><li><b>Follow up:</b> ${esc(d.followup)}</li><li class="muted"><b>If you have energy:</b> ${esc(d.optional)}</li></ol></details>`;
   }
-  const leads = all("leads");
-  const unanswered = leads.filter((l) => l.status === "New Lead").sort((a, b) => a.inquiry.localeCompare(b.inquiry));
-  const fu = leads.filter((l) => !["New Lead", "Lost", "Completed", "Booked"].includes(l.status) && l.next && l.next <= t);
-  const appts = all("appts").filter((a) => (a.status === "proposed" || a.status === "confirmed") && ((S.slots.get(a.slot) || {}).date || "") >= plusDays(-1)).sort((x, y) => ((S.slots.get(x.slot) || {}).date || "").localeCompare((S.slots.get(y.slot) || {}).date || ""));
-  const remind = appts.filter((a) => a.status === "confirmed" && (S.slots.get(a.slot) || {}).date === plusDays(1) && !a.reminder);
-  const paidDone = new Set(all("jobs").filter((j) => j.status === "paid" && j.date < t).map((j) => j.lead));
-  const review = leads.filter((l) => paidDone.has(l.id) && !l.reviewReq);
-  const repeat = leads.filter((l) => l.status === "Completed" && l.repeat && l.repeat <= t);
-  const oppDue = all("opps").filter((o) => o.nextDate && o.nextDate <= t && !["declined", "not_a_fit"].includes(o.status));
-  const posts = POSTS.map(postView);
-  let todays = posts.filter((p) => p.status === "scheduled" && p.scheduled <= t);
-  if (todays.length < 2) todays = todays.concat(posts.filter((p) => p.status === "approved").slice(0, 2 - todays.length));
-  if (todays.length < 2) todays = todays.concat(posts.filter((p) => p.status === "draft").slice(0, 2 - todays.length));
-  const f = funnel(), ch = channels();
-  const unpaid = all("jobs").filter((j) => j.status !== "paid");
-  const running = S.active && S.active.service ? `<div class="card ok"><h2>Job in progress</h2><p>${esc(SERVICES[S.active.service].label)}${S.active.who ? " · " + esc(S.active.who) : ""}</p><button ${go("work")}>Back to the timer</button></div>` : "";
   const lb = latestBrief();
-  const briefCard = lb ? `<div class="card"><h2>This week's marketing brief</h2><p>${esc(lb.summary)}</p><button class="ghost small" ${go("agent")}>Open brief + ready posts</button></div>` : "";
-  return `<h1>Today · ${esc(fdate(t))}</h1>${running}${setupWarning()}${plan}${briefCard}
-<div class="card ${unanswered.length ? "bad" : ""}"><h2>New leads, no reply yet (${unanswered.length})</h2>${list(unanswered.map((l) => leadRow(l, "asked " + fdate(l.inquiry))), "None right now.")}<div class="btns" style="margin-top:8px"><button ${go("newlead")}>+ Add someone who messaged you</button></div></div>
-<div class="card ${fu.length ? "warn" : ""}"><h2>Follow-ups due (${fu.length})</h2>${list(fu.map((l) => leadRow(l, "due " + fdate(l.next))), "Nothing due today.")}</div>
-${remind.length ? `<div class="card warn"><h2>Send reminders (tomorrow's drop-offs)</h2>${list(remind.map(apptRow), "")}</div>` : ""}
-${review.length ? `<div class="card warn"><h2>Ask for a review</h2>${list(review.map((l) => leadRow(l)), "")}</div>` : ""}
-${repeat.length ? `<div class="card warn"><h2>Repeat-booking reminders</h2>${list(repeat.map((l) => leadRow(l)), "")}</div>` : ""}
-${oppDue.length ? `<div class="card warn"><h2>Prospecting due</h2>${list(oppDue.map((o) => `<li><div class="main"><a class="rowlink" href="#" ${go("prospects")}>${esc(o.name)}</a><span class="hint">${esc(o.next)}</span></div></li>`), "")}</div>` : ""}
-<div class="card"><h2>Posts for today</h2>${list(todays.map((p) => `<li><div class="main"><a class="rowlink" href="#" ${go("post", p.id)}>Day ${p.day}: ${esc(p.title)}</a><span class="hint">${esc(p.platform)}</span></div>${pill(p.status)}</li>`), "")}<p class="hint">You approve each post, then post it yourself. Nothing posts automatically.</p></div>
-<div class="card"><h2>Appointments</h2>${list(appts.map(apptRow), "No upcoming appointments.")}<h3>Open drop-off slots, next 7 days</h3>${list(openSlots(7).map((s) => `<li><div class="main">${esc(fdate(s.date))}, drop-off ${esc(ftime(s.time))}</div></li>`), "None entered. Add the times you can really take a car on the Book tab.")}</div>
-<div class="card"><h2>Money collected</h2><div class="big">${money(collected(ws, t))}</div><span class="hint">this week (Mon to today)</span>
-<div class="nums" style="margin-top:12px"><div><b>${money(collected())}</b><span>all time</span></div><div><b>${money(owed())}</b><span>still owed to you</span></div><div><b>${all("jobs").length}</b><span>jobs completed</span></div></div>
-${unpaid.length ? `<h3>Unpaid</h3>${list(unpaid.map((j) => `<li><div class="main">${esc((S.leads.get(j.lead) || {}).name)}</div><span>${money(j.price - j.paid)}</span></li>`), "")}` : ""}<p class="hint">Only payments you record count. Quotes, bookings, likes and views don't.</p></div>
-<div class="card"><h2>Leads to bookings</h2><div class="nums"><div><b>${f.leads}</b><span>leads</span></div><div><b>${f.quoted}</b><span>quoted</span></div><div><b>${f.booked}</b><span>booked</span></div><div><b>${f.completed}</b><span>completed</span></div><div><b>${f.l2b}</b><span>lead → booking</span></div><div><b>${f.q2b}</b><span>quote → booking</span></div></div></div>
-<div class="card"><h2>Where inquiries come from</h2>${ch.length ? `<div class="tablewrap"><table><tr><th>Channel</th><th>Inquiries</th><th>Booked</th><th>Collected</th></tr>${ch.map((c) => `<tr><td>${esc(nice(c.source))}</td><td>${c.inquiries}</td><td>${c.booked}</td><td>${money(c.money)}</td></tr>`).join("")}</table></div>` : empty("No leads recorded yet.")}</div>`;
+  return `<h1>Today · ${esc(fdate(t))}</h1>${running}
+<div class="card next"><span class="eyebrow">Do this next</span>${top ? `<p class="nextwhat">${esc(top.title)}</p><p class="muted small">${esc(top.why)}</p><button ${go(top.go[0], top.go[1])}>Open</button>` : `<p class="nextwhat">You're caught up.</p><p class="muted small">Nothing is waiting on you. Best use of time: a prospecting action (post on Nextdoor, drop flyers, visit a shop).</p><button ${go("plan")}>Log a marketing action</button>`}</div>
+<div class="nums tiles">
+  <div><b>${todays.length}</b><span>car(s) today · ${isWorkDay ? capLeft + " slot(s) left" : "day off"}</span></div>
+  <div><b>${all("leads").filter((l) => l.status === "New Lead").length}</b><span>waiting for a reply</span></div>
+  <div><b>${money(collected(ws, we))}</b><span>collected this week</span></div>
+  <div><b>${money(msum.collected)}</b><span>collected this month${target ? " · goal " + money(target) : ""}</span></div>
+  <div><b>${money(owed())}</b><span>still owed to you</span></div>
+  <div><b>${msum.profit != null ? money(msum.profit) : msum.contribution != null ? money(msum.contribution) : "-"}</b><span>${msum.profit != null ? (msum.allActual ? "profit this month" : "profit this month (estimate)") : msum.contribution != null ? "after job costs · profit needs more cost data" : "profit: no completed jobs yet"}</span></div>
+</div>
+${setupWarning()}
+<div class="card"><h2>Needs attention (${q.length})</h2>${list(q.slice(0, 6).map(qRow), "Nothing overdue.")}${q.length > 6 ? `<details data-key="moreq"><summary>${q.length - 6} more</summary>${list(q.slice(6).map(qRow), "")}</details>` : ""}</div>
+${blk.length ? `<div class="card warn"><h2>What's holding back bookings</h2><ul class="list">${blk.map(([h, d, v]) => `<li><div class="main"><b>${esc(h)}</b><span class="hint">${esc(d)}</span></div><button class="small ghost" ${go(v)}>Fix</button></li>`).join("")}</ul></div>` : ""}
+<div class="card"><h2>Today's checklist · ${doneN}/${daily.length}</h2><p class="hint">Goals are targets you set (Services & prices > Targets). Ticks for the first four come from what you actually recorded.</p><div class="checks">${daily.map((d) => { const on = d.manual ? !!(dd.manual || {})[d.key] : d.done; return d.manual ? `<button type="button" class="check${on ? " on" : ""}" data-act="dailytick" data-v="${d.key}"><span class="box">${on ? "✓" : ""}</span>${esc(d.label)}</button>` : `<div class="check auto${on ? " on" : ""}"><span class="box">${on ? "✓" : ""}</span><span>${esc(d.label)}<span class="hint">Goal: ${esc(d.goal)} · Actual: ${esc(d.actual)}</span></span></div>`; }).join("")}</div>${plan}</div>
+<div class="card"><h2>Bookings</h2>${list(upcoming.map(apptRow), "No upcoming appointments.")}<h3>Quotes waiting for a decision (${quotes.length})</h3>${list(quotes.map((l) => leadRow(l, (l.quote != null ? money(l.quote) : "") + (l.next ? " · follow up " + fdate(l.next) : ""))), "None.")}
+<h3>Open drop-off times, next 7 days</h3>${list(openSlots(7).map((s) => `<li><div class="main">${esc(fdate(s.date))}, drop-off ${esc(ftime(s.time))}</div></li>`), "None. Add the times you can really take a car on the Book tab.")}</div>
+${unpaid.length ? `<div class="card bad"><h2>Unpaid balances</h2>${list(unpaid.map((j) => `<li><div class="main"><a class="rowlink" href="#" ${go("lead", j.lead)}>${esc((S.leads.get(j.lead) || {}).name)}</a><span class="hint">${esc(fdate(j.date))}</span></div><b>${money(jobEcon(j).balance)}</b></li>`), "")}</div>` : ""}
+${lb ? `<div class="card"><h2>This week's marketing brief</h2><p>${esc(lb.summary)}</p><button class="ghost small" ${go("agent")}>Open brief + ready posts</button></div>` : ""}
+<p class="hint">Only payments you record count as money. Likes, views, messages and quotes don't.</p>`;
 }
 
 function leadFields(l) {
   l = l || {};
   return `${field("Name or nickname", "name", l.name, "text", "First name is fine", 'required autocomplete="off"')}
 <div class="row">${sel("Contact method", "method", METHODS, l.method || "text")}${field("Phone / handle / email", "contact", l.contact, "text", "", 'autocomplete="off"')}</div>
-<div class="row">${sel("Where did they find you?", "source", SOURCES, l.source || "facebook_page")}${field("Which group or post?", "sourceDetail", l.sourceDetail)}</div>
+<div class="row">${sel("Where did they come from?", "source", sources(), l.source || "nextdoor", srcLabel)}${field("Which post, group or person?", "sourceDetail", l.sourceDetail)}</div>
 <div class="row">${sel("Service they want", "service", SERVICE_CHOICES, l.service || "unsure", svcLabel)}${field("Vehicle", "vehicle", l.vehicle, "text", "e.g. 2017 Honda CR-V")}</div>
+<div class="row">${sel("Size", "size", [""].concat(Object.keys(SIZES)), l.size || "", (k) => SIZES[k] || "Not sure")}${sel("Condition", "condition", [""].concat(Object.keys(CONDITIONS)), l.condition || "", (k) => CONDITIONS[k] || "Not sure yet")}</div>
 ${field("Quoted price", "quote", l.quote == null ? "" : l.quote, "text", "Leave blank until you quote", 'inputmode="decimal"')}
-<label><input type="checkbox" name="consent" id="f-consent" ${l.consent ? "checked" : ""}>They messaged me first / OK to text them about this job</label>
+${field("Next action", "nextAction", l.nextAction, "text", "e.g. Ask for photos of the back seat")}
+${check("They messaged me first / OK to text them about this job", "consent", l.consent)}
 ${field("Consent note", "consentNote", l.consentNote, "text", 'e.g. "texted me first 10/19"')}
 ${field("Notes", "notes", l.notes, "textarea")}`;
 }
 function vNewLead() {
-  return `<button class="back" ${go("leads")}>‹ Leads</button><h1>Someone messaged you</h1><div class="card"><form class="f" data-form="newlead">${field("Date they asked", "inquiry", today(), "date")}${leadFields()}<button type="submit">Add lead</button></form></div>`;
+  const outbound = sub === "outbound";
+  return `${back("leads", "Leads")}<h1>${outbound ? "Someone I'm reaching out to" : "Someone messaged me"}</h1>
+<div class="chips"><button class="${outbound ? "" : "on"}" ${go("newlead", "inbound")}>They messaged me</button><button class="${outbound ? "on" : ""}" ${go("newlead", "outbound")}>I'm reaching out</button></div>
+<div class="card"><form class="f" data-form="newlead"><input type="hidden" name="mode" value="${outbound ? "outbound" : "inbound"}">${field(outbound ? "Date found / contacted" : "Date they asked", "date", today(), "date")}
+${outbound ? `<p class="hint">Only people or businesses you have a real reason to contact, through their public business contact or in person. No mass messages.</p>${check("I already contacted them", "contacted", true)}` : ""}
+${leadFields()}${check("This is a different person (skip the duplicate check)", "dupok", false)}<button type="submit">Save</button></form></div>`;
 }
 function vLeads() {
-  const ls = all("leads").filter((l) => !filter || status(l) === filter);
-  const order = { "New Lead": 0, "Follow-Up Due": 1, "Quote Sent": 2, Replied: 3, Booked: 4, Completed: 5, Lost: 6 };
-  ls.sort((a, b) => order[status(a)] - order[status(b)] || b.inquiry.localeCompare(a.inquiry));
-  return `<h1>Leads</h1><button ${go("newlead")}>+ Add someone who messaged you</button>
-<div class="chips" role="group" aria-label="Filter">${["", ...STATUSES].map((s) => `<button data-filter="${esc(s)}" class="${filter === s ? "on" : ""}">${esc(s || "All")}</button>`).join("")}</div>
-<div class="card">${list(ls.map((l) => leadRow(l, (l.next ? "next " + fdate(l.next) : "asked " + fdate(l.inquiry)) + (l.quote != null ? " · " + money(l.quote) : ""))), "No leads yet. When someone messages you, add them here first - it's how you learn what's working.")}</div>`;
+  const s = search.trim().toLowerCase();
+  const ls = all("leads").filter((l) => (!filter || (filter === "overdue" ? overdueDays(l) > 0 : status(l) === filter)) && (!s || [l.name, l.contact, l.vehicle, l.notes, l.sourceDetail].join(" ").toLowerCase().includes(s)));
+  const order = { "New Lead": 0, "Follow-Up Due": 1, "Quote Sent": 2, Replied: 3, Contacted: 4, Identified: 5, Booked: 6, Completed: 7, Lost: 8 };
+  ls.sort((a, b) => order[status(a)] - order[status(b)] || overdueDays(b) - overdueDays(a) || (b.inquiry || b.created || "").localeCompare(a.inquiry || a.created || ""));
+  return `<h1>Leads</h1><div class="btns"><button ${go("newlead", "inbound")}>+ Someone messaged me</button><button class="ghost" ${go("newlead", "outbound")}>+ I'm reaching out</button></div>
+<label class="searchbox">Search<input type="search" id="f-search" data-search value="${esc(search)}" placeholder="Name, phone, vehicle…"></label>
+<div class="chips" role="group" aria-label="Filter">${["", "overdue", ...STATUSES].map((x) => `<button data-filter="${esc(x)}" class="${filter === x ? "on" : ""}">${esc(x === "overdue" ? "Overdue" : x || "All")}</button>`).join("")}</div>
+<div class="card">${list(ls.map((l) => leadRow(l, (l.next ? "next " + fdate(l.next) : l.inquiry ? "asked " + fdate(l.inquiry) : "") + (l.quote != null ? " · " + money(l.quote) : ""))), all("leads").length ? "No leads match." : "No leads yet. When someone messages you, add them here first - it's how you learn what's working.")}</div>`;
+}
+function journey(l) {
+  const jobs = realJobs().filter((j) => j.lead === l.id);
+  const paid = jobs.some((j) => jobEcon(j).status === "paid");
+  const stages = [["Contacted", hasEv(l, "contacted") || hasEv(l, "inquiry")], ["Inquiry", !!l.inquiry], ["Replied", hasEv(l, "reply_sent") || hasEv(l, "quote_sent")], ["Quote", hasEv(l, "quote_sent")], ["Booked", hasEv(l, "booked")], ["Done", jobs.length > 0], ["Paid", paid], ["Review", !!l.reviewReq], ["Repeat", jobs.length > 1]];
+  return `<div class="journey">${stages.map(([n, on]) => `<span class="${on ? "on" : ""}">${esc(n)}</span>`).join("")}</div>`;
+}
+const REPLY_GROUPS_FOR_LEAD = ["first_response", "pre_quote_questions", "price", "send_quote", "location", "come_to_me", "service_limits", "full_package", "availability", "pet_or_stain", "quote_followup", "no_reply_1", "no_reply_2", "payment_request", "review_request", "referral_ask", "repeat_offer", "reconnect"];
+function addonPicker(selected) {
+  return B().addons.length ? `<fieldset class="addons"><legend>Add-ons</legend>${B().addons.map((a) => check(`${a.name} (${a.price == null ? "no price set" : "$" + a.price})`, "addon_" + a.id, (selected || []).includes(a.id))).join("")}</fieldset>` : "";
 }
 function vLead(id) {
-  const l = S.leads.get(id); if (!l) return `<button class="back" ${go("leads")}>‹ Leads</button>${empty("That lead isn't here.")}`;
+  const l = S.leads.get(id); if (!l) return `${back("leads", "Leads")}${empty("That lead isn't here.")}`;
   const svcDefault = SERVICES[l.service] ? l.service : "full";
-  const replies = ["price", "location", "come_to_me", "full_package", "availability", "pet_or_stain", "quote_followup", "no_reply_1", "no_reply_2", "review_request", "referral_ask", "repeat_offer"];
   const appts = all("appts").filter((a) => a.lead === id).sort((a, b) => (b.created || "").localeCompare(a.created || ""));
   const jobs = all("jobs").filter((j) => j.lead === id);
   const slots = openSlots(21);
   const apptHtml = appts.map((a) => {
     const s = S.slots.get(a.slot) || {}; let acts = "";
+    const est = supplyEstimate(a.service, a.addons), t = timingFor(a.id);
     if (a.status === "proposed") acts = `<div class="btns"><button class="small" data-act="confirm" data-id="${a.id}">They said yes - confirm</button><button class="small ghost" data-act="release" data-id="${a.id}">Release slot</button></div>`;
     if (a.status === "confirmed") acts = `<div class="btns"><button class="small ghost" data-act="reminder" data-id="${a.id}">${a.reminder ? "Reminder sent ✓" : "Reminder sent"}</button><button class="small danger" data-ask="cancel-${a.id}">Cancelled</button><button class="small danger" data-ask="noshow-${a.id}">No-show</button></div>
-<div class="confirm" data-confirm="cancel-${a.id}" hidden><form class="f" data-form="cancel" data-id="${a.id}">${field("Reason (optional)", "reason", "")}<div class="btns"><button type="submit" class="small danger">Yes, cancel it</button><button type="button" class="small ghost" data-ask="">Keep it</button></div></form></div>
-<div class="confirm" data-confirm="noshow-${a.id}" hidden><p>Mark as a no-show?</p><div class="btns"><button class="small danger" data-act="noshow" data-id="${a.id}">Yes, no-show</button><button type="button" class="small ghost" data-ask="">Keep it</button></div></div>
-<details data-key="done-${a.id}"><summary>Job done - record it</summary><form class="f" data-form="complete" data-id="${a.id}"><div class="row">${sel("Service done", "service", Object.keys(SERVICES), a.service, svcLabel)}${field("Price charged", "price", a.price, "text", "", 'inputmode="decimal"')}</div><div class="row">${field("Amount paid now", "paid", a.price, "text", "0 if not paid yet", 'inputmode="decimal"')}${sel("Paid with", "method", [""].concat(PAY), "")}</div>${field("Completed date", "date", today(), "date")}${field("Notes", "notes", "")}<button type="submit">Mark completed</button></form></details>`;
-    const msgs = a.status === "proposed" || a.status === "confirmed" ? `<details data-key="msgs-${a.id}"><summary>Messages for this appointment</summary>${["booking_confirmation", "reminder", "ready_pickup", "reschedule"].map((r) => `<h3>${esc(REPLIES.find((x) => x.id === r).title)}</h3>${copyBox(renderReply(r, l, a))}`).join("")}</details>` : "";
-    return `<div class="card"><h2>${esc(fdate(s.date))} ${esc(ftime(s.time))}</h2><p>${esc(SERVICES[a.service].label)} · ${money(a.price)} ${pill(a.status)}</p>${acts}${msgs}</div>`;
+<div class="confirm" data-confirm="cancel-${a.id}" hidden><form class="f" data-form="cancel" data-id="${a.id}">${field("Reason (optional)", "reason", "")}${a.deposit ? check(`Keep the ${money(a.deposit.a)} deposit (per your policy)`, "keep", false) : ""}<div class="btns"><button type="submit" class="small danger">Yes, cancel it</button><button type="button" class="small ghost" data-ask="">Keep the booking</button></div></form></div>
+<div class="confirm" data-confirm="noshow-${a.id}" hidden><form class="f" data-form="noshow" data-id="${a.id}"><p>Mark as a no-show?</p>${a.deposit ? check(`Keep the ${money(a.deposit.a)} deposit (per your policy)`, "keep", false) : ""}<div class="btns"><button type="submit" class="small danger">Yes, no-show</button><button type="button" class="small ghost" data-ask="">Keep the booking</button></div></form></div>
+<details data-key="done-${a.id}"><summary>Job done - record it</summary><form class="f" data-form="complete" data-id="${a.id}">
+<div class="row">${sel("Service done", "service", SVC_KEYS, a.service, svcLabel)}${field("Price charged (before discount)", "price", a.price, "text", "", 'inputmode="decimal"')}</div>
+<div class="row">${field("Discount", "discount", "", "text", "Only if you actually gave one", 'inputmode="decimal"')}${field(a.deposit ? `Paid now (deposit ${money(a.deposit.a)} already counted)` : "Paid now", "paid", r2(a.price - (a.deposit ? a.deposit.a : 0)), "text", "0 if not paid yet", 'inputmode="decimal"')}</div>
+${sel("Paid with", "method", [""].concat(PAY), "", (m) => (m ? payLabel(m) : "-"))}
+<div class="row">${field("Supplies used ($)", "supplies", est == null ? "" : est, "text", est == null ? "Unknown - set a supply cost per service" : "Prefilled estimate from Services & prices", 'inputmode="decimal"')}${field("Labor hours", "hours", t ? Math.round(t.total / 36) / 100 : "", "text", t ? "From your Work timer" : "Your best estimate", 'inputmode="decimal"')}</div>
+${check("Supplies number is what I actually used (not the estimate)", "suppliesActual", false)}${check("Hours are actual (timed or tracked)", "hoursActual", !!t)}
+${field("Other direct costs ($)", "other", "", "text", "e.g. extra towels you had to buy for this car", 'inputmode="decimal"')}
+${check("Before photos taken", "photosBefore", false)}${check("After photos taken", "photosAfter", false)}${check("Final quality check done", "qc", false)}
+${field("Completed date", "date", today(), "date")}${field("Outcome / notes", "notes", "")}<button type="submit">Mark completed</button></form></details>
+${a.deposit ? `<p class="hint">Deposit: ${money(a.deposit.a)} ${esc(payLabel(a.deposit.m))} on ${esc(fdate(a.deposit.d))}</p>` : `<details data-key="dep-${a.id}"><summary>Record a deposit</summary><form class="f" data-form="deposit" data-id="${a.id}"><div class="row">${field("Amount", "amount", "", "text", "", 'inputmode="decimal"')}${sel("Paid with", "method", PAY, "zelle", payLabel)}</div><button type="submit" class="small">Save deposit</button></form></details>`}`;
+    const msgs = a.status === "proposed" || a.status === "confirmed" ? `<details data-key="msgs-${a.id}"><summary>Messages for this appointment</summary>${["booking_confirmation", "booking_terms", "reminder", "ready_pickup", "reschedule"].filter((r) => REPLIES.find((x) => x.id === r)).map((r) => `<h3>${esc(REPLIES.find((x) => x.id === r).title)}</h3>${copyBox(renderReply(r, l, a))}`).join("")}</details>` : "";
+    return `<div class="card"><h2>${esc(fdate(s.date))} ${esc(ftime(s.time))}</h2><p>${esc(SERVICES[a.service].label)}${a.addons && a.addons.length ? " + " + esc(a.addons.map((x) => (addonById(x) || { name: x }).name).join(", ")) : ""} · <b>${money(a.price)}</b> · about ${Math.round((a.minutes || 0) / 6) / 10}h ${pill(a.status)}</p>${a.vehicle ? `<p class="hint">${esc(a.vehicle)}${a.condition ? " · " + esc(CONDITIONS[a.condition] || a.condition) : ""}</p>` : ""}${acts}${msgs}</div>`;
   }).join("");
-  const after = jobs.length ? `<div class="card"><h2>After the job</h2>${jobs.map((j) => `<p>${esc(fdate(j.date))}: ${esc(SERVICES[j.service].label)} · charged ${money(j.price)}, paid ${money(j.paid)} ${pill(j.status)}</p>${j.status !== "paid" ? `<form class="f" data-form="pay" data-id="${j.id}"><div class="row">${field("Payment received", "amount", j.price - j.paid, "text", "", 'inputmode="decimal"')}${sel("Method", "method", PAY, "cash")}</div><button type="submit" class="small">Record payment</button></form>` : ""}`).join("")}
-<div class="btns">${l.reviewReq ? `<span class="hint">Review asked ${esc(fdate(l.reviewReq))}</span>` : `<button class="small" data-act="reviewreq" data-id="${id}">Review request sent</button>`}${l.reviewGot ? `<span class="hint">Review received ✓</span>` : `<button class="small ghost" data-act="reviewgot" data-id="${id}">They left a review</button>`}<button class="small ghost" data-act="repeat" data-id="${id}">Repeat offer sent</button></div><p class="hint">Next repeat reminder: ${esc(fdate(l.repeat))}</p></div>` : "";
-  return `<button class="back" ${go("leads")}>‹ Leads</button><h1>${esc(l.name)}</h1>
-<p>${pill(status(l))} <span class="muted">asked ${esc(fdate(l.inquiry))} via ${esc(nice(l.source))}${l.sourceDetail ? " (" + esc(l.sourceDetail) + ")" : ""} · ${esc(nice(l.method))}: ${esc(l.contact || "-")} · consent: ${l.consent ? "yes" : "not recorded"} · next follow-up: <b>${esc(fdate(l.next))}</b></span></p>
-<div class="card"><h2>1 · Reply</h2><p class="hint">Copy, paste into your messages app, send it yourself. Then record it below.</p>${replies.map((r) => { const t = REPLIES.find((x) => x.id === r); return `<details data-key="r-${r}"><summary>${esc(t.title)}</summary><span class="hint">${esc(t.when)}</span>${copyBox(renderReply(r, l))}<span class="hint">Then: ${esc(t.next_step)}</span></details>`; }).join("")}</div>
-<div class="card"><h2>2 · Record what you did</h2><div class="btns"><button class="small" data-act="replied" data-id="${id}">I replied</button><button class="small ghost" data-act="followup" data-id="${id}" data-v="4">I sent a follow-up</button><button class="small ghost" data-act="followup" data-id="${id}" data-v="0">Final follow-up sent</button></div>
-<h3>Quote</h3><form class="f" data-form="quote" data-id="${id}"><div class="row">${sel("Service", "service", Object.keys(SERVICES), svcDefault, svcLabel)}${field("Price (blank = standard)", "price", "", "text", "", 'inputmode="decimal"')}</div><button type="submit" class="small">I sent this quote</button></form>
-<h3>Offer a drop-off time</h3>${slots.length ? `<form class="f" data-form="offer" data-id="${id}">${sel("Your open slot", "slot", slots.map((s) => s.id), slots[0].id, (sid) => { const s = S.slots.get(sid); return `${fdate(s.date)} - ${ftime(s.time)}`; })}<div class="row">${sel("Service", "service", Object.keys(SERVICES), svcDefault, svcLabel)}${field("Price (blank = quote)", "price", "", "text", "", 'inputmode="decimal"')}</div><button type="submit" class="small">Hold this slot for them</button><span class="hint">Holding doesn't book it. Confirm only after they say yes.</span></form>` : `<p class="muted">No open slots. <a href="#" ${go("book")}>Add your real available times</a> first.</p>`}</div>
+  const after = jobs.length ? `<div class="card"><h2>Jobs + payments</h2>${jobs.map((j) => { const e = jobEcon(j); return `<div class="jobbox"><p><b>${esc(fdate(j.date))}</b> · ${esc(j.kind === "cancellation_fee" ? "Kept deposit" : SERVICES[j.service].label)} · earned ${money(e.revenue)} · paid ${money(e.netPaid)} ${pill(e.status)}</p>${e.balance > 0 ? `<form class="f" data-form="pay" data-id="${j.id}"><div class="row">${field("Payment received", "amount", e.balance, "text", "", 'inputmode="decimal"')}${sel("Method", "method", PAY, "cash", payLabel)}</div><button type="submit" class="small">Record payment</button></form><details data-key="payreq-${j.id}"><summary>Payment request message</summary>${copyBox(renderReply("payment_request", l, null, j))}</details>` : ""}
+<details data-key="ref-${j.id}"><summary>Refund</summary><form class="f" data-form="refund" data-id="${j.id}"><div class="row">${field("Refund amount", "amount", "", "text", "", 'inputmode="decimal"')}${field("Why", "note", "")}</div><button type="submit" class="small danger">Record refund</button></form></details></div>`; }).join("")}
+<div class="btns">${l.reviewReq ? `<span class="hint">Review asked ${esc(fdate(l.reviewReq))}</span>` : `<button class="small" data-act="reviewreq" data-id="${id}">Review request sent</button>`}${l.reviewGot ? `<span class="hint">Review received ✓</span>` : `<button class="small ghost" data-act="reviewgot" data-id="${id}">They left a review</button>`}<button class="small ghost" data-act="repeat" data-id="${id}">Reconnect message sent</button></div><p class="hint">Next reconnect reminder: ${esc(fdate(l.repeat))}</p></div>` : "";
+  const prospect = l.status === "Identified" || l.status === "Contacted";
+  const replies = REPLY_GROUPS_FOR_LEAD.map((r) => REPLIES.find((x) => x.id === r)).filter(Boolean);
+  return `${back("leads", "Leads")}<h1>${esc(l.name)}</h1>${journey(l)}
+<p>${pill(status(l))}${overdueDays(l) ? " " + pill("overdue") : ""} <span class="muted">${l.inquiry ? "asked " + esc(fdate(l.inquiry)) : "first contact " + esc(fdate(l.firstContact))} via ${esc(srcLabel(l.source))}${l.sourceDetail ? " (" + esc(l.sourceDetail) + ")" : ""} · ${esc(nice(l.method))}: ${esc(l.contact || "-")} · consent: ${l.consent ? "yes" : "not recorded"} · follow-ups: ${l.followups || 0} · last contact: ${esc(fdate(l.lastContact))}</span></p>
+<div class="card next"><span class="eyebrow">Next action</span><p class="nextwhat">${esc(l.nextAction || (l.status === "New Lead" ? "Reply now" : status(l)))}</p><p class="muted small">Due ${esc(fdate(l.next))}${overdueDays(l) ? " · " + overdueDays(l) + " day(s) overdue" : ""}</p></div>
+${prospect ? `<div class="card"><h2>Outreach</h2><div class="btns">${l.status === "Identified" ? `<button class="small" data-act="contacted" data-id="${id}">I contacted them</button>` : `<button class="small ghost" data-act="contacted" data-id="${id}">Contacted again</button>`}<button class="small" data-act="inquired" data-id="${id}">They replied / asked about a detail</button></div></div>` : ""}
+<div class="card"><h2>1 · Message</h2><p class="hint">Copy, paste into your messages app, send it yourself. Then record it below. Edit any script in More > Message scripts.</p>${replies.map((t) => `<details data-key="r-${t.id}"><summary>${esc(t.title)}</summary><span class="hint">${esc(t.when)}</span>${copyBox(renderReply(t.id, l))}<span class="hint">Then: ${esc(t.next_step)}</span></details>`).join("")}</div>
+<div class="card"><h2>2 · Record what you did</h2><div class="btns"><button class="small" data-act="replied" data-id="${id}">I replied</button><button class="small ghost" data-act="followup" data-id="${id}" data-v="${B().sla.followupGapDays}">I sent a follow-up</button><button class="small ghost" data-act="followup" data-id="${id}" data-v="0">Final follow-up sent</button></div>
+<h3>Quote</h3><form class="f" data-form="quote" data-id="${id}"><div class="row">${sel("Service", "service", SVC_KEYS, svcDefault, svcLabel)}${sel("Condition", "condition", Object.keys(CONDITIONS), l.condition || "medium", (k) => CONDITIONS[k])}</div>${addonPicker([])}${field("Agreed / quoted price", "price", "", "text", "Blank = service + add-on prices", 'inputmode="decimal"')}<button type="submit" class="small">I sent this quote</button></form>
+<h3>Offer a drop-off time</h3>${slots.length ? `<form class="f" data-form="offer" data-id="${id}">${sel("Your open slot", "slot", slots.map((s) => s.id), slots[0].id, (sid) => { const s = S.slots.get(sid); const ld = dayLoad(s.date); return `${fdate(s.date)} - ${ftime(s.time)}${ld.jobs ? ` (${ld.jobs} already that day)` : ""}`; })}<div class="row">${sel("Service", "service", SVC_KEYS, svcDefault, svcLabel)}${sel("Condition", "condition", Object.keys(CONDITIONS), l.condition || "medium", (k) => CONDITIONS[k])}</div>${addonPicker([])}<div class="row">${field("Vehicle", "vehicle", l.vehicle)}${field("Agreed price", "price", "", "text", l.quote != null ? "Blank = their quote of " + money(l.quote) : "Blank = service + add-ons", 'inputmode="decimal"')}</div>${check("I can work longer that day", "overtime", false)}<button type="submit" class="small">Hold this slot for them</button><span class="hint">Holding doesn't book it. Confirm only after they say yes.</span></form>` : `<p class="muted">No open slots. <a href="#" ${go("book")}>Add your real available times</a> first.</p>`}</div>
 ${apptHtml}${after}
-<div class="card"><details data-key="edit-${id}"><summary>Edit lead</summary><form class="f" data-form="editlead" data-id="${id}">${leadFields(l)}<div class="row">${sel("Status", "status", STATUSES, l.status)}${field("Next follow-up", "next", l.next || "", "date")}</div><div class="row">${field("Repeat reminder date", "repeat", l.repeat || "", "date")}${field("Lost reason", "lostReason", l.lostReason)}</div><button type="submit">Save changes</button></form></details></div>
+<div class="card"><details data-key="edit-${id}"><summary>Edit lead</summary><form class="f" data-form="editlead" data-id="${id}">${leadFields(l)}<div class="row">${sel("Status", "status", STATUSES, l.status)}${field("Next action date", "next", l.next || "", "date")}</div><div class="row">${field("Reconnect reminder date", "repeat", l.repeat || "", "date")}${sel("Lost reason", "lostReason", [""].concat(LOST_REASONS), l.lostReason || "", (k) => (k ? nice(k) : "-"))}</div>${field("Lost reason details", "lostNote", l.lostNote)}<button type="submit">Save changes</button></form></details></div>
 <div class="card"><h2>History</h2>${list((l.events || []).slice().reverse().map((e) => `<li><div class="main">${esc(fdate(e.d))} · ${esc(nice(e.t))} <span class="hint">${esc(e.n)}</span></div></li>`), "")}</div>`;
 }
 
 function vBook() {
   const slots = all("slots").filter((s) => s.date >= plusDays(-7)).sort((a, b) => (a.date + a.time).localeCompare(b.date + b.time));
-  const live = all("appts").filter((a) => a.status === "proposed" || a.status === "confirmed").sort((x, y) => ((S.slots.get(x.slot) || {}).date || "").localeCompare((S.slots.get(y.slot) || {}).date || ""));
+  const live = liveAppts().sort((x, y) => apptDate(x).localeCompare(apptDate(y)));
   const jobs = all("jobs").sort((a, b) => b.date.localeCompare(a.date));
-  return `<h1>Booking</h1><div class="card warn"><p><b>Drop-off only, at times you approved.</b> Add the times you can really take a car. On a lead, hold one and send it. Confirm when they say yes. Max ${maxPerDay()} car(s) a day (change in Setup).</p></div>
-<div class="card"><h2>Add an open drop-off time</h2><form class="f" data-form="slot"><div class="row">${field("Date", "date", plusDays(1), "date")}${field("Drop-off time", "time", "08:30", "time")}</div><div class="row">${field("Expected pick-up (optional)", "pickup", "", "time")}${field("Note", "note", "")}</div><button type="submit">Add slot</button></form></div>
+  const cap = B().capacity;
+  return `<h1>Booking</h1><div class="card warn"><p><b>Drop-off only, at times you approved.</b> Add the times you can really take a car. On a lead, hold one and send it. Confirm when they say yes.</p><p class="hint">Capacity: max ${maxPerDay()} car(s) and ${cap.hoursPerDay} work hours a day, ${cap.workDays.map((d) => DAYS[d]).join(", ")}. Change it in Services & prices.</p></div>
+<div class="card"><h2>Add an open drop-off time</h2><form class="f" data-form="slot"><div class="row">${field("Date", "date", plusDays(1), "date")}${field("Drop-off time", "time", "09:00", "time")}</div><div class="row">${field("Expected pick-up (optional)", "pickup", "", "time")}${field("Note", "note", "")}</div>${check("I'm working that day even though it's not a normal work day", "offday", false)}<button type="submit">Add slot</button></form></div>
 <div class="card"><h2>Upcoming appointments</h2>${list(live.map(apptRow), "None yet.")}</div>
 <div class="card"><h2>Your slots</h2>${list(slots.map((s) => { const a = all("appts").find((x) => x.slot === s.id && ["proposed", "confirmed", "completed"].includes(x.status)); const who = a ? (S.leads.get(a.lead) || {}).name : ""; return `<li><div class="main">${esc(fdate(s.date))} ${esc(ftime(s.time))}${s.pickup ? " → " + esc(ftime(s.pickup)) : ""}<span class="hint">${who ? esc(who) : esc(s.note || "")}</span></div><div class="btns">${pill(s.status)}${s.status === "open" ? `<button class="small ghost" data-act="closeslot" data-id="${s.id}">Close</button>` : ""}</div></li>`; }), "No slots yet.")}</div>
-<div class="card"><h2>Completed jobs</h2>${list(jobs.map((j) => `<li><div class="main"><a class="rowlink" href="#" ${go("lead", j.lead)}>${esc((S.leads.get(j.lead) || {}).name)}</a><span class="hint">${esc(fdate(j.date))} · ${esc(SERVICES[j.service].label)} · charged ${money(j.price)} · paid ${money(j.paid)}</span></div>${pill(j.status)}</li>`), "No completed jobs yet.")}</div>`;
+<div class="card"><h2>Completed jobs</h2>${list(jobs.map((j) => { const e = jobEcon(j); return `<li><div class="main"><a class="rowlink" href="#" ${go("lead", j.lead)}>${esc((S.leads.get(j.lead) || {}).name)}</a><span class="hint">${esc(fdate(j.date))} · ${esc(j.kind === "cancellation_fee" ? "Kept deposit" : SERVICES[j.service].label)} · earned ${money(e.revenue)} · paid ${money(e.netPaid)}</span></div>${pill(e.status)}</li>`; }), "No completed jobs yet.")}</div>`;
 }
 
 function vPosts() {
@@ -577,8 +1032,128 @@ ${p.status !== "published" ? `<div class="card"><details data-key="pedit-${id}">
 
 function vReplies() {
   const groups = {}; REPLIES.forEach((r) => (groups[r.group] = groups[r.group] || []).push(r));
-  return `<button class="back" ${go("more")}>‹ More</button><h1>Reply templates</h1><p class="muted">Filled with your Setup info and your real open slots. Open one from a lead to fill in their name. You send every message yourself.</p>
-${Object.keys(groups).map((g) => `<div class="card"><h2>${esc(g)}</h2>${groups[g].map((r) => `<details data-key="t-${r.id}"><summary>${esc(r.title)}</summary><span class="hint">${esc(r.when)}</span>${copyBox(renderReply(r.id))}<span class="hint">Then: ${esc(r.next_step)}</span></details>`).join("")}</div>`).join("")}`;
+  const ov = B().replyOverrides || {};
+  return `${back("more", "More")}<h1>Message scripts</h1><p class="muted">Filled with your Setup info, prices, policies and real open slots. Open one from a lead to fill in their name. You send every message yourself; nothing is sent automatically.</p>
+${Object.keys(groups).map((g) => `<div class="card"><h2>${esc(g)}</h2>${groups[g].map((r) => `<details data-key="t-${r.id}"><summary>${esc(r.title)}${typeof ov[r.id] === "string" ? " · edited" : ""}</summary><span class="hint">${esc(r.when)}</span>${copyBox(renderReply(r.id))}<span class="hint">Then: ${esc(r.next_step)}</span>
+<details data-key="te-${r.id}"><summary>Edit this script</summary><form class="f" data-form="replyedit" data-id="${esc(r.id)}">${field("Script", "text", replyText(r), "textarea", "Placeholders like {name}, {price_full}, {open_times} fill in automatically.")}<div class="btns"><button type="submit" class="small">Save script</button>${typeof ov[r.id] === "string" ? `<button type="button" class="small ghost" data-act="replyreset" data-id="${esc(r.id)}">Reset to original</button>` : ""}</div></form></details></details>`).join("")}</div>`).join("")}`;
+}
+
+function vPlan() {
+  const cash = settings().cash_mode === "yes";
+  const eff = all("effort").sort((a, b) => b.date.localeCompare(a.date)).slice(0, 15);
+  return `${back("more", "More")}<h1>Daily plan</h1>
+<div class="card"><h2>Log a marketing action</h2><p class="hint">Every post, flyer drop, visit or group reply. Rough minutes are fine. This is how Marketing results knows which work brings customers.</p><form class="f" data-form="effort"><div class="row">${field("Date", "date", today(), "date")}${sel("Channel", "channel", sources(), "nextdoor", srcLabel)}</div>${sel("What kind", "kind", ["post", "outreach", "flyers", "visit", "other"], "post", nice)}<div class="row">${field("What you did", "activity", "", "text", "e.g. Posted launch story on Nextdoor", "required")}${field("Minutes", "minutes", "15", "number", "", 'inputmode="numeric" min="0" max="600"')}</div><button type="submit">Log it</button></form>${list(eff.map((e) => `<li><div class="main">${esc(e.activity)}<span class="hint">${esc(fdate(e.date))} · ${esc(srcLabel(e.channel))} · ${esc(nice(e.kind || "other"))}</span></div><span>${e.minutes} min</span></li>`), "")}</div>
+<div class="card bad"><h2>Cash mode ${cash ? "(on)" : "(off)"}</h2><p class="hint">For weeks you need paying jobs now.</p><ol class="todo">${PLAN.cash_mode.map((s) => `<li>${esc(s.replace(/^\d+\.\s*/, ""))}</li>`).join("")}</ol><button data-act="cash" data-v="${cash ? "no" : "yes"}">Turn cash mode ${cash ? "off" : "on"}</button></div>
+<h2>7-day routine</h2>${PLAN.normal.map((d) => `<div class="card"><details data-key="pday-${d.day}"><summary>Day ${d.day}: ${esc(d.theme)}</summary><ol class="todo"><li><b>Content:</b> ${esc(d.content)}</li><li><b>Get customers:</b> ${esc(d.acquisition)}</li><li><b>Follow up:</b> ${esc(d.followup)}</li><li class="muted"><b>Optional:</b> ${esc(d.optional)}</li></ol></details></div>`).join("")}`;
+}
+
+let reportWeek = null;
+function channelTable(rows) {
+  if (!rows.length) return empty("No channel activity recorded in this period.");
+  return `<div class="tablewrap"><table><tr><th>Channel</th><th>Time</th><th>Actions</th><th>Inquiries</th><th>Quotes</th><th>Booked</th><th>Done</th><th>Collected</th><th>Spent</th><th>Cost / customer</th><th>Inq → booked</th></tr>${rows.map((c) => `<tr><td>${esc(srcLabel(c.source))}</td><td>${c.minutes}m</td><td>${c.actions + c.outreach}</td><td>${c.inquiries}</td><td>${c.quotes}</td><td>${c.booked}</td><td>${c.completed}</td><td>${money(c.revenue)}</td><td>${c.cost ? money(c.cost) : "-"}</td><td>${c.cac != null ? money(c.cac) : "-"}</td><td>${c.i2b}</td></tr>`).join("")}</table></div>`;
+}
+function vWeekly() {
+  const r = weekly(reportWeek);
+  return `${back("more", "More")}<h1>Week of ${esc(fdate(r.a))}</h1><div class="btns"><button class="small ghost" data-act="week" data-v="-7">‹ Previous</button><button class="small ghost" data-act="week" data-v="7">Next ›</button></div>
+<div class="card ok"><h2>What to change next week</h2><ul>${r.tips.map((t) => `<li>${esc(t)}</li>`).join("")}</ul></div>
+<div class="card"><div class="nums"><div><b>${r.posts.length + r.loggedPosts.length}</b><span>posts</span></div><div><b>${r.inquiries}</b><span>inquiries</span></div><div><b>${r.quotes}</b><span>quotes sent</span></div><div><b>${r.booked}</b><span>booked</span></div><div><b>${r.jobs}</b><span>jobs done</span></div><div><b>${money(r.revenue)}</b><span>collected</span></div></div></div>
+<div class="card"><h2>Channels this week</h2>${channelTable(r.ch)}${r.ch.length ? `<ul class="list">${r.ch.map((c) => `<li><div class="main"><b>${esc(srcLabel(c.source))}</b><span class="hint">${esc(c.why)}</span></div>${pill(c.verdict === "More attention" ? "paid" : c.verdict === "Change something" ? "overdue" : "estimate")}<span class="hint">${esc(c.verdict)}</span></li>`).join("")}</ul>` : ""}</div>
+<div class="card"><h2>Full report</h2>${copyBox(weeklyText(r))}</div>`;
+}
+
+function vMoney() {
+  const [a, b] = periodRange(period), m = moneySummary(a, b), costs = B().costs;
+  const [ms, me] = monthBounds(), mm = moneySummary(ms, me), target = B().targets.monthlyRevenue;
+  const be = costs.overheadMonthly != null && mm.contribution != null && mm.contribN ? Math.ceil(costs.overheadMonthly / Math.max(1, mm.contribution / mm.contribN)) : null;
+  const cf = cashFlow(8);
+  const exps = all("expenses").sort((x, y) => y.date.localeCompare(x.date)).slice(0, 20);
+  const profitLabel = m.profit == null ? "Profit: not enough cost data" : m.allActual ? "Profit (actual)" : "Profit (estimate)";
+  return `${back("more", "More")}<h1>Money & profit</h1>${periodChips(period)}
+<div class="nums tiles"><div><b>${money(m.collected)}</b><span>collected (after refunds)</span></div><div><b>${money(m.owed)}</b><span>still owed to you (all time)</span></div><div><b>${money(m.revenue)}</b><span>earned from ${m.jobs} job(s)</span></div><div><b>${dollars(m.avgJob)}</b><span>average job</span></div><div><b>${m.avgHours == null ? "-" : m.avgHours + "h"}</b><span>average job time</span></div><div><b>${dollars(m.revPerHour)}</b><span>revenue per labor hour</span></div></div>
+<div class="card"><h2>Profit</h2><dl class="kv"><dt>After job costs (supplies, fees, other)</dt><dd>${m.contribution == null ? "-" : money(m.contribution)} <span class="hint">${m.contribN} of ${m.jobs} job(s) have enough data</span></dd>
+<dt>${esc(profitLabel)}</dt><dd>${m.profit == null ? "-" : money(m.profit)} <span class="hint">after your labor value and overhead</span></dd><dt>Profit per labor hour</dt><dd>${dollars(m.profitPerHour)}</dd></dl>
+${m.missing.length ? `<p class="hint"><b>Missing for true profit:</b> ${esc(m.missing.join("; "))}.</p>` : m.jobs && m.allActual ? `<p class="hint">All jobs in this period have complete, actual cost data.</p>` : m.jobs ? `<p class="hint"><b>Estimate:</b> some numbers are estimates (${esc(Array.from(new Set(m.econ.flatMap((e) => e.estimated))).join(", "))}). Mark them actual on each job once you know them.</p>` : ""}
+<p class="hint">"After job costs" is cash left from the jobs. Profit also subtracts what your own time is worth and your overhead, so it isn't confused with take-home cash.</p></div>
+<div class="card"><h2>This month vs targets</h2><dl class="kv"><dt>Collected this month</dt><dd>${money(mm.collected)}</dd><dt>Revenue target</dt><dd>${target ? money(target) + " · " + pct(mm.collected, target) + " reached" : `<a href="#" ${go("growth")}>Set a target</a>`}</dd><dt>Break-even</dt><dd>${costs.overheadMonthly === 0 ? "No monthly overhead entered (0), so every job's after-cost amount goes toward your pay." : be != null ? `${be} job(s) a month cover ${money(costs.overheadMonthly)} overhead (at your average after-cost amount per job)` : "Needs monthly overhead and at least one job with complete costs"}</dd></dl></div>
+<div class="card"><h2>Cash flow, last 8 weeks</h2><div class="tablewrap"><table><tr><th>Week of</th><th>Money in</th><th>Money out</th><th>Net</th></tr>${cf.map((w) => `<tr><td>${esc(fdate(w.a))}</td><td>${money(w.inn)}</td><td>${money(w.out)}</td><td>${money(w.net)}</td></tr>`).join("")}</table></div><p class="hint">Money in = payments received. Money out = expenses you logged + refunds. Supplies you use from stock show up in job costs, not here, so they aren't counted twice.</p></div>
+<div class="card"><h2>Jobs</h2>${list(m.econ.map((e) => `<li><div class="main"><a class="rowlink" href="#" ${go("lead", e.j.lead)}>${esc((S.leads.get(e.j.lead) || {}).name)}</a><span class="hint">${esc(fdate(e.j.date))} · ${esc(SERVICES[e.j.service].label)} · earned ${money(e.revenue)} · after costs ${dollars(e.contribution)} · profit ${dollars(e.profit)}${e.hours != null ? " · " + e.hours + "h" : ""}</span>
+<details data-key="jc-${e.j.id}"><summary>Edit costs</summary><form class="f" data-form="jobcosts" data-id="${e.j.id}"><div class="row">${field("Discount", "discount", e.j.discount || "", "text", "", 'inputmode="decimal"')}${field("Supplies used ($)", "supplies", e.j.supplies == null ? "" : e.j.supplies, "text", "", 'inputmode="decimal"')}</div>${check("Supplies are actual", "suppliesActual", e.j.suppliesActual)}<div class="row">${field("Labor hours", "hours", e.j.laborHours == null ? "" : e.j.laborHours, "text", "", 'inputmode="decimal"')}${field("Other direct costs", "other", e.j.otherCost || "", "text", "", 'inputmode="decimal"')}</div>${check("Hours are actual", "hoursActual", e.j.laborActual)}<button type="submit" class="small">Save costs</button></form></details></div>${pill(e.actual ? "actual" : e.complete ? "estimate" : "incomplete")}</li>`), "No completed jobs in this period.")}</div>
+<div class="card"><h2>Expenses</h2><form class="f" data-form="expense"><div class="row">${field("Date", "date", today(), "date")}${field("Amount", "amount", "", "text", "", 'inputmode="decimal" required')}</div><div class="row">${sel("Category", "category", EXPENSE_CATS, "supplies", nice)}${sel("Marketing channel (if marketing)", "channel", [""].concat(sources()), "", (k) => (k ? srcLabel(k) : "-"))}</div>${field("What for", "note", "", "text", "e.g. P&S gallon of Xpress Interior", "required")}<button type="submit" class="small">Add expense</button></form>${list(exps.map((x) => `<li><div class="main">${esc(x.note)}<span class="hint">${esc(fdate(x.date))} · ${esc(nice(x.category))}${x.channel ? " · " + esc(srcLabel(x.channel)) : ""}</span></div><b>${money(x.amount)}</b></li>`), "No expenses logged yet.")}</div>
+<div class="card"><details data-key="costset"><summary>Cost settings</summary><form class="f" data-form="costs">${field("What an hour of your time is worth ($)", "ownerRate", costs.ownerRate == null ? "" : costs.ownerRate, "text", "Used only to estimate true profit. Leave blank if you haven't decided.", 'inputmode="decimal"')}${field("Monthly overhead ($)", "overheadMonthly", costs.overheadMonthly == null ? "" : costs.overheadMonthly, "text", "Phone, equipment wear, water, software... Enter 0 if none.", 'inputmode="decimal"')}
+<h3>Payment fees (% of each payment)</h3><p class="hint">Blank = unknown, which marks profit as incomplete. Check your own account terms; 0 is a placeholder.</p><div class="row">${PAY.map((p) => field(payLabel(p), "fee_" + p, costs.fees[p] == null ? "" : costs.fees[p], "text", "", 'inputmode="decimal"')).join("")}</div><button type="submit" class="small">Save cost settings</button></form></details></div>`;
+}
+
+function vMarketing() {
+  const [a, b] = periodRange(period), rows = channelVerdicts(channelStats(a, b));
+  const exps = all("experiments").sort((x, y) => (y.start || "").localeCompare(x.start || ""));
+  return `${back("more", "More")}<h1>Marketing results</h1>${periodChips(period)}
+<p class="hint">Inquiries, quotes and bookings are counted for the channel the customer came from. Money only counts once it's paid. Likes, views and messages are never revenue.</p>
+<div class="card"><h2>By channel</h2>${channelTable(rows)}</div>
+<div class="card"><h2>What deserves attention</h2>${list(rows.map((c) => `<li><div class="main"><b>${esc(srcLabel(c.source))}: ${esc(c.verdict)}</b><span class="hint">${esc(c.why)}</span></div></li>`), "Log your marketing actions and add every lead with its source - then this fills in.")}</div>
+<div class="card"><h2>Experiments</h2><p class="hint">Change one thing at a time (a new photo style, a different post day, a new flyer spot) and compare with the same number of days before.</p>
+${list(exps.map((x) => { const r = experimentResult(x); return `<li><div class="main"><b>${esc(x.name)}</b><span class="hint">${esc(srcLabel(x.channel))} · ${esc(fdate(x.start))} to ${esc(fdate(x.end))} · change: ${esc(x.change)}</span><span class="hint">During: ${r.during.inquiries} inquiries, ${r.during.booked} booked, ${money(r.during.revenue)} · Before: ${r.before.inquiries} inquiries, ${r.before.booked} booked, ${money(r.before.revenue)}${r.during.inquiries + r.before.inquiries < 5 ? " · too little data to call it yet" : ""}</span>${x.result ? `<span class="hint">Result: ${esc(x.result)}</span>` : ""}
+<details data-key="exr-${x.id}"><summary>Write down the result</summary><form class="f" data-form="expresult" data-id="${x.id}">${field("What happened / what you'll keep", "result", x.result || "")}<button type="submit" class="small">Save</button></form></details></div>${pill(x.end >= today() ? "running" : "finished")}</li>`; }), "No experiments yet.")}
+<details data-key="expnew"><summary>+ New experiment</summary><form class="f" data-form="experiment">${field("Name", "name", "", "text", "e.g. Before/after photo posts", "required")}${sel("Channel", "channel", sources(), "nextdoor", srcLabel)}${field("The one thing you're changing", "change", "", "text", "", "required")}<div class="row">${field("Start", "start", today(), "date")}${field("Days to run", "days", "14", "number", "", 'min="3" max="90"')}</div><button type="submit" class="small">Start experiment</button></form></details></div>
+<div class="card"><h2>Channels you track</h2><p class="hint">Built in: ${esc(BASE_SOURCES.map(srcLabel).join(", "))}.</p>${list((B().channels || []).map((c) => `<li><div class="main">${esc(c.label)}</div></li>`), "No custom channels.")}<form class="f" data-form="channel">${field("Add a channel", "label", "", "text", "e.g. Laundromat board on North Ave", "required")}<button type="submit" class="small">Add channel</button></form></div>`;
+}
+function experimentResult(x) {
+  const len = Math.max(1, dayDiff(x.start, x.end) + 1);
+  const bA = plusDays(-len, x.start), bB = plusDays(-1, x.start);
+  const pick = (a, b) => { const r = channelStats(a, b).find((c) => c.source === x.channel) || { inquiries: 0, booked: 0, revenue: 0 }; return { inquiries: r.inquiries, booked: r.booked, revenue: r.revenue }; };
+  return { during: pick(x.start, x.end < today() ? x.end : today()), before: pick(bA, bB) };
+}
+
+function vServices() {
+  const sv = B().services, cap = B().capacity, tg = B().targets, cond = B().condition;
+  const tms = all("timings"), js = realJobs();
+  const cmp = SVC_KEYS.map((k) => {
+    const t = tms.filter((x) => x.service === k), j = js.filter((x) => x.service === k && x.supplies != null);
+    const actMin = t.length ? Math.round(t.reduce((s, x) => s + x.total, 0) / t.length / 60) : null;
+    const actSup = j.length ? r2(j.reduce((s, x) => s + Number(x.supplies), 0) / j.length) : null;
+    const hours = (actMin || sv[k].minutes) / 60, sup = actSup != null ? actSup : sv[k].supply;
+    return `<tr><td>${esc(sv[k].label)}</td><td>${money(sv[k].price)}</td><td>${Math.round(sv[k].minutes / 6) / 10}h</td><td>${actMin == null ? "-" : Math.round(actMin / 6) / 10 + "h (" + t.length + ")"}</td><td>${dollars(sv[k].supply)}${sv[k].supplyEstimated ? "*" : ""}</td><td>${actSup == null ? "-" : money(actSup) + " (" + j.length + ")"}</td><td>${sup == null ? "-" : money((sv[k].price - sup) / hours)}</td></tr>`;
+  }).join("");
+  return `${back("more", "More")}<h1>Services & prices</h1><p class="muted">Prices here feed every script, quote and report. Nothing changes automatically. Your public website doesn't update itself - ask Claude to update it after you change prices.</p>
+<div class="card"><h2>Estimated vs actual</h2><div class="tablewrap"><table><tr><th>Service</th><th>Price</th><th>Est. time</th><th>Actual avg time (jobs)</th><th>Est. supplies</th><th>Actual avg supplies (jobs)</th><th>Per hour after supplies</th></tr>${cmp}</table></div><p class="hint">* estimate. "Per hour after supplies" uses actual numbers when you have them, otherwise your estimates. If it's low, raise the price or speed up (Work tab).</p></div>
+${SVC_KEYS.map((k) => `<div class="card"><details data-key="svc-${k}"><summary>${esc(sv[k].label)} · ${money(sv[k].price)}</summary><form class="f" data-form="service" data-id="${k}">${field("Name customers see", "label", sv[k].label)}<div class="row">${field("Starting price ($)", "price", sv[k].price, "text", "", 'inputmode="decimal" required')}${field("Estimated time (minutes)", "minutes", sv[k].minutes, "number", "Use your real current time", 'min="15" max="900"')}</div><div class="row">${field("Supply cost per job ($)", "supply", sv[k].supply == null ? "" : sv[k].supply, "text", "What this service uses, not a whole bottle", 'inputmode="decimal"')}</div>${check("Supply cost is an estimate", "supplyEstimated", sv[k].supplyEstimated)}
+${field("What's included (one per line)", "includes", (sv[k].includes || []).join("\n"), "textarea", "Only what you do on every car at this price.")}${field("Not included (one per line)", "excludes", (sv[k].excludes || []).join("\n"), "textarea")}${field("Customer-facing description", "description", sv[k].description, "text")}<button type="submit" class="small">Save ${esc(sv[k].label)}</button></form></details></div>`).join("")}
+<div class="card"><h2>Add-ons</h2><p class="hint">Blank price = "ask for a price". Spray wax is an add-on, not part of the exterior, unless you add it to the exterior's included list.</p>${B().addons.map((a) => `<details data-key="ad-${a.id}"><summary>${esc(a.name)} · ${a.price == null ? "no price" : money(a.price)}</summary><form class="f" data-form="addon" data-id="${esc(a.id)}">${field("Name", "name", a.name, "text", "", "required")}<div class="row">${field("Price ($)", "price", a.price == null ? "" : a.price, "text", "", 'inputmode="decimal"')}${field("Supply cost ($)", "supply", a.supply == null ? "" : a.supply, "text", "", 'inputmode="decimal"')}${field("Extra minutes", "minutes", a.minutes == null ? "" : a.minutes, "number", "", 'min="0" max="600"')}</div><div class="btns"><button type="submit" class="small">Save add-on</button><button type="button" class="small danger" data-ask="rmaddon-${esc(a.id)}">Remove</button></div><div class="confirm" data-confirm="rmaddon-${esc(a.id)}" hidden><p>Remove ${esc(a.name)}? Past jobs keep their records.</p><div class="btns"><button type="button" class="small danger" data-act="rmaddon" data-id="${esc(a.id)}">Yes, remove</button><button type="button" class="small ghost" data-ask="">Keep it</button></div></div></form></details>`).join("")}
+<details data-key="ad-new"><summary>+ New add-on</summary><form class="f" data-form="addon" data-id="">${field("Name", "name", "", "text", "", "required")}<div class="row">${field("Price ($)", "price", "", "text", "", 'inputmode="decimal"')}${field("Supply cost ($)", "supply", "", "text", "", 'inputmode="decimal"')}${field("Extra minutes", "minutes", "", "number", "", 'min="0" max="600"')}</div><button type="submit" class="small">Add</button></form></details></div>
+<div class="card"><h2>Condition adjustments</h2><form class="f" data-form="condition"><div class="row">${field("Light condition (+/- $)", "light", cond.light, "text", "", 'inputmode="decimal"')}${field("Heavy condition extra ($)", "heavy", cond.heavy == null ? "" : cond.heavy, "text", "Blank = quote after seeing photos", 'inputmode="decimal"')}</div><p class="hint">Heavy cars also get 40% more estimated time.</p><button type="submit" class="small">Save</button></form></div>
+<div class="card"><h2>Capacity + targets</h2><form class="f" data-form="capacity"><fieldset class="addons"><legend>Work days</legend>${[1, 2, 3, 4, 5, 6, 0].map((d) => check(DAYS[d], "wd_" + d, cap.workDays.includes(d))).join("")}</fieldset><div class="row">${field("Max cars per day", "maxJobs", cap.maxJobs, "number", "", 'min="1" max="10"')}${field("Work hours per day", "hoursPerDay", cap.hoursPerDay, "number", "Placeholder 9 - set your real number", 'min="1" max="16" step="0.5"')}</div><div class="row">${field("Prospecting actions per day (goal)", "prospect", tg.prospect, "number", "", 'min="0" max="50"')}${field("Posts per week (goal)", "postsPerWeek", tg.postsPerWeek, "number", "", 'min="0" max="21"')}</div><div class="row">${field("Reply within (hours)", "replyHours", B().sla.replyHours, "number", "", 'min="1" max="72"')}${field("Max follow-ups before Lost", "maxFollowups", B().sla.maxFollowups, "number", "", 'min="1" max="6"')}</div><button type="submit" class="small">Save</button></form></div>`;
+}
+
+function vGrowth() {
+  const target = B().targets.monthlyRevenue;
+  const g = target ? growthPlan(target) : null, as = B().assumptions;
+  return `${back("more", "More")}<h1>Growth planner</h1><p class="muted">Work backward from a monthly goal. Everything here is an estimate, not a promise. It doesn't assume demand exists until your real numbers show it.</p>
+<div class="card"><form class="f" data-form="growth">${field("Monthly revenue goal ($)", "target", target == null ? "" : target, "text", "", 'inputmode="decimal"')}<h3>Assumptions (used until you have enough real data)</h3><div class="row">${field("Average job value ($)", "avgJob", as.avgJob == null ? "" : as.avgJob, "text", "Blank = full package price", 'inputmode="decimal"')}${field("Inquiries that get a quote (%)", "i2q", Math.round(as.inquiryToQuote * 100), "number", "", 'min="1" max="100"')}${field("Quotes that book (%)", "q2b", Math.round(as.quoteToBook * 100), "number", "", 'min="1" max="100"')}</div><button type="submit">Calculate</button></form></div>
+${g ? `<div class="card"><h2>Inputs being used</h2><dl class="kv"><dt>Average job</dt><dd>${money(g.p.avgJob.v)} <span class="hint">${esc(g.p.avgJob.src)}</span></dd><dt>Inquiry → quote</dt><dd>${Math.round(g.p.i2q.v * 100)}% <span class="hint">${esc(g.p.i2q.src)}</span></dd><dt>Quote → booking</dt><dd>${Math.round(g.p.q2b.v * 100)}% <span class="hint">${esc(g.p.q2b.src)}</span></dd><dt>Your capacity</dt><dd>about ${g.capacityJobs} jobs/month <span class="hint">${g.daysPerMonth} work days × ${g.perDay}/day</span></dd></dl></div>
+<div class="card"><h2>To reach ${money(target)} a month</h2><div class="tablewrap"><table><tr><th>Scenario</th><th>Jobs</th><th>Quotes</th><th>Inquiries</th><th>Inquiries / week</th><th>Fits capacity?</th></tr>${g.scen.map((s) => `<tr><td>${esc(s.name)} <span class="hint">${Math.round(s.i2q * 100)}% / ${Math.round(s.q2b * 100)}%</span></td><td>${s.jobs}</td><td>${s.quotes == null ? "-" : s.quotes}</td><td>${s.inquiries == null ? "-" : s.inquiries}</td><td>${s.perWeek == null ? "-" : s.perWeek}</td><td>${s.fits ? "Yes" : "<b>No - raise prices or capacity</b>"}</td></tr>`).join("")}</table></div><p class="hint">Conservative/ambitious scale your conversion rates by 0.7× and 1.3×. All numbers are estimates.</p></div>` : `<div class="card">${empty("Enter a monthly goal to see how many jobs, quotes and inquiries it takes.")}</div>`}`;
+}
+
+function vPolicies() {
+  const pol = B().policies, rev = B().policyReviewed || {}, rd = B().readiness || {};
+  return `${back("more", "More")}<h1>Policies & readiness</h1>
+<div class="card warn"><p>These are your own business policies, written in plain English. They are <b>not legal advice</b> and don't make the business legally compliant by themselves. Check local rules and insurance with the right people before you expand.</p></div>
+<div class="card"><h2>Customer policies</h2>${Object.keys(POLICY_LABELS).map((k) => `<details data-key="pol-${k}"><summary>${esc(POLICY_LABELS[k])} ${rev[k] ? pill("approved") : pill("draft")}</summary><form class="f" data-form="policy" data-id="${k}">${field("Policy text", "text", pol[k], "textarea")}${check("I reviewed this and it's what I actually do", "reviewed", rev[k])}<button type="submit" class="small">Save policy</button></form></details>`).join("")}
+<p class="hint">Approved policies fill the "Booking terms" message script. Policies still marked DRAFT will show "DRAFT" there, so you notice.</p></div>
+<div class="card"><h2>Business readiness checklist</h2><p class="hint">Verify these before taking on more cars. Tick only what you've actually done.</p><div class="checks">${READINESS.map(([k, label]) => `<button type="button" class="check${rd[k] ? " on" : ""}" data-act="ready" data-v="${k}"><span class="box">${rd[k] ? "✓" : ""}</span>${esc(label)}</button>`).join("")}</div></div>`;
+}
+
+function vSetup() {
+  const st = settings(), lb = S.meta.lastBackup;
+  const snaps = all("backups").sort((a, b) => (b.saved || "").localeCompare(a.saved || ""));
+  return `${back("more", "More")}<h1>Setup</h1><div class="card warn"><p>The grey examples are only hints. Nothing is saved until you type your own real details. Never put passwords or card numbers here.</p></div>
+<div class="card"><form class="f" data-form="settings">${SETTINGS.map(([k, label, hint, req]) => field(label, k, st[k] || "", k === "launch_date" ? "date" : "text", req ? "Required for message scripts" : "", hint ? `placeholder="${esc(hint)}"` : "")).join("")}<button type="submit">Save setup</button></form><p class="hint">Prices, what's included and add-ons moved to More > Services & prices.</p></div>
+<div class="card"><h2>Backup</h2><p>Last backup file: <b>${lb ? esc(fdate(lb)) : "never"}</b></p><p class="hint">Your data lives in this page's storage in your Claude account. Claude can't promise it's backed up anywhere else, so save a file to your phone about once a week.</p><button data-act="backup" id="backupbtn">Save backup file</button>
+<h3>Restore from a backup file</h3><p class="hint">Restoring adds or replaces records by their ID. It never deletes records that aren't in the file. A safety snapshot of your current data is saved first.</p><label>Backup file<input type="file" id="f-restore" accept="application/json,.json" data-restore></label>${restoreState.preview ? `<div class="confirm"><p><b>Ready to restore:</b> ${esc(restoreState.preview)}</p><div class="btns"><button class="small danger" data-act="restoredo">Restore now</button><button class="small ghost" data-act="restorecancel">Cancel</button></div></div>` : ""}${restoreState.error ? `<p class="p-bad">${esc(restoreState.error)}</p>` : ""}
+${snaps.length ? `<h3>Saved snapshots</h3>${list(snaps.map((s) => `<li><div class="main">${esc(s.note || s.id)}<span class="hint">${esc(s.saved || "")}</span></div><button class="small ghost" data-act="snaprestore" data-id="${esc(s.id)}">Use this</button></li>`), "")}` : ""}</div>
+<div class="card"><h2>Privacy + limits</h2><p class="hint">This page's data is readable and editable only by its owner (you), including when Claude works on your behalf in your account. It's stored by Claude, not on your phone, so it shows up on any device where you're signed in. If the page is ever deleted, its data is deleted too, so keep backup files.</p></div>`;
+}
+
+function vMore() {
+  return `<h1>More</h1><div class="stack morelist">${MORE.map(([v, t, d]) => `<button ${go(v)}><b>${esc(t)}</b><span class="hint">${esc(d)}</span></button>`).join("")}</div>`;
 }
 
 function oppFields(o) {
@@ -595,51 +1170,22 @@ function vProspects() {
 ${os.length ? os.map((o) => `<div class="card"><p><b>${esc(o.name)}</b> ${pill(o.status)}</p><p class="hint">${esc(nice(o.type))} · found ${esc(fdate(o.found))} · ${esc(o.contact)}</p><p><b>Next:</b> ${esc(o.next || "-")}${o.nextDate ? " (" + esc(fdate(o.nextDate)) + ")" : ""}</p><p class="hint"><b>Rules:</b> ${esc(RULES[o.rule] || "")}. ${esc(o.rulesNotes)}</p>${o.outcome ? `<p><b>Outcome:</b> ${esc(o.outcome)}</p>` : ""}<details data-key="opp-${o.id}"><summary>Update</summary><form class="f" data-form="opp" data-id="${o.id}">${oppFields(o)}<button type="submit">Save</button></form></details></div>`).join("") : `<div class="card">${empty("No opportunities yet. Add the first one above.")}</div>`}`;
 }
 
-function vPlan() {
-  const cash = settings().cash_mode === "yes";
-  const eff = all("effort").sort((a, b) => b.date.localeCompare(a.date)).slice(0, 12);
-  return `<button class="back" ${go("more")}>‹ More</button><h1>Daily plan</h1>
-<div class="card"><h2>Log marketing time</h2><p class="hint">Rough minutes are fine. The weekly report compares time spent to inquiries by channel.</p><form class="f" data-form="effort"><div class="row">${field("Date", "date", today(), "date")}${sel("Channel", "channel", SOURCES, "facebook_page")}</div><div class="row">${field("What you did", "activity", "", "text", "", "required")}${field("Minutes", "minutes", "15", "number", "", 'inputmode="numeric" min="0" max="600"')}</div><button type="submit">Log it</button></form>${list(eff.map((e) => `<li><div class="main">${esc(e.activity)}<span class="hint">${esc(fdate(e.date))} · ${esc(nice(e.channel))}</span></div><span>${e.minutes} min</span></li>`), "")}</div>
-<div class="card bad"><h2>Cash mode ${cash ? "(on)" : "(off)"}</h2><p class="hint">For weeks you need paying jobs now. It replaces the day plan on Today.</p><ol class="todo">${PLAN.cash_mode.map((s) => `<li>${esc(s.replace(/^\d+\.\s*/, ""))}</li>`).join("")}</ol><button data-act="cash" data-v="${cash ? "no" : "yes"}">Turn cash mode ${cash ? "off" : "on"}</button></div>
-<h2>7-day routine</h2>${PLAN.normal.map((d) => `<div class="card"><h2>Day ${d.day}: ${esc(d.theme)}</h2><ol class="todo"><li><b>Content:</b> ${esc(d.content)}</li><li><b>Get customers:</b> ${esc(d.acquisition)}</li><li><b>Follow up:</b> ${esc(d.followup)}</li><li class="muted"><b>Optional:</b> ${esc(d.optional)}</li></ol></div>`).join("")}`;
-}
-
-let reportWeek = null;
-function vWeekly() {
-  const r = weekly(reportWeek);
-  return `<button class="back" ${go("more")}>‹ More</button><h1>Week of ${esc(fdate(r.a))}</h1><div class="btns"><button class="small ghost" data-act="week" data-v="-7">‹ Previous</button><button class="small ghost" data-act="week" data-v="7">Next ›</button></div>
-<div class="card ok"><h2>What to change next week</h2><ul>${r.tips.map((t) => `<li>${esc(t)}</li>`).join("")}</ul></div>
-<div class="card"><div class="nums"><div><b>${r.posts.length}</b><span>posts published</span></div><div><b>${r.inquiries}</b><span>inquiries</span></div><div><b>${r.quotes}</b><span>quotes sent</span></div><div><b>${r.booked}</b><span>booked</span></div><div><b>${r.jobs}</b><span>jobs done</span></div><div><b>${money(r.revenue)}</b><span>collected</span></div></div></div>
-<div class="card"><h2>Full report</h2>${copyBox(weeklyText(r))}</div>`;
-}
-
-function vSetup() {
-  const st = settings();
-  return `<button class="back" ${go("more")}>‹ More</button><h1>Setup</h1><div class="card warn"><p>The grey examples are only hints. Nothing is saved until you type your own real details. Never put passwords here.</p></div>
-<div class="card"><form class="f" data-form="settings">${SETTINGS.map(([k, label, hint, req]) => field(label, k, st[k] || "", k === "launch_date" ? "date" : "text", req ? "Required before approving posts" : "", hint ? `placeholder="${esc(hint)}"` : "")).join("")}<button type="submit">Save setup</button></form></div>
-<div class="card"><h2>Backup</h2><p>Your data is saved in your private Claude storage for this page. For an extra copy, save a backup file to your phone once a week.</p><button data-act="backup" id="backupbtn">Save backup file</button></div>
-<div class="card"><h2>Privacy</h2><p class="hint">Only you (the owner) can read or change this data, even if the page is ever shared. Don't share this page's link with anyone.</p></div>`;
-}
-
-function vMore() {
-  return `<h1>More</h1><div class="stack morelist">${MORE.map(([v, t, d]) => `<button ${go(v)}><b>${esc(t)}</b><span class="hint">${esc(d)}</span></button>`).join("")}</div>`;
-}
-
 // ---------------------------------------------------------------- work mode: one step at a time, timed
 // Goal minutes are starting targets for a medium-dirty car; your own averages replace them as you log jobs.
 // Product names are P&S examples - use whatever you actually own, at the label's dilution.
 const S_ = (k, name, min, why, todo, done, dont, tools) => ({ k, name, min, why, todo, done, dont, tools });
 const STEPS = {
   exterior: [
-    S_("x-setup", "Setup", 5, "Every trip away from the car costs minutes.", ["2 buckets: one soap, one rinse", "Wash mitt + wheel brushes", "Wheel/tire cleaner, bug remover", "Big drying towel + spray wax", "Tire shine + applicator", "Before photos: same 3 spots"], "You won't have to walk away from the car once.", "Don't start rinsing before everything is in reach.", ["Brake Buster", "Absolute Wash", "Bead Maker"]),
+    S_("x-setup", "Setup", 5, "Every trip away from the car costs minutes.", ["2 buckets: one soap, one rinse", "Wash mitt + wheel brushes", "Wheel/tire cleaner, bug remover", "Big drying towel", "Tire shine + applicator", "Add-on products ONLY if this job has add-ons", "Before photos: same 3 spots, note any existing damage"], "You won't have to walk away from the car once.", "Don't start rinsing before everything is in reach.", ["Brake Buster", "Absolute Wash"]),
     S_("x-wheels", "Spray wheels + walk away", 5, "Chemicals work while you do something else.", ["Wheel cleaner on all 4 wheels and tires", "Bug remover on the bumper and mirrors", "Don't scrub yet"], "Everything is soaking.", "Don't scrub now - the soak does it for free.", ["Brake Buster"]),
     S_("x-prerinse", "Pre-rinse", 10, "Loose dirt off now = faster, safer wash.", ["Top to bottom", "One lap around the car"], "Loose dirt and mud are off.", "Don't blast one spot for minutes.", []),
     S_("x-wheelscrub", "Scrub + rinse wheels", 15, "The soak did the hard part.", ["One brush pass per wheel", "One brush pass per tire", "Rinse all 4"], "Wheels and tires look clean from standing height.", "Don't chase every speck in the lug nuts.", ["Wheel brush", "Tire brush"]),
     S_("x-wash", "Hand wash", 20, "Top down, one lap: dirt only goes down.", ["Roof", "Glass", "Hood + trunk", "Upper sides", "Lower sides + bumpers last", "Rinse mitt in bucket 2 after each panel"], "Every panel washed once, in order.", "No circles, no jumping side to side.", ["Absolute Wash", "Wash mitt"]),
-    S_("x-dry", "Rinse + dry with wax", 15, "Two steps become one.", ["Rinse top down", "Mist spray wax on the wet panel", "Lay towel flat, drag toward you", "Panel by panel, same order as the wash"], "Whole car dry, no water spots.", "Don't rub in small circles. Drag.", ["Bead Maker", "Drying towel"]),
+    S_("x-dry", "Rinse + dry", 15, "Drag, don't rub - faster and safer.", ["Rinse top down", "Lay towel flat, drag toward you", "Panel by panel, same order as the wash", "Mirrors and handles with a small towel"], "Whole car dry, no water spots.", "Don't rub in small circles. Drag.", ["Drying towel"]),
     S_("x-jambs", "Door jambs", 10, "Customers notice them when they open the door.", ["Open door", "Damp towel on the jamb", "Close, next door"], "All 4 jambs wiped, one lap.", "Don't open and close the same door twice.", []),
     S_("x-glass", "Outside glass", 5, "Two towels = no streaks = no redo.", ["Damp towel cleans", "Dry towel buffs", "All glass, one pass"], "No streaks when you look from an angle.", "Don't use a wet, used towel on glass.", ["Glass towel x2"]),
     S_("x-tires", "Tire shine", 5, "Last, so it never slings on clean paint.", ["Thin coat with applicator", "All 4 tires"], "Even shine, no drips on the wheel.", "Don't glob it on - thin is faster and looks better.", ["Tire shine", "Applicator"]),
+    S_("x-qc", "Final quality check", 5, "Catch it before the customer does.", ["Walk around once: paint, glass, wheels", "Check mirrors and door jambs for drips", "Tires shined evenly, no sling on paint", "Look from 3 steps away like the customer will"], "No missed spots from 3 steps away.", "Don't start a second full pass - fix only what you see.", []),
     S_("x-photos", "After photos", 5, "Your next Nextdoor post.", ["Same 3 spots and angles as before photos", "Blur the plate later"], "3 after photos taken.", "Don't skip it - photos get you clients.", []),
   ],
   interior: [
@@ -656,7 +1202,26 @@ const STEPS = {
 };
 // Full package: exterior first (no water drips into a clean interior; mats dry in the sun), then interior.
 STEPS.full = STEPS.exterior.filter((s) => s.k !== "x-photos").concat(STEPS.interior.filter((s) => s.k !== "i-setup"));
-const STEP_BY_KEY = {}; Object.values(STEPS).forEach((arr) => arr.forEach((s) => { STEP_BY_KEY[s.k] = s; }));
+// Add-on steps only appear on jobs that booked them. Wax/sealant is never part of the base exterior.
+const OPTIONAL_STEPS = {
+  wax: S_("x-wax", "Spray wax (add-on)", 10, "Only because this customer booked it.", ["Panel by panel on a dry, cool surface", "Same order as the wash", "Buff off with a clean towel"], "Even finish, no streaks or high spots.", "Don't wax glass or trim.", ["Bead Maker"]),
+  spray_ceramic: S_("x-sealant", "Spray ceramic sealant (add-on)", 15, "Only because this customer booked it.", ["Follow the product label exactly", "Panel by panel on a dry, cool surface", "Buff off within the label's time"], "Even finish, no streaks.", "Don't apply in direct sun.", []),
+};
+const STEP_BY_KEY = {}; Object.values(STEPS).concat([Object.values(OPTIONAL_STEPS)]).forEach((arr) => arr.forEach((s) => { STEP_BY_KEY[s.k] = s; }));
+STEP_BY_KEY.addons = S_("addons", "Add-ons", 20, "Extras this customer paid for.", [], "Every add-on on this job is done.", "Don't do add-ons they didn't book - offer them next time instead.", []);
+function buildSteps(service, addons) {
+  const base = STEPS[service].slice(), keys = base.map((s) => s.k);
+  const at = (k) => keys.indexOf(k);
+  const after = (k, step) => { const i = at(k); if (i >= 0) { base.splice(i + 1, 0, step); keys.splice(i + 1, 0, step.k); } };
+  if (service !== "interior") { if ((addons || []).includes("spray_ceramic")) after("x-dry", OPTIONAL_STEPS.spray_ceramic); if ((addons || []).includes("wax")) after("x-dry", OPTIONAL_STEPS.wax); }
+  const rest = (addons || []).filter((a) => !(service !== "interior" && (a === "wax" || a === "spray_ceramic")));
+  if (rest.length) { const before = at("i-final") >= 0 ? at("i-final") : at("x-qc"); base.splice(before, 0, STEP_BY_KEY.addons); keys.splice(before, 0, "addons"); }
+  return keys;
+}
+function jobSteps(a) {
+  if (!a.keys) return STEPS[a.service];
+  return a.keys.map((k) => (k === "addons" ? Object.assign({}, STEP_BY_KEY.addons, { todo: (a.addons || []).filter((x) => !(a.service !== "interior" && (x === "wax" || x === "spray_ceramic"))).map((x) => (addonById(x) || { name: x }).name) }) : STEP_BY_KEY[k])).filter(Boolean);
+}
 const CONDITION = { light: ["Light (pretty clean)", 0.8], medium: ["Medium (normal)", 1], heavy: ["Heavy (pet hair, stains, trash)", 1.4] };
 const KIT = ["Vacuum charged or plugged in, with crevice + brush tools", "Stiff carpet brush + detail brushes + pet hair brush", "Interior cleaner, carpet cleaner, glass cleaner - bottles filled", "Wheel cleaner, soap, spray wax, tire shine", "Towels for the whole job, sorted: interior / glass / drying", "2 buckets + wash mitt + wheel brushes", "Trash bags + a bin for the customer's things", "Phone stand for photos", "Water + snack, so you don't stop mid-job"];
 const HABITS = [
@@ -669,7 +1234,7 @@ const HABITS = [
 const fmt = (sec) => { sec = Math.max(0, Math.round(sec)); const h = Math.floor(sec / 3600), m = Math.floor(sec % 3600 / 60), s = sec % 60; return h ? `${h}:${pad(m)}:${pad(s)}` : `${m}:${pad(s)}`; };
 const fmtMin = (sec) => { const m = Math.round(sec / 60); return m >= 60 ? `${Math.floor(m / 60)}h ${m % 60}m` : `${m}m`; };
 const goalFor = (step, cond) => Math.round(step.min * 60 * (CONDITION[cond] || CONDITION.medium)[1]);
-const jobGoal = (service, cond) => STEPS[service].reduce((s, st) => s + goalFor(st, cond), 0);
+const jobGoal = (service, cond, steps) => (steps || STEPS[service]).reduce((s, st) => s + goalFor(st, cond), 0);
 const productCost = () => { const n = Number(String(settings().product_cost || "").replace(/[$,\s]/g, "")); return isFinite(n) && n >= 0 ? n : 0; };
 const perHour = (service, sec) => sec >= 600 ? money((SERVICES[service].price - productCost()) / (sec / 3600)) : "-"; // under 10 min = test run, not a real rate
 function stepStats() {
@@ -687,7 +1252,7 @@ function clearActive() { S.active = null; activeQ = activeQ.catch(() => {}).then
 const stepElapsed = (a, now) => ((a.pausedAt || now) - a.stepStart) / 1000;
 
 function vWorkRunning(a) {
-  const steps = STEPS[a.service], cur = steps[a.i];
+  const steps = jobSteps(a), cur = steps[a.i];
   const goal = goalFor(cur, a.condition), now = Date.now(), el = stepElapsed(a, now);
   const total = ((a.pausedAt || now) - a.jobStart) / 1000;
   const checks = (a.checks && a.checks[a.i]) || [];
@@ -698,7 +1263,7 @@ function vWorkRunning(a) {
 <div class="card stepcard">
 <p class="stepname">${esc(cur.name)}</p><p class="why">${esc(cur.why)}</p>
 <div class="clock"><div class="timer${el > goal ? " over" : ""}" id="worktimer" data-goal="${goal}">${fmt(el)}</div><div class="goal">goal<br><b>${fmtMin(goal)}</b></div></div>
-<p class="muted small">Whole job <span id="worktotal">${fmt(total)}</span> of ${fmtMin(jobGoal(a.service, a.condition))} goal${a.pausedAt ? " · <b class='p-warn'>PAUSED</b>" : ""}</p>
+<p class="muted small">Whole job <span id="worktotal">${fmt(total)}</span> of ${fmtMin(jobGoal(a.service, a.condition, steps))} goal${a.pausedAt ? " · <b class='p-warn'>PAUSED</b>" : ""}</p>
 <div class="checks">${cur.todo.map((t, i) => `<button type="button" class="check${checks[i] ? " on" : ""}" data-act="workcheck" data-v="${i}" aria-pressed="${checks[i] ? "true" : "false"}"><span class="box">${checks[i] ? "✓" : ""}</span>${esc(t)}</button>`).join("")}</div>
 <div class="donewhen"><span class="eyebrow">Done when</span>${esc(cur.done)}</div>
 <div class="dont"><span class="eyebrow">Time-waster</span>${esc(cur.dont)}</div>
@@ -710,14 +1275,14 @@ ${a.pausedAt ? `<button class="huge" data-act="workresume">Resume</button>` : `<
 <div class="card"><h2>Coming up</h2>${list(steps.slice(a.i + 1).map((s, j) => `<li><div class="main"><span class="muted">${a.i + j + 2}.</span> ${esc(s.name)}</div><span class="muted">${fmtMin(goalFor(s, a.condition))}</span></li>`), "This is the last step.")}</div>`;
 }
 function vFinish(r) {
-  const goal = jobGoal(r.service, r.condition), beat = r.total <= goal;
+  const goal = jobGoal(r.service, r.condition, r.keys ? jobSteps(r) : null), beat = r.total <= goal;
   const sorted = r.steps.filter((d) => !d.skipped && STEP_BY_KEY[d.k]).map((d) => ({ d, over: d.sec - goalFor(STEP_BY_KEY[d.k], r.condition) })).sort((x, y) => y.over - x.over);
   const worst = sorted[0];
   return `<div class="card finish ${beat ? "ok" : "warn"}"><span class="eyebrow">Job done</span><p class="stepname">${fmtMin(r.total)}</p>
 <p>${beat ? "You beat the goal of " + fmtMin(goal) + "." : "Goal was " + fmtMin(goal) + ". Every job gets you closer."}</p>
 <div class="nums"><div><b>${perHour(r.service, r.total)}</b><span>per hour after ${money(productCost())} products</span></div>${worst ? `<div><b>${esc(STEP_BY_KEY[worst.d.k].name)}</b><span>${worst.over > 0 ? "biggest time sink (+" + fmtMin(worst.over) + ")" : "slowest step"}</span></div>` : ""}</div>
 ${worst && worst.over > 0 ? `<p class="hint">Next job, focus only on "${esc(STEP_BY_KEY[worst.d.k].name)}": ${esc(STEP_BY_KEY[worst.d.k].dont)}</p>` : ""}
-<div class="btns">${r.appt ? `<button ${go("lead", r.lead)}>Record payment on the lead</button>` : ""}<button class="ghost" data-act="finishok">Close</button></div></div>`;
+<div class="btns">${r.appt ? `<button ${go("lead", r.lead)}>Record the job, costs + payment</button>` : ""}<button class="ghost" data-act="finishok">Close</button></div></div>`;
 }
 function vGuide(service) {
   return STEPS[service].map((s, i) => `<details data-key="g-${service}-${s.k}"><summary>${i + 1}. ${esc(s.name)} <span class="muted">· ${s.min}m</span></summary>
@@ -738,7 +1303,8 @@ function vWork() {
 <div class="card hero"><h2>Start a job</h2><form class="f" data-form="workstart">
 ${todays.length ? sel("Which appointment?", "appt", [""].concat(todays.map((x) => x.id)), todays[0].id, (id) => { if (!id) return "Practice / not in the app"; const x = S.appts.get(id); return `${(S.leads.get(x.lead) || {}).name} - ${SERVICES[x.service].label}`; }) : `<input type="hidden" name="appt" value="">`}
 ${sel("Service", "service", Object.keys(SERVICES), todays.length ? todays[0].service : "full", (k) => `${SERVICES[k].label} · goal ${fmtMin(jobGoal(k, "medium"))}`)}
-${sel("How dirty is it?", "condition", Object.keys(CONDITION), "medium", (k) => CONDITION[k][0])}
+${sel("How dirty is it?", "condition", Object.keys(CONDITION), todays.length && todays[0].condition ? todays[0].condition : "medium", (k) => CONDITION[k][0])}
+${addonPicker([])}<p class="hint">If you pick an appointment, its booked add-ons are used.</p>
 <button type="submit" class="huge">Start job</button></form>
 <p class="hint">One step at a time with a checklist and a timer. It keeps running if your phone locks.</p></div>
 <div class="card"><h2>Your times</h2>${bySvc.length ? list(bySvc, "") : empty("No timed jobs yet. Time your next car - even a practice one on your own car.")}
@@ -753,17 +1319,19 @@ async function workStart(f) {
   need(SERVICES[f.service], "Pick a service.");
   need(!S.active || !S.active.service, "A job is already running.");
   const appt = f.appt ? S.appts.get(f.appt) : null, now = Date.now();
+  const service = appt ? appt.service : f.service;
+  const addons = appt ? (appt.addons || []) : B().addons.filter((a) => f["addon_" + a.id] === "on").map((a) => a.id);
   lastFinish = null;
-  await saveActive({ service: f.service, condition: CONDITION[f.condition] ? f.condition : "medium", appt: appt ? appt.id : "", lead: appt ? appt.lead : "", who: appt ? (S.leads.get(appt.lead) || {}).name || "" : "", i: 0, jobStart: now, stepStart: now, pausedAt: null, done: [], checks: {} });
+  await saveActive({ service, addons, keys: buildSteps(service, addons), condition: CONDITION[f.condition] ? f.condition : "medium", appt: appt ? appt.id : "", lead: appt ? appt.lead : "", who: appt ? (S.leads.get(appt.lead) || {}).name || "" : "", i: 0, jobStart: now, stepStart: now, pausedAt: null, done: [], checks: {} });
 }
 async function workNext(skip) {
   const a = JSON.parse(JSON.stringify(S.active)); need(a && a.service, "No job running.");
-  const steps = STEPS[a.service], now = Date.now();
+  const steps = jobSteps(a), now = Date.now();
   if (a.pausedAt) { a.stepStart += now - a.pausedAt; a.jobStart += now - a.pausedAt; a.pausedAt = null; }
   a.done.push({ k: steps[a.i].k, sec: Math.round((now - a.stepStart) / 1000), skipped: !!skip });
   if (a.i + 1 < steps.length) { a.i++; a.stepStart = now; await saveActive(a); window.scrollTo(0, 0); return null; }
   const total = Math.round(a.done.filter((d) => !d.skipped).reduce((s, d) => s + d.sec, 0));
-  const rec = { date: today(), service: a.service, condition: a.condition, appt: a.appt, lead: a.lead || "", who: a.who, steps: a.done, total };
+  const rec = { date: today(), service: a.service, addons: a.addons || [], keys: a.keys || null, condition: a.condition, appt: a.appt, lead: a.lead || "", who: a.who, steps: a.done, total };
   await put("timings", newId("timings"), rec);
   await clearActive();
   lastFinish = rec; window.scrollTo(0, 0);
@@ -807,7 +1375,7 @@ function agentContext() {
   const usedTitles = POSTS.map(postView).filter((p) => p.status === "published").map((p) => p.title);
   return [
     `You are the marketing assistant for ${BUSINESS}, a one-person, garage-based car detailing business in Melrose Park, IL. Customers DROP OFF their car; it is NOT mobile.`,
-    `Services and prices (the only ones offered): Interior $80 (${st.interior_includes || "see owner"}); Exterior $60 (${st.exterior_includes || "see owner"}); Full interior + exterior $140. Prices may be quoted higher for very dirty cars only after seeing photos.`,
+    `Services and prices (the only ones offered): ${SVC_KEYS.map((k) => `${SERVICES[k].label} $${SERVICES[k].price} (includes: ${(B().services[k].includes || []).join(", ") || "see owner"})`).join("; ")}. Add-ons: ${B().addons.map((a) => a.name + (a.price == null ? " (ask for price)" : " $" + a.price)).join(", ")}. Spray wax is an add-on, not included. Very dirty cars may be quoted higher, only after seeing photos.`,
     `Booking: ${st.booking_line || "call or text"}. Hours: ${st.hours_line || "ask"}. Payment: ${st.payment_methods || "ask"}. Turnaround: ${st.turnaround_line || "same day"}.`,
     "Marketing channel: a free Nextdoor Business Page (no personal-profile promotion, no paid ads or Opportunity Alerts), flyers on community boards, in-person visits to local businesses. No Facebook profile.",
     "Add-ons offered (price on request): pet hair removal, odor bomb treatment, headliner cleaning, engine bay cleaning, spray ceramic sealant, salt removal, wax & sealant protection, wheel & tire deep clean. Hard rules: never claim mobile service (coming later, once the owner's vehicle is repaired), a full ceramic coating or paint correction (owner is still training), polishing, paint correction, extraction, being insured/certified/#1, being fully booked or having limited spots. Never invent reviews, testimonials, customer stories or results. Write like a real local owner: plain, specific, a little funny sometimes, no hashtags on Nextdoor, at most one emoji. Use [brackets] for any detail the owner must fill in with something true.",
@@ -857,25 +1425,38 @@ async function ask(q) {
 
 // ---------------------------------------------------------------- render loop
 let pendingRender = false;
+const VIEWS = { today: vToday, leads: vLeads, newlead: vNewLead, lead: () => vLead(sub), book: vBook, posts: vPosts, post: () => vPost(sub), replies: vReplies, prospects: vProspects, plan: vPlan, weekly: vWeekly, setup: vSetup, more: vMore, work: vWork, agent: vAgent, money: vMoney, marketing: vMarketing, services: vServices, growth: vGrowth, policies: vPolicies };
 function render(force) {
   const root = document.getElementById("view");
   const a = document.activeElement;
   if (!force && a && root.contains(a) && /INPUT|TEXTAREA|SELECT/.test(a.tagName)) { pendingRender = true; return; } // don't wipe what you're typing
   pendingRender = false;
   const open = new Set(Array.from(root.querySelectorAll("details[open]")).map((d) => d.dataset.key));
-  const fn = { today: vToday, leads: vLeads, newlead: vNewLead, lead: () => vLead(sub), book: vBook, posts: vPosts, post: () => vPost(sub), replies: vReplies, prospects: vProspects, plan: vPlan, weekly: vWeekly, setup: vSetup, more: vMore, work: vWork, agent: vAgent }[view] || vToday;
-  root.innerHTML = gate || fn();
+  let html;
+  try { html = gate || (VIEWS[view] || vToday)(); }
+  catch (e) { console.error(e); html = `<div class="card bad"><h2>This screen hit an error</h2><p>Your data is safe. Go back to Today and try again. If it keeps happening, save a backup file and tell Claude what you tapped.</p><button ${go("today")}>Back to Today</button></div>`; }
+  root.innerHTML = html;
   root.querySelectorAll("details[data-key]").forEach((d) => { if (open.has(d.dataset.key)) d.open = true; });
   document.getElementById("tabs").innerHTML = TABS.map(([v, l]) => `<button ${go(v)} class="${tabOf(view) === v || (view === "newlead" && v === "leads") || (view === "lead" && v === "leads") || (view === "post" && v === "posts") ? "on" : ""}" aria-label="${l}"><svg viewBox="0 0 24 24" aria-hidden="true">${ICONS[v]}</svg>${l}</button>`).join("");
 }
 document.addEventListener("focusout", () => setTimeout(() => { if (pendingRender) render(); }, 150));
 
-function navigate(v, s) { view = v; sub = s == null ? null : s; filter = ""; render(true); window.scrollTo(0, 0); }
+function navigate(v, s) { view = v; sub = s == null ? null : s; filter = ""; if (v !== "leads") search = ""; render(true); window.scrollTo(0, 0); }
 
+let busy = false;
 async function run(fn, okMsg) {
+  if (busy) return toast("Still saving the last change…"); // stops double taps from saving twice
+  busy = true; document.body.classList.add("busy");
   try { await fn(); if (okMsg) toast(okMsg); render(true); }
   catch (e) { toast(e instanceof VErr ? e.message : "Couldn't save that. Check your connection and try again.", true); if (!(e instanceof VErr)) console.error(e); }
+  finally { busy = false; document.body.classList.remove("busy"); }
 }
+
+document.addEventListener("input", (e) => {
+  const t = e.target;
+  if (t.hasAttribute && t.hasAttribute("data-search")) { search = t.value; const pos = t.selectionStart; render(true); const n = document.getElementById("f-search"); if (n) { n.focus(); try { n.setSelectionRange(pos, pos); } catch (_) {} } }
+});
+document.addEventListener("change", (e) => { if (e.target.hasAttribute && e.target.hasAttribute("data-restore")) readRestoreFile(e.target.files && e.target.files[0]); });
 
 document.addEventListener("click", (e) => {
   const t = e.target.closest("[data-go],[data-act],[data-copy],[data-filter],[data-ask]");
@@ -892,20 +1473,29 @@ document.addEventListener("click", (e) => {
   }
   const id = t.dataset.id, v = t.dataset.v;
   const acts = {
-    replied: () => run(() => leadAct(id, (l) => { if (l.status === "New Lead" || l.status === "Follow-Up Due") l.status = "Replied"; l.lastContact = today(); l.next = plusDays(2); ev(l, "reply_sent"); }), "Reply logged. Follow-up set for 2 days from now."),
-    followup: () => run(() => leadAct(id, (l) => { l.lastContact = today(); l.next = Number(v) ? plusDays(Number(v)) : null; if (l.status === "Follow-Up Due") l.status = "Replied"; ev(l, "followup_sent"); }), Number(v) ? "Follow-up logged." : "Final follow-up logged. If they don't answer, mark them Lost."),
+    replied: () => run(() => leadAct(id, (l) => { if (["New Lead", "Follow-Up Due", "Contacted"].includes(l.status)) l.status = "Replied"; l.lastContact = today(); l.next = plusDays(B().sla.quoteFollowDays); l.nextAction = "Send a quote or book a time"; ev(l, "reply_sent"); }), "Reply logged. Follow-up set."),
+    followup: () => run(() => leadAct(id, (l) => { l.lastContact = today(); l.followups = (l.followups || 0) + 1; l.next = Number(v) ? plusDays(Number(v)) : null; l.nextAction = Number(v) ? "Follow up again or mark Lost" : "Mark Lost if no answer"; if (l.status === "Follow-Up Due") l.status = "Replied"; ev(l, "followup_sent", "follow-up #" + l.followups); }), Number(v) ? "Follow-up logged." : "Final follow-up logged. If they don't answer, mark them Lost."),
+    contacted: () => run(() => leadAct(id, (l) => { l.status = "Contacted"; l.firstContact = l.firstContact || today(); l.lastContact = today(); if (hasEv(l, "contacted")) l.followups = (l.followups || 0) + 1; l.next = plusDays(B().sla.followupGapDays); l.nextAction = "Check for a reply"; ev(l, "contacted"); }), "Outreach logged."),
+    inquired: () => run(() => leadAct(id, (l) => { l.status = "New Lead"; l.inquiry = today(); l.next = today(); l.nextAction = "Reply now"; ev(l, "inquiry", "replied to outreach"); }), "Great - now reply to them."),
     confirm: () => run(() => confirmAppt(id), "Confirmed. Send the booking confirmation message."),
-    release: () => run(() => cancelAppt(id, false, "slot released"), "Slot released."),
-    noshow: () => run(() => cancelAppt(id, true, ""), "No-show logged."),
-    reminder: () => run(async () => { const a = S.appts.get(id); await put("appts", id, Object.assign({}, a, { reminder: today() })); await leadAct(a.lead, (l) => ev(l, "reminder_sent")); }, "Reminder logged."),
+    release: () => run(() => cancelAppt(id, false, { reason: "slot released" }), "Slot released."),
+    reminder: () => run(async () => { const a = S.appts.get(id); need(a, "That appointment is gone."); await put("appts", id, Object.assign({}, a, { reminder: today() })); await leadAct(a.lead, (l) => ev(l, "reminder_sent")); }, "Reminder logged."),
     closeslot: () => run(async () => { const s = S.slots.get(id); need(s && s.status === "open", "Only open slots can be closed."); await put("slots", id, Object.assign({}, s, { status: "closed" })); }, "Slot closed."),
-    reviewreq: () => run(() => leadAct(id, (l) => { l.reviewReq = today(); l.next = null; ev(l, "review_requested"); }), "Review request logged."),
+    reviewreq: () => run(() => leadAct(id, (l) => { l.reviewReq = today(); l.next = null; l.nextAction = "Ask for a referral in a few days"; ev(l, "review_requested"); }), "Review request logged."),
     reviewgot: () => run(() => leadAct(id, (l) => { l.reviewGot = true; ev(l, "review_received"); }), "Review logged."),
-    repeat: () => run(() => leadAct(id, (l) => { l.repeat = plusDays(60); ev(l, "repeat_offer_sent"); }), "Repeat offer logged. Next reminder in 60 days."),
+    repeat: () => run(() => leadAct(id, (l) => { l.repeat = plusDays(60); ev(l, "repeat_offer_sent"); }), "Reconnect logged. Next reminder in 60 days."),
     todraft: () => run(() => putPost(id, { status: "draft", approved: null, scheduled: null }), "Back to draft."),
     cash: () => run(() => saveSettings({ cash_mode: v }), v === "yes" ? "Cash mode on." : "Cash mode off."),
     week: () => { reportWeek = plusDays(Number(v), weekBounds(reportWeek)[0]); render(true); },
+    period: () => { period = v; render(true); },
     backup: () => saveBackup(),
+    restoredo: () => run(doRestore),
+    restorecancel: () => { restoreState = {}; render(true); },
+    snaprestore: () => { const s = S.backups.get(id); if (!s) return toast("That snapshot is gone.", true); prepareRestore(s, "snapshot " + (s.note || id)); render(true); window.scrollTo(0, 0); },
+    dailytick: () => run(async () => { const d = today(), cur = S.daily.get(d) || {}; const manual = Object.assign({}, cur.manual || {}); manual[v] = !manual[v]; await put("daily", d, { manual }); }),
+    ready: () => run(() => { const rd = Object.assign({}, B().readiness || {}); rd[v] = !rd[v]; return saveBiz({ readiness: rd }); }),
+    replyreset: () => run(() => { const ov = Object.assign({}, B().replyOverrides || {}); delete ov[id]; return saveBizReplace("replyOverrides", ov); }, "Script reset to the original."),
+    rmaddon: () => run(() => saveBiz({ addons: B().addons.filter((a) => a.id !== id) }), "Add-on removed."),
     askchip: () => { askDraft = ASK_CHIPS[Number(v)][1]; render(true); const ta = document.getElementById("f-askq"); if (ta) ta.focus(); },
     askstop: () => { if (askCtl) askCtl.abort(); },
     worknext: () => run(() => workNext(false)),
@@ -922,7 +1512,9 @@ document.addEventListener("click", (e) => {
 });
 
 async function putPost(id, patch) { const o = Object.assign({ status: "draft" }, S.posts.get(id) || {}, patch); await put("posts", id, o); }
-async function saveSettings(patch) { if (!db) throw new VErr("Storage isn't connected."); const next = Object.assign({}, S.settings, patch); await db.doc("config/settings").set(next); S.settings = next; }
+async function saveSettings(patch) { if (!db) throw new VErr("Storage isn't connected."); const next = Object.assign({}, S.settings, patch); await db.doc("config/settings").set(next); S.settings = next; rebuildBiz(); }
+async function saveBizReplace(key, value) { const next = Object.assign({}, S.biz || {}); next[key] = value; await db.doc("config/business").set(JSON.parse(JSON.stringify(next))); S.biz = next; rebuildBiz(); }
+const lines = (s) => String(s || "").split("\n").map((x) => clean(x, 120)).filter(Boolean).slice(0, 30);
 
 document.addEventListener("submit", (e) => {
   const form = e.target.closest("form[data-form]"); if (!form) return;
@@ -932,13 +1524,17 @@ document.addEventListener("submit", (e) => {
   const handlers = {
     workstart: () => run(() => workStart(f), "Timer started. One step at a time."),
     ask: () => { ask(f.q).catch((err) => toast(err.message || "Couldn't ask.", true)); },
-    newlead: () => run(async () => { const nid = await createLead(f); view = "lead"; sub = nid; }, "Lead added. Reply now - fast replies win jobs."),
-    editlead: () => run(() => leadAct(id, (l) => { const n = leadFromForm(f, l); need(STATUSES.includes(f.status), "Pick a status."); if (f.status === "Lost" && l.status !== "Lost") ev(n, "lost", f.lostReason); n.status = f.status; n.next = isDate(f.next) ? f.next : null; n.repeat = isDate(f.repeat) ? f.repeat : null; n.lostReason = clean(f.lostReason, 200); Object.assign(l, n); }), "Saved."),
-    quote: () => run(() => leadAct(id, (l) => { need(SERVICES[f.service], "Pick a service."); let p = num(f.price, "Price"); if (p == null) p = SERVICES[f.service].price; l.status = "Quote Sent"; l.service = f.service; l.quote = p; l.lastContact = today(); l.next = plusDays(2); ev(l, "quote_sent", `${SERVICES[f.service].label} $${p}`); }), "Quote logged. Follow-up in 2 days."),
-    offer: () => run(() => propose(id, f.slot, f.service, f.price), "Slot held. Send them the time, then confirm when they say yes."),
-    cancel: () => run(() => cancelAppt(id, false, f.reason), "Cancelled. The slot is open again if it's in the future."),
-    complete: () => run(() => completeJob(id, f), "Job recorded. Ask for a review tomorrow."),
+    newlead: () => run(async () => { const nid = await createLead(f); view = "lead"; sub = nid; }, f.mode === "outbound" ? "Prospect saved." : "Lead added. Reply now - fast replies win jobs."),
+    editlead: () => run(() => leadAct(id, (l) => { const n = leadFromForm(f, l); need(STATUSES.includes(f.status), "Pick a status."); if (f.status === "Lost") need(LOST_REASONS.includes(f.lostReason), "Pick why the lead was lost - it shows you what to fix."); if (f.status === "Lost" && l.status !== "Lost") ev(n, "lost", f.lostReason + (f.lostNote ? ": " + f.lostNote : "")); n.status = f.status; n.next = isDate(f.next) ? f.next : null; n.repeat = isDate(f.repeat) ? f.repeat : null; n.lostReason = LOST_REASONS.includes(f.lostReason) ? f.lostReason : ""; n.lostNote = clean(f.lostNote, 200); Object.assign(l, n); }), "Saved."),
+    quote: () => run(() => leadAct(id, (l) => { const addons = B().addons.filter((a) => f["addon_" + a.id] === "on").map((a) => a.id); const q = quoteFor(f.service, addons, CONDITIONS[f.condition] ? f.condition : "medium", f.price); l.status = "Quote Sent"; l.service = f.service; l.condition = f.condition; l.quote = q.price; l.quoteAddons = addons; l.lastContact = today(); l.next = plusDays(B().sla.quoteFollowDays); l.nextAction = "Follow up on the quote"; ev(l, "quote_sent", `${SERVICES[f.service].label}${addons.length ? " + " + addons.length + " add-on(s)" : ""} $${q.price}`); }), "Quote logged. Follow-up scheduled."),
+    offer: () => run(() => propose(id, f.slot, f), "Slot held. Send them the time, then confirm when they say yes."),
+    cancel: () => run(() => cancelAppt(id, false, f), "Cancelled. The slot is open again if it's in the future."),
+    noshow: () => run(() => cancelAppt(id, true, f), "No-show logged."),
+    deposit: () => run(() => recordDeposit(id, f), "Deposit recorded."),
+    complete: () => run(() => completeJob(id, f), "Job recorded."),
     pay: () => run(() => recordPayment(id, f.amount, f.method), "Payment recorded."),
+    refund: () => run(() => recordRefund(id, f), "Refund recorded."),
+    jobcosts: () => run(() => editJobCosts(id, f), "Costs saved."),
     slot: () => run(() => addSlot(f), "Slot added."),
     approve: () => run(async () => { const p = postView(POSTS.find((x) => x.id === id)); if (p.needs_real_photos) need(f.photos === "on", "This post needs your real photos or video. Tick the box once you have them."); const probs = postProblems(p); need(!probs.length, "Can't approve yet: " + probs.join("; ")); await putPost(id, { status: "approved", approved: today() }); }, "Approved. Post it yourself, then mark it published."),
     publish: () => run(async () => { const where = clean(f.where, 200); need(where, "Say where you posted it."); const d = isDate(f.date) ? f.date : today(); need(d <= today(), "Use Schedule for a future date."); await putPost(id, { status: "published", published: d, where }); }, "Marked published."),
@@ -946,8 +1542,20 @@ document.addEventListener("submit", (e) => {
     postedit: () => run(async () => { const base = POSTS.find((x) => x.id === id), cur = postView(base); need(cur.status !== "published", "Already published - edit it on the platform."); const edits = {}; let changed = false; for (const k in POST_FIELDS) { edits[k] = clean(f[k], 4000); if (edits[k] !== cur[k]) changed = true; } await putPost(id, Object.assign({ edits }, changed && cur.status !== "draft" ? { status: "draft", approved: null } : {})); }, "Wording saved."),
     oppnew: () => run(() => put("opps", newId("opps"), oppFromForm(f, { found: today(), order: Date.now() })), "Added."),
     opp: () => run(() => put("opps", id, oppFromForm(f, S.opps.get(id))), "Updated."),
-    effort: () => run(async () => { const m = parseInt(f.minutes, 10); need(m >= 0 && m <= 600, "Minutes must be 0-600."); need(clean(f.activity), "Say what you did."); need(SOURCES.includes(f.channel), "Pick a channel."); await put("effort", newId("effort"), { date: isDate(f.date) ? f.date : today(), channel: f.channel, activity: clean(f.activity, 200), minutes: m }); }, "Logged."),
-    settings: () => run(async () => { const patch = {}; for (const [k] of SETTINGS) patch[k] = clean(f[k], 200); if (patch.max_jobs_per_day) { const n = parseInt(patch.max_jobs_per_day, 10); need(n >= 1 && n <= 10, "Max cars per day must be 1-10."); patch.max_jobs_per_day = String(n); } if (patch.launch_date) need(isDate(patch.launch_date), "Launch date must be a date."); await saveSettings(patch); }, "Setup saved."),
+    effort: () => run(async () => { const m = parseInt(f.minutes, 10); need(m >= 0 && m <= 600, "Minutes must be 0-600."); need(clean(f.activity), "Say what you did."); need(sources().includes(f.channel), "Pick a channel."); await put("effort", newId("effort"), { date: isDate(f.date) ? f.date : today(), channel: f.channel, kind: ["post", "outreach", "flyers", "visit", "other"].includes(f.kind) ? f.kind : "other", activity: clean(f.activity, 200), minutes: m }); }, "Logged."),
+    settings: () => run(async () => { const patch = {}; for (const [k] of SETTINGS) patch[k] = clean(f[k], 200); if (patch.launch_date) need(isDate(patch.launch_date), "Launch date must be a date."); await saveSettings(patch); }, "Setup saved."),
+    replyedit: () => run(() => { const txt = clean(f.text, 3000); need(txt, "A script can't be empty. Use Reset to go back to the original."); const c = banned(txt); need(!c.length, `That script includes a claim you haven't confirmed: ${c.join(", ")}.`); const ov = Object.assign({}, B().replyOverrides || {}); ov[id] = txt; return saveBizReplace("replyOverrides", ov); }, "Script saved."),
+    service: () => run(() => { const price = num(f.price, "Price"); need(price != null && price > 0, "Price is required."); const minutes = parseInt(f.minutes, 10); need(minutes >= 15 && minutes <= 900, "Time must be 15-900 minutes."); const inc = lines(f.includes); const svc = { label: clean(f.label, 60) || B().services[id].label, price, minutes, supply: numOrNull(f.supply, "Supply cost", 1000), supplyEstimated: f.supplyEstimated === "on", includes: inc, excludes: lines(f.excludes), description: clean(f.description, 200) }; const c = banned(inc.join(" ")); need(!c.length, `"Included" mentions something you haven't confirmed: ${c.join(", ")}.`); const services = JSON.parse(JSON.stringify(B().services)); services[id] = svc; return saveBiz({ services }); }, "Service saved."),
+    addon: () => run(() => { const name = clean(f.name, 60); need(name, "Name is required."); const a = { id: id || slug(name) || "addon_" + Date.now(), name, price: numOrNull(f.price, "Price", 2000), supply: numOrNull(f.supply, "Supply cost", 1000), minutes: f.minutes === "" ? null : Math.max(0, Math.min(600, parseInt(f.minutes, 10) || 0)) }; const list2 = B().addons.filter((x) => x.id !== a.id); need(id || !B().addons.some((x) => x.id === a.id), "An add-on with that name already exists."); const idx = B().addons.findIndex((x) => x.id === id); if (idx >= 0) list2.splice(idx, 0, a); else list2.push(a); return saveBiz({ addons: list2 }); }, "Add-on saved."),
+    condition: () => run(() => saveBiz({ condition: { light: Number(String(f.light || "0").replace(/[$,\s]/g, "")) || 0, medium: 0, heavy: numOrNull(f.heavy, "Heavy extra", 1000) } }), "Saved."),
+    capacity: () => run(() => { const wd = [0, 1, 2, 3, 4, 5, 6].filter((d) => f["wd_" + d] === "on"); need(wd.length, "Pick at least one work day."); const mj = parseInt(f.maxJobs, 10), hp = Number(f.hoursPerDay); need(mj >= 1 && mj <= 10, "Max cars per day must be 1-10."); need(hp >= 1 && hp <= 16, "Work hours must be 1-16."); return saveBiz({ capacity: { workDays: wd, maxJobs: mj, hoursPerDay: hp }, targets: { prospect: Math.max(0, parseInt(f.prospect, 10) || 0), postsPerWeek: Math.max(0, parseInt(f.postsPerWeek, 10) || 0) }, sla: { replyHours: Math.max(1, parseInt(f.replyHours, 10) || 2), maxFollowups: Math.max(1, parseInt(f.maxFollowups, 10) || 2) } }); }, "Saved."),
+    costs: () => run(() => { const fees = {}; for (const p of PAY) fees[p] = numOrNull(f["fee_" + p], payLabel(p) + " fee", 20); return saveBiz({ costs: { ownerRate: numOrNull(f.ownerRate, "Hourly value", 500), overheadMonthly: numOrNull(f.overheadMonthly, "Monthly overhead", 100000), fees } }); }, "Cost settings saved."),
+    expense: () => run(async () => { const amount = num(f.amount, "Amount"); need(amount && amount > 0, "Enter the amount."); need(EXPENSE_CATS.includes(f.category), "Pick a category."); need(clean(f.note), "Say what it was for."); await put("expenses", newId("expenses"), { date: isDate(f.date) ? f.date : today(), amount, category: f.category, channel: f.category === "marketing" && sources().includes(f.channel) ? f.channel : "", note: clean(f.note, 200) }); }, "Expense added."),
+    experiment: () => run(async () => { const days = parseInt(f.days, 10); need(days >= 3 && days <= 90, "Run it for 3-90 days."); need(isDate(f.start), "Pick a start date."); need(sources().includes(f.channel), "Pick a channel."); await put("experiments", newId("experiments"), { name: clean(f.name, 100), channel: f.channel, change: clean(f.change, 200), start: f.start, end: plusDays(days - 1, f.start), result: "" }); }, "Experiment started. Change only this one thing."),
+    expresult: () => run(() => put("experiments", id, Object.assign({}, S.experiments.get(id), { result: clean(f.result, 300) })), "Saved."),
+    channel: () => run(() => { const label = clean(f.label, 60); need(label, "Name the channel."); const key = "c_" + slug(label); need(!sources().includes(key), "You already track that channel."); return saveBiz({ channels: (B().channels || []).concat([{ key, label }]) }); }, "Channel added."),
+    growth: () => run(() => { const i2q = Number(f.i2q), q2b = Number(f.q2b); need(i2q >= 1 && i2q <= 100 && q2b >= 1 && q2b <= 100, "Percentages must be 1-100."); return saveBiz({ targets: { monthlyRevenue: numOrNull(f.target, "Goal", 100000) }, assumptions: { avgJob: numOrNull(f.avgJob, "Average job", 5000), inquiryToQuote: i2q / 100, quoteToBook: q2b / 100 } }); }, "Saved."),
+    policy: () => run(() => { const txt = clean(f.text, 1000); need(txt, "A policy can't be empty."); const reviewed = f.reviewed === "on"; const pols = Object.assign({}, B().policies); pols[id] = reviewed ? txt.replace(/^DRAFT[^:]*:\s*/i, "") : txt; const rv = Object.assign({}, B().policyReviewed || {}); rv[id] = reviewed; return saveBiz({ policies: pols, policyReviewed: rv }); }, "Policy saved."),
   };
   if (handlers[form.dataset.form]) handlers[form.dataset.form]();
 });
@@ -958,20 +1566,76 @@ function oppFromForm(f, base) {
   return o;
 }
 
-let downloads = null;
-async function saveBackup() {
-  const data = { saved: new Date().toISOString(), settings: S.settings };
-  COLS.forEach((c) => { data[c] = all(c); });
-  if (!downloads) return toast("Saving files isn't available in this view. Your data is still stored safely.", true);
-  try { await downloads.save({ filename: `carbon-force-backup-${today()}.json`, data: JSON.stringify(data, null, 1) }); }
-  catch (e) { toast("Backup wasn't saved.", true); }
+// ---------------------------------------------------------------- backup + restore
+let downloads = null, restoreState = {};
+const BACKUP_FORMAT = "carbon-force-backup";
+function snapshotData(note) {
+  const collections = {}; COLS.forEach((c) => { collections[c] = all(c); });
+  return { format: BACKUP_FORMAT, version: 2, saved: new Date().toISOString(), note: note || "", settings: S.settings, business: S.biz, meta: S.meta, collections };
 }
+async function saveBackup() {
+  if (!downloads) return toast("Saving files isn't available in this view. Your data is still in your Claude storage.", true);
+  try {
+    const res = await downloads.save({ filename: `carbon-force-backup-${today()}.json`, data: JSON.stringify(snapshotData("manual backup"), null, 1) });
+    if (res === "saved" || (res && res.status === "saved") || res === undefined) { await saveMeta({ lastBackup: today() }); toast("Backup file saved."); render(true); }
+    else toast("Backup wasn't saved.", true);
+  } catch (e) { toast("Backup wasn't saved.", true); }
+}
+const ID_OK = /^(?!\.\.?$)[A-Za-z0-9_\-.~:@+]{1,200}$/;
+function validateBackup(d) {
+  // Accepts this app's backups (v2), the in-app pre-upgrade snapshot, and the older v1 file. Rejects anything else.
+  need(d && typeof d === "object" && !Array.isArray(d), "That file isn't a Carbon Force backup.");
+  let cols = d.collections;
+  if (!cols) { need(Array.isArray(d.leads) && d.saved, "That file isn't a Carbon Force backup."); cols = {}; COLS.forEach((c) => { if (Array.isArray(d[c])) cols[c] = d[c]; }); }
+  else need(d.format === BACKUP_FORMAT, "That file isn't a Carbon Force backup.");
+  need(typeof cols === "object" && !Array.isArray(cols), "The backup's records are damaged.");
+  const out = {};
+  for (const c of Object.keys(cols)) {
+    need(COLS.includes(c), `The backup has an unknown section "${c}". Nothing was restored.`);
+    need(Array.isArray(cols[c]), `Section "${c}" is damaged. Nothing was restored.`);
+    out[c] = cols[c].map((r, i) => { need(r && typeof r === "object" && !Array.isArray(r), `Record ${i + 1} in "${c}" is damaged. Nothing was restored.`); need(typeof r.id === "string" && ID_OK.test(r.id), `Record ${i + 1} in "${c}" has no valid ID. Nothing was restored.`); return r; });
+  }
+  for (const l of out.leads || []) need(typeof l.name === "string" && l.name, "A lead in the backup has no name. Nothing was restored.");
+  for (const j of out.jobs || []) need(isFinite(Number(j.price)), "A job in the backup has no price. Nothing was restored.");
+  const cfg = {};
+  if (d.settings && typeof d.settings === "object") cfg.settings = d.settings;
+  if (d.business && typeof d.business === "object") cfg.business = d.business;
+  return { cols: out, cfg };
+}
+function prepareRestore(data, label) {
+  try {
+    const v = validateBackup(data);
+    const counts = Object.keys(v.cols).map((c) => { const n = v.cols[c].length; const over = v.cols[c].filter((r) => S[c].has(r.id)).length; return n ? `${n} ${c}${over ? ` (${over} replace current)` : ""}` : ""; }).filter(Boolean);
+    restoreState = { v, preview: `${label}: ${counts.join(", ") || "no records"}${v.cfg.settings ? ", setup" : ""}${v.cfg.business ? ", services & prices" : ""}.`, error: "" };
+  } catch (e) { restoreState = { error: e instanceof VErr ? e.message : "Couldn't read that file." }; }
+}
+function readRestoreFile(file) {
+  if (!file) return;
+  if (file.size > 5 * 1024 * 1024) { restoreState = { error: "That file is too big to be a Carbon Force backup." }; return render(true); }
+  const r = new FileReader();
+  r.onload = () => { let d; try { d = JSON.parse(r.result); } catch (_) { restoreState = { error: "That file isn't valid JSON. Nothing was restored." }; return render(true); } prepareRestore(d, file.name); render(true); };
+  r.onerror = () => { restoreState = { error: "Couldn't read that file." }; render(true); };
+  r.readAsText(file);
+}
+async function doRestore() {
+  need(restoreState.v, "Choose a backup file first.");
+  const { cols, cfg } = restoreState.v;
+  const snap = JSON.stringify(snapshotData("safety snapshot before restore"));
+  if (snap.length < 240000) await put("backups", "auto-" + Date.now(), JSON.parse(snap));
+  else need(confirmBig, "Your current data is too big for an in-app snapshot. Save a backup file first, then restore again.");
+  let n = 0;
+  for (const c of Object.keys(cols)) for (const r of cols[c]) { await put(c, r.id, r); n++; }
+  if (cfg.settings) await saveSettings(cfg.settings);
+  if (cfg.business) { await db.doc("config/business").set(JSON.parse(JSON.stringify(cfg.business))); S.biz = cfg.business; rebuildBiz(); }
+  restoreState = {}; toast(`Restored ${n} record(s). A safety snapshot of the previous data was saved.`);
+}
+let confirmBig = false;
 
 // ---------------------------------------------------------------- boot
 let gate = "";
 (function boot() {
   const h = (location.hash || "").slice(1);
-  if (["agent", "today", "leads", "book", "work", "posts", "replies", "prospects", "plan", "weekly", "setup", "more"].includes(h)) view = h;
+  if (VIEWS[h] && !["lead", "post", "newlead"].includes(h)) view = h;
   render(true);
 })();
 (async function connect() {
@@ -982,11 +1646,17 @@ let gate = "";
   if (u) { try { if (!(await u.isOwner())) { readOnly = true; gate = `<div class="card bad"><h2>Private business tool</h2><p>This page belongs to someone else, and its data is private.</p></div>`; sync.textContent = ""; return render(true); } } catch (_) {} }
   if (!d) { sync.textContent = "Not connected"; gate = `<div class="card bad"><h2>Storage isn't connected</h2><p>Reopen this page from its claude.ai link while signed in. Your data is safe - it just can't load in this view.</p></div>`; return render(true); }
   db = d; gate = "";
-  const done = (name) => { S.loaded.add(name); sync.textContent = S.loaded.size >= COLS.length + 1 ? "Saved ✓" : "Loading…"; render(); };
+  const need2 = COLS.length + CONFIG_DOCS.length;
+  const done = (name) => { S.loaded.add(name); sync.textContent = S.loaded.size >= need2 ? "Saved ✓" : "Loading…"; render(); };
   const fail = (e) => { sync.textContent = "Connection lost - reload"; console.warn(e && e.code); };
   COLS.forEach((c) => db.collection(c).onSnapshot((snap) => { S[c] = new Map(snap.docs.map((x) => [x.id, Object.assign({ id: x.id }, x.data())])); done(c); }, fail));
+  db.collection("backups").onSnapshot((snap) => { S.backups = new Map(snap.docs.map((x) => [x.id, Object.assign({ id: x.id }, x.data())])); render(); }, fail);
   db.doc("config/activejob").onSnapshot((snap) => { S.active = snap.exists ? Object.assign({}, snap.data()) : null; render(); }, fail);
-  db.doc("config/settings").onSnapshot((snap) => { S.settings = snap.exists ? Object.assign({}, snap.data()) : {}; done("settings"); }, fail);
+  db.doc("config/settings").onSnapshot((snap) => { S.settings = snap.exists ? Object.assign({}, snap.data()) : {}; rebuildBiz(); done("settings"); }, fail);
+  db.doc("config/business").onSnapshot((snap) => { S.biz = snap.exists ? Object.assign({}, snap.data()) : {}; rebuildBiz(); done("business"); }, fail);
+  db.doc("config/meta").onSnapshot((snap) => { S.meta = snap.exists ? Object.assign({}, snap.data()) : {}; done("meta"); }, fail);
 })();
+if (window.__CF_TEST__) window.__cf = { jobEcon, quoteFor, channelStats, growthPlan, attentionQueue, validateBackup, moneySummary, B, S };
 })();
+
 </script>
