@@ -1,0 +1,202 @@
+[
+  {
+    "id": "price",
+    "group": "Inquiries",
+    "title": "\"How much do you charge?\"",
+    "when": "First reply to a price question. Answer the price straight away - don't make them ask twice.",
+    "next_step": "Mark as Replied (or Quote Sent if they named a service).",
+    "text": "Hey {name}! Prices are simple:\n\nInterior - {price_interior}\nExterior - {price_exterior}\nBoth inside and out - {price_full}\n\nIt's drop-off at my garage in {area_line}. What kind of car is it, and which one were you thinking?"
+  },
+  {
+    "id": "location",
+    "group": "Inquiries",
+    "title": "\"Where are you located?\"",
+    "when": "Give the general area. Send the exact address only once they've booked.",
+    "next_step": "Mark as Replied.",
+    "text": "I'm in {area_line}. It's a garage setup, so it's drop-off - you leave the car with me and pick it up when it's done. I'll send the exact address once we lock in a time. Want me to send you what I have open?"
+  },
+  {
+    "id": "come_to_me",
+    "group": "Inquiries",
+    "title": "\"Do you come to me?\"",
+    "when": "Mobile requests. Be clear and friendly - don't leave any doubt.",
+    "next_step": "Mark as Replied. If they can't drop off, mark Lost with reason 'needs mobile'.",
+    "text": "I don't, sorry - I'm drop-off only right now. Everything I use is set up in my garage in {area_line}. If you're able to drop it off, I'd be happy to take care of it. {hours_line}."
+  },
+  {
+    "id": "full_package",
+    "group": "Inquiries",
+    "title": "\"What does the $140 package include?\"",
+    "when": "Explaining the full package. Only list what you actually do (it comes from Settings).",
+    "next_step": "Mark Quote Sent with service 'full'.",
+    "text": "The {price_full} package is both services in one drop-off:\n\nInside: {interior_includes}.\nOutside: {exterior_includes}.\n\n{turnaround_line}. Want me to send you some drop-off times?"
+  },
+  {
+    "id": "availability",
+    "group": "Inquiries",
+    "title": "\"Do you have availability?\"",
+    "when": "Only real open slots from the Booking page are listed. If none are listed, add slots first - never guess.",
+    "next_step": "After they pick one, use 'Offer this slot' on the lead, then Confirm once they say yes.",
+    "text": "Here's what I have open right now:\n\n{open_times}\n\nWhich one works for you? Once you pick, I'll hold it and send the address."
+  },
+  {
+    "id": "pet_or_stain",
+    "group": "Inquiries",
+    "title": "Pet hair / old stain / \"can you get this out?\"",
+    "when": "Don't promise results you haven't seen. Ask for a photo.",
+    "next_step": "Mark as Replied, follow up in 1 day.",
+    "text": "Can you send me a picture of it? I'd rather tell you honestly what to expect before you book than promise something and have you disappointed."
+  },
+  {
+    "id": "no_reply_1",
+    "group": "Follow-ups",
+    "title": "No reply - first nudge (2 days)",
+    "when": "They asked, you answered, then silence. One light nudge.",
+    "next_step": "Use 'Log follow-up' and set next follow-up in 4 days.",
+    "text": "Hey {name}, just checking back in case my last message got buried. Still want to get the car cleaned? No worries either way."
+  },
+  {
+    "id": "no_reply_2",
+    "group": "Follow-ups",
+    "title": "No reply - last message (about a week later)",
+    "when": "Final follow-up. After this, mark Lost - don't keep messaging.",
+    "next_step": "Log follow-up with no next date, then mark Lost (reason: no response).",
+    "text": "Last one from me so I'm not blowing up your phone - if you ever want the car done, just text me. Interior {price_interior}, exterior {price_exterior}, both {price_full}. Take care!"
+  },
+  {
+    "id": "quote_followup",
+    "group": "Follow-ups",
+    "title": "Quote sent, no decision yet",
+    "when": "They got a price but didn't pick a time.",
+    "next_step": "Log follow-up, next in 3 days.",
+    "text": "Hey {name}, any thoughts on the {service_label}? Happy to send you the open drop-off times if you want to grab one."
+  },
+  {
+    "id": "booking_confirmation",
+    "group": "Appointments",
+    "title": "Booking confirmation",
+    "when": "Right after they say yes to a time. Then press Confirm on the appointment.",
+    "next_step": "Confirm the appointment in the app.",
+    "text": "You're all set, {name}!\n\n{appt_service} - {appt_price}\nDrop-off: {appt_date} at {appt_time}\nWhere: {private_address}\n\n{turnaround_line}. I take {payment_methods}. Please take out anything valuable before drop-off. If anything changes, just text me."
+  },
+  {
+    "id": "reminder",
+    "group": "Appointments",
+    "title": "Reminder (day before)",
+    "when": "The day before a confirmed appointment.",
+    "next_step": "Press 'Reminder sent' on the appointment.",
+    "text": "Hey {name}, quick reminder - drop-off is tomorrow ({appt_date}) at {appt_time} for the {appt_service}. Still good?"
+  },
+  {
+    "id": "ready_pickup",
+    "group": "Appointments",
+    "title": "Car is ready",
+    "when": "When you finish the job.",
+    "next_step": "Mark the job completed and record payment.",
+    "text": "Your car's ready, {name}! Come by whenever works for you. Total is {appt_price} ({payment_methods})."
+  },
+  {
+    "id": "reschedule",
+    "group": "Appointments",
+    "title": "They need to reschedule / cancel",
+    "when": "Keep it easy. Cancel the appointment in the app so the slot opens back up.",
+    "next_step": "Cancel the appointment (the slot re-opens automatically).",
+    "text": "No problem at all. Here's what else I have open:\n\n{open_times}\n\nJust let me know which one works."
+  },
+  {
+    "id": "review_request",
+    "group": "After the job",
+    "title": "Review request (day after)",
+    "when": "The day after a completed, paid job. Ask once. Never offer anything in exchange, and never ask only happy customers.",
+    "next_step": "Press 'Review requested' on the lead.",
+    "text": "Thanks again for bringing your car in, {name}. If you have a minute, an honest review would really help a one-person shop like mine: {review_link}\n\nAnd if anything wasn't right, tell me directly - I'd rather fix it."
+  },
+  {
+    "id": "referral_ask",
+    "group": "After the job",
+    "title": "Referral ask",
+    "when": "With a happy customer, a few days after the job.",
+    "next_step": "Log follow-up.",
+    "text": "Hey {name}, if you know anyone who needs their car cleaned, I'd really appreciate you passing my number along. Most of my customers come from people telling people."
+  },
+  {
+    "id": "repeat_offer",
+    "group": "After the job",
+    "title": "Repeat booking (about 5 weeks later)",
+    "when": "Repeat follow-up date reached. No fake discounts - just a reminder.",
+    "next_step": "Press 'Repeat offer sent' (next reminder in 60 days).",
+    "text": "Hey {name}, it's been about a month since I did your car. If it's ready for another round, I've got a few drop-off times open:\n\n{open_times}\n\nSame prices: interior {price_interior}, exterior {price_exterior}, both {price_full}."
+  },
+  {
+    "id": "group_recommendation",
+    "group": "Community groups",
+    "title": "Answering a \"Can anyone recommend a detailer?\" post",
+    "when": "When someone in a local group asks for a recommendation. Reply once; don't argue with other recommendations.",
+    "next_step": "Log the effort under facebook_group. If they message you, add them as a lead.",
+    "text": "I do detailing out of my garage in {area_line} - {business}. Drop-off only. Interior {price_interior}, exterior {price_exterior}, both {price_full}. Happy to answer questions, feel free to message me."
+  },
+  {
+    "id": "partner_intro",
+    "group": "Partnerships",
+    "title": "Intro to a local business (in person or via their public business contact)",
+    "when": "One personal message to a business's PUBLIC business contact. Never mass-send. If they don't answer, one follow-up max.",
+    "next_step": "Update the opportunity status to 'contacted' and set a follow-up date 7 days out.",
+    "text": "Hi, I'm {owner_first_name} - I run {business}, a small drop-off detailing shop in {area_line}. I'm reaching out to a few local businesses to see if you'd be open to me leaving a few flyers, or if your customers ever ask about car cleaning. Interior {price_interior}, exterior {price_exterior}, both {price_full}. Totally fine if it's not a fit - thanks for reading."
+  },
+  {
+    "id": "first_response",
+    "group": "Inquiries",
+    "title": "First response to a new inquiry",
+    "when": "The first reply to anyone who messages you. Fast and friendly.",
+    "next_step": "Tap \"I replied\" on the lead.",
+    "text": "Hey {name}, thanks for reaching out! I'd be glad to help. What kind of car is it, and are you thinking interior, exterior, or both? It's drop-off at my garage in {area_line}, and {turnaround_line}."
+  },
+  {
+    "id": "pre_quote_questions",
+    "group": "Inquiries",
+    "title": "Questions to ask before quoting",
+    "when": "Before you give an exact price. Photos stop surprises at pickup.",
+    "next_step": "When they answer, send the quote.",
+    "text": "Happy to give you an exact price. A few quick questions:\n\n1. What's the year, make and model?\n2. Interior, exterior, or both?\n3. Any pet hair, stains or anything I should know about?\n4. Could you send 2-3 photos of the inside (front seats, back seat, floor)?\n\nThat way the price I give you is the price you pay."
+  },
+  {
+    "id": "send_quote",
+    "group": "Inquiries",
+    "title": "Sending a quote",
+    "when": "Once you know the car and what they want.",
+    "next_step": "Use the Quote form on the lead, then follow up in a couple of days.",
+    "text": "Thanks {name}! For your car, the {service_label} would be {quote_price}. That's drop-off at my garage in {area_line}, {hours_line}, and {turnaround_line}. I take {payment_methods}.\n\nHere's what I have open:\n{open_times}\n\nWant me to hold one of those for you?"
+  },
+  {
+    "id": "service_limits",
+    "group": "Inquiries",
+    "title": "Explaining what you don't offer",
+    "when": "When someone asks for a service you don't do yet.",
+    "next_step": "If that's all they wanted, mark the lead Lost with reason \"service not offered\".",
+    "text": "Thanks for asking, {name}. Right now I don't offer {excludes_line}. I'm drop-off only at my garage in {area_line}. What I do offer is interior ({price_interior}), exterior ({price_exterior}) or both ({price_full}). If that works for you, I'd be glad to help."
+  },
+  {
+    "id": "payment_request",
+    "group": "After the job",
+    "title": "Requesting payment",
+    "when": "When a finished job still has a balance.",
+    "next_step": "Record the payment on the lead when it comes in.",
+    "text": "Hi {name}, thanks again for bringing your car in! Your total is {job_total} and the remaining balance is {balance}. You can pay with {payment_methods}. Let me know if you have any questions."
+  },
+  {
+    "id": "booking_terms",
+    "group": "Appointments",
+    "title": "Booking terms",
+    "when": "Send with a confirmation if you want customers to know your policies up front. Review your policies first (More > Policies & readiness).",
+    "next_step": "Confirm the appointment.",
+    "text": "A few quick notes before your drop-off:\n\n- {policy_deposit}\n- {policy_cancel}\n- {policy_late}\n- {policy_belongings}\n- {policy_condition}\n\nThanks, {name}. See you soon!"
+  },
+  {
+    "id": "reconnect",
+    "group": "After the job",
+    "title": "Reconnecting with a past customer",
+    "when": "Someone you detailed a while ago. Only people who've done business with you.",
+    "next_step": "Tap \"Reconnect message sent\" on the lead.",
+    "text": "Hi {name}, it's been a little while since I detailed your car. If it's ready for another round, here's what I have open:\n\n{open_times}\n\nSame prices as before. No pressure at all."
+  }
+]
