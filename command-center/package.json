@@ -1,0 +1,42 @@
+{
+  "name": "trading-command-center",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Stock & ETF analysis, trade planning, paper trading and monitoring for a small account. Paper trading only; real orders require the user to place them.",
+  "engines": {
+    "node": ">=20.11"
+  },
+  "scripts": {
+    "dev": "node scripts/dev.mjs",
+    "dev:server": "tsx watch src/server/index.ts",
+    "dev:client": "vite",
+    "build": "tsc --noEmit -p tsconfig.json && vite build",
+    "start": "vite build && NODE_ENV=production tsx src/server/index.ts",
+    "monitor": "tsx src/monitor/worker.ts",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit -p tsconfig.json"
+  },
+  "dependencies": {
+    "better-sqlite3": "^12.4.1",
+    "express": "^5.1.0",
+    "lightweight-charts": "^5.0.9",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0",
+    "tsx": "^4.21.0",
+    "zod": "^4.1.12"
+  },
+  "devDependencies": {
+    "@tailwindcss/vite": "^4.1.14",
+    "@types/better-sqlite3": "^7.6.13",
+    "@types/express": "^5.0.3",
+    "@types/node": "^24.7.0",
+    "@types/react": "^19.2.0",
+    "@types/react-dom": "^19.2.0",
+    "@vitejs/plugin-react": "^5.0.4",
+    "tailwindcss": "^4.1.14",
+    "typescript": "~5.9.3",
+    "vite": "^7.1.9",
+    "vitest": "^3.2.4"
+  }
+}
