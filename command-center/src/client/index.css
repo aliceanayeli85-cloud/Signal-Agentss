@@ -1,0 +1,33 @@
+@import 'tailwindcss';
+
+@theme {
+  --color-bg: #0b0f14;
+  --color-panel: #121821;
+  --color-panel2: #18202b;
+  --color-line: #243041;
+  --color-ink: #e6edf3;
+  --color-dim: #8b98a9;
+  --color-up: #2fd07a;
+  --color-down: #ff5c5c;
+  --color-warn: #ffb020;
+  --color-info: #4aa8ff;
+  --color-paper: #8b5cf6;
+}
+
+html,
+body {
+  background: var(--color-bg);
+  color: var(--color-ink);
+  font-family: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.num {
+  font-variant-numeric: tabular-nums;
+}
+
+input,
+select,
+textarea {
+  font-size: 16px; /* stops iOS zooming into inputs */
+}
