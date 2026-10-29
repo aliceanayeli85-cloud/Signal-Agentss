@@ -81,17 +81,21 @@ export class AlpacaProvider implements MarketDataProvider {
     const perDay: Record<Timeframe, number> = { '1Day': 1, '1Hour': 16, '15Min': 64, '5Min': 192 };
     const daysBack = Math.ceil((raw / perDay[timeframe]) * 1.5) + 10;
     const start = new Date(Date.now() - daysBack * 86_400_000).toISOString();
-    const url = `${this.cfg.dataUrl}/v2/stocks/${encodeURIComponent(symbol)}/bars?timeframe=${timeframe}&start=${start}&limit=${raw}&sort=desc&adjustment=split&feed=${this.cfg.feed}`;
-    const body = (await this.get(url)) as { bars?: unknown } | null;
-    if (!body || (body.bars !== null && body.bars !== undefined && !Array.isArray(body.bars))) {
-      throw new DataError('MALFORMED', 'Alpaca returned an unexpected bars response.');
-    }
-    const list = (body.bars ?? []) as Record<string, unknown>[];
+    const base = `${this.cfg.dataUrl}/v2/stocks/${encodeURIComponent(symbol)}/bars?timeframe=${timeframe}&start=${start}&limit=${raw}&sort=desc&adjustment=split&feed=${this.cfg.feed}`;
+    // Alpaca can return fewer bars than `limit` per page, with a token for the next page.
     const candles: Candle[] = [];
-    for (const b of list) {
-      const t = Date.parse(String(b.t));
-      const c = { t, o: Number(b.o), h: Number(b.h), l: Number(b.l), c: Number(b.c), v: Number(b.v) };
-      if ([c.t, c.o, c.h, c.l, c.c, c.v].every(Number.isFinite)) candles.push(c);
+    let token: string | null = null;
+    for (let page = 0; page < 10 && candles.length < raw; page++) {
+      const body = (await this.get(token ? `${base}&page_token=${encodeURIComponent(token)}` : base)) as { bars?: unknown; next_page_token?: unknown } | null;
+      if (!body || (body.bars !== null && body.bars !== undefined && !Array.isArray(body.bars))) {
+        throw new DataError('MALFORMED', 'Alpaca returned an unexpected bars response.');
+      }
+      for (const b of (body.bars ?? []) as Record<string, unknown>[]) {
+        const c = { t: Date.parse(String(b.t)), o: Number(b.o), h: Number(b.h), l: Number(b.l), c: Number(b.c), v: Number(b.v) };
+        if ([c.t, c.o, c.h, c.l, c.c, c.v].every(Number.isFinite)) candles.push(c);
+      }
+      token = typeof body.next_page_token === 'string' && body.next_page_token ? body.next_page_token : null;
+      if (!token) break;
     }
     if (!candles.length) throw new DataError('NOT_FOUND', `No ${timeframe} candles were returned for ${symbol}. Check the ticker.`);
     return candles.reverse();

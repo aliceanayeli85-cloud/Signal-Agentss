@@ -303,6 +303,18 @@ describe('Alpaca provider parsing and failures', () => {
     const b = await p.bars('SPY', '1Day', 2);
     expect(b.map((c) => c.c)).toEqual([1.5, 2.5]);
   });
+  it('follows next_page_token until it has enough bars', async () => {
+    const urls: string[] = [];
+    const paged = (async (url: string) => {
+      urls.push(url);
+      const second = url.includes('page_token=abc');
+      const bars = second ? [{ t: '2026-03-08T05:00:00Z', o: 1, h: 2, l: 0.5, c: 1, v: 1 }] : [{ t: '2026-03-10T05:00:00Z', o: 3, h: 4, l: 2, c: 3, v: 1 }, { t: '2026-03-09T05:00:00Z', o: 2, h: 3, l: 1, c: 2, v: 1 }];
+      return new Response(JSON.stringify({ bars, next_page_token: second ? null : 'abc' }), { status: 200 });
+    }) as typeof fetch;
+    const b = await new AlpacaProvider({ ...cfg, fetchImpl: paged }).bars('SPY', '1Day', 10);
+    expect(urls).toHaveLength(2);
+    expect(b.map((c) => c.c)).toEqual([1, 2, 3]);
+  });
   it('parses the market clock', async () => {
     const p = new AlpacaProvider({ ...cfg, fetchImpl: respond(200, { is_open: true, timestamp: '2026-03-10T15:00:00Z', next_open: '2026-03-11T13:30:00Z', next_close: '2026-03-10T20:00:00Z' }) as typeof fetch });
     expect((await p.clock()).isOpen).toBe(true);
