@@ -13,8 +13,14 @@ import type { Timeframe } from '../engine/types.js';
 import { env } from '../server/env.js';
 import { AlpacaProvider } from '../server/providers/alpaca.js';
 import { DATA_RANGE, PERIODS, RESEARCH_TICKERS } from './config.js';
+import { readFileSync } from 'node:fs';
+import type { Candle } from '../engine/types.js';
 import { cleanDaily, day, loadSeries, saveSeries, type DataCheck } from './data.js';
-import { inRange, summarize, type ResearchTrade } from './stats.js';
+import { stage1, stage2, type Stage1 } from './decision.js';
+import { runStrategy } from './harness.js';
+import { buyAndHoldPct, inRange, summarize, type ResearchTrade, type Summary } from './stats.js';
+import { CANDIDATES } from './strategies.js';
+import { SLIPPAGE_BPS } from './config.js';
 
 const RESULTS = resolve(process.cwd(), 'research/results');
 
@@ -183,8 +189,118 @@ async function audit() {
   console.log(JSON.stringify({ counts, violations: Object.fromEntries(Object.entries(violations).map(([k, v]) => [k, v.length])) }, null, 2));
 }
 
+// ---------------------------------------------------------------------------
+// Candidate evaluation
+// ---------------------------------------------------------------------------
+
+const STRATEGY_IDS = ['C0_BASELINE_AUDITED', ...CANDIDATES.map((c) => c.id)];
+const STRATEGY_NAMES: Record<string, string> = { C0_BASELINE_AUDITED: 'Baseline (audited engine)', ...Object.fromEntries(CANDIDATES.map((c) => [c.id, c.name])) };
+
+function runOne(id: string, sym: string, candles: Candle[], slippageBps: number): ResearchTrade[] {
+  const settings = { ...DEFAULT_SETTINGS, slippageBps };
+  if (id === 'C0_BASELINE_AUDITED') return toResearch(sym, id, runBacktest(candles, { timeframe: '1Day', settings, maxHoldBars: 20, warmupBars: 60, outOfSampleFraction: 0.3 }).trades);
+  return runStrategy(sym, candles, CANDIDATES.find((c) => c.id === id)!, settings);
+}
+
+type Range = { start: string; end: string };
+const yearRanges = (from: number, to: number): (Range & { id: string })[] => Array.from({ length: to - from + 1 }, (_, k) => ({ id: String(from + k), start: `${from + k}-01-01`, end: `${from + k}-12-31` }));
+
+/** Pooled = every ticker's trades together. Exposure is the average of per-ticker exposure; return is on the combined $100 × tickers. */
+function pooled(byTicker: Record<string, ResearchTrade[]>, bars: Record<string, Candle[]>, r: Range): Summary & { perTicker: Record<string, Summary> } {
+  const perTicker: Record<string, Summary> = {};
+  const all: ResearchTrade[] = [];
+  for (const [sym, ts] of Object.entries(byTicker)) {
+    const inP = ts.filter((t) => inRange(t.entryTime, r.start, r.end));
+    perTicker[sym] = summarize(inP, bars[sym]!.filter((b) => inRange(b.t, r.start, r.end)), DEFAULT_SETTINGS.startingCapitalUsd);
+    all.push(...inP);
+  }
+  const syms = Object.keys(byTicker);
+  const sum = summarize(all, [], DEFAULT_SETTINGS.startingCapitalUsd * syms.length);
+  sum.exposurePct = syms.reduce((a, k) => a + perTicker[k]!.exposurePct, 0) / syms.length;
+  return { ...sum, perTicker };
+}
+
+function benchmarks(r: Range) {
+  return Object.fromEntries(RESEARCH_TICKERS.map((sym) => [sym, buyAndHoldPct(loadSeries('sip-daily-all', sym), r.start, r.end)]));
+}
+
+async function validate() {
+  const cutoff = Date.parse('2023-01-01T00:00:00Z');
+  const train = PERIODS[0];
+  const val = PERIODS[1];
+  const bars: Record<string, Candle[]> = {};
+  for (const sym of RESEARCH_TICKERS) bars[sym] = loadSeries('sip-daily-split', sym).filter((b) => b.t < cutoff); // final-test candles are not even loaded
+  const strategies: Record<string, unknown> = {};
+  const decisions: Record<string, Stage1> = {};
+  for (const id of STRATEGY_IDS) {
+    const res: Record<string, Record<string, ResearchTrade[]>> = {};
+    for (const bps of [SLIPPAGE_BPS.base, SLIPPAGE_BPS.stressed]) {
+      res[bps] = {};
+      for (const sym of RESEARCH_TICKERS) res[bps]![sym] = runOne(id, sym, bars[sym]!, bps);
+    }
+    const base = res[SLIPPAGE_BPS.base]!;
+    const stressed = res[SLIPPAGE_BPS.stressed]!;
+    const out = {
+      name: STRATEGY_NAMES[id],
+      train: pooled(base, bars, train),
+      validation: pooled(base, bars, val),
+      trainStressed: pooled(stressed, bars, train),
+      validationStressed: pooled(stressed, bars, val),
+      years: Object.fromEntries(yearRanges(2016, 2022).map((y) => [y.id, pooled(base, bars, y)])),
+      trades: Object.values(base).flat(),
+    };
+    decisions[id] = stage1({ defects: [], train: out.train, validation: out.validation, validationStressed: out.validationStressed });
+    strategies[id] = { ...out, decision: decisions[id] };
+    const v = out.validation;
+    console.log(`${id}: train ${out.train.trades}t ${fmt(out.train.expectancyR)} | validation ${v.trades}t ${fmt(v.expectancyR)} PF ${v.profitFactor?.toFixed(2)} | @15bps ${fmt(out.validationStressed.expectancyR)} → ${decisions[id]!.rejected ? 'REJECTED' : decisions[id]!.advance ? 'ADVANCES' : 'does not advance'}`);
+  }
+  writeOnce('validation-v1.json', JSON.stringify({ version: 1, recordedAt: new Date().toISOString(), dataCutoff: '2022-12-31', benchmarks: { train: benchmarks(train), validation: benchmarks(val) }, decisions, strategies }, null, 2));
+}
+
+async function final() {
+  const vpath = resolve(RESULTS, 'validation-v1.json');
+  if (!existsSync(vpath)) throw new Error('Run validate first: the final test may only be evaluated after validation decisions are recorded.');
+  const decisions = JSON.parse(readFileSync(vpath, 'utf8')).decisions as Record<string, Stage1>;
+  const bars: Record<string, Candle[]> = {};
+  for (const sym of RESEARCH_TICKERS) bars[sym] = loadSeries('sip-daily-split', sym);
+  const [train, val, test] = PERIODS;
+  const valPlusTest = { start: val.start, end: test.end };
+  const strategies: Record<string, unknown> = {};
+  for (const id of STRATEGY_IDS) {
+    const res: Record<number, Record<string, ResearchTrade[]>> = {};
+    for (const bps of [SLIPPAGE_BPS.base, SLIPPAGE_BPS.stressed]) {
+      res[bps] = {};
+      for (const sym of RESEARCH_TICKERS) res[bps]![sym] = runOne(id, sym, bars[sym]!, bps);
+    }
+    const base = res[SLIPPAGE_BPS.base]!;
+    const stressed = res[SLIPPAGE_BPS.stressed]!;
+    const testSum = pooled(base, bars, test);
+    const combined = pooled(base, bars, valPlusTest);
+    const verdict = stage2({
+      stage1: decisions[id]!,
+      test: testSum,
+      testStressed: pooled(stressed, bars, test),
+      perTickerExpectancyR: Object.entries(combined.perTicker).map(([symbol, s]) => ({ symbol, trades: s.trades, expectancyR: s.expectancyR })),
+    });
+    strategies[id] = {
+      name: STRATEGY_NAMES[id],
+      stage1: decisions[id],
+      verdict,
+      periods: { train: pooled(base, bars, train), validation: pooled(base, bars, val), test: testSum, all: pooled(base, bars, { start: train.start, end: test.end }) },
+      stressed: { train: pooled(stressed, bars, train), validation: pooled(stressed, bars, val), test: pooled(stressed, bars, test) },
+      validationPlusTest: combined,
+      years: Object.fromEntries(yearRanges(2016, 2026).map((y) => [y.id, pooled(base, bars, y)])),
+      trades: Object.values(base).flat(),
+    };
+    console.log(`${id}: test ${testSum.trades}t ${fmt(testSum.expectancyR)} PF ${testSum.profitFactor?.toFixed(2)} → ${verdict.verdict}`);
+  }
+  writeOnce('final-v1.json', JSON.stringify({ version: 1, recordedAt: new Date().toISOString(), benchmarks: { train: benchmarks(train), validation: benchmarks(val), test: benchmarks(test) }, strategies }, null, 2));
+}
+
+const fmt = (x: number | null) => (x === null ? 'n/a' : `${x >= 0 ? '+' : ''}${x.toFixed(3)}R`);
+
 const cmd = process.argv[2];
-const run = { fetch: fetchAll, baseline, audit } as Record<string, () => Promise<void>>;
+const run = { fetch: fetchAll, baseline, audit, validate, final } as Record<string, () => Promise<void>>;
 if (!cmd || !run[cmd]) {
   console.error(`Usage: npm run research -- <${Object.keys(run).join('|')}>`);
   process.exit(1);
