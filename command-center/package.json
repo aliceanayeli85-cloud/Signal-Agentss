@@ -15,7 +15,8 @@
     "start": "vite build && NODE_ENV=production tsx src/server/index.ts",
     "monitor": "tsx src/monitor/worker.ts",
     "test": "vitest run",
-    "typecheck": "tsc --noEmit -p tsconfig.json"
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "research": "tsx src/research/cli.ts"
   },
   "dependencies": {
     "better-sqlite3": "^12.4.1",

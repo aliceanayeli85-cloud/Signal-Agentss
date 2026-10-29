@@ -1,0 +1,296 @@
+{
+  "fetchedAt": "2026-10-29T01:34:46.631Z",
+  "source": "Alpaca Market Data v2",
+  "range": {
+    "start": "2016-01-01T00:00:00Z",
+    "end": "2026-10-28T00:00:00Z"
+  },
+  "datasets": {
+    "sip-daily-split/SPY": {
+      "sha256": "bec7ff8c14c326b2075776d444c687f495ee1efaa02bf7057deff315aacc9967",
+      "check": {
+        "bars": 2720,
+        "first": "2016-01-04",
+        "last": "2026-10-27",
+        "duplicatesRemoved": 0,
+        "invalidOhlc": 0,
+        "longGaps": []
+      }
+    },
+    "sip-daily-all/SPY": {
+      "sha256": "5723852b28c1b2984ddcdff68c9d2bf8e77ecc51701f5b2dab0144a04455e095",
+      "check": {
+        "bars": 2720,
+        "first": "2016-01-04",
+        "last": "2026-10-27",
+        "duplicatesRemoved": 0,
+        "invalidOhlc": 0,
+        "longGaps": []
+      }
+    },
+    "sip-daily-split/QQQ": {
+      "sha256": "483fcce6dd53dd543a3841885d168bad255d5495d83bd8667f251f3c70f1d74d",
+      "check": {
+        "bars": 2720,
+        "first": "2016-01-04",
+        "last": "2026-10-27",
+        "duplicatesRemoved": 0,
+        "invalidOhlc": 0,
+        "longGaps": []
+      }
+    },
+    "sip-daily-all/QQQ": {
+      "sha256": "dad51f28f3c298fbeed27d85c4aa29557c2902eb23f4175172a2d4fd0466c007",
+      "check": {
+        "bars": 2720,
+        "first": "2016-01-04",
+        "last": "2026-10-27",
+        "duplicatesRemoved": 0,
+        "invalidOhlc": 0,
+        "longGaps": []
+      }
+    },
+    "sip-daily-split/IWM": {
+      "sha256": "51708235aae55f7a177553e8728b1741c74ff8036995db2a54b724a76ace3b2e",
+      "check": {
+        "bars": 2720,
+        "first": "2016-01-04",
+        "last": "2026-10-27",
+        "duplicatesRemoved": 0,
+        "invalidOhlc": 0,
+        "longGaps": []
+      }
+    },
+    "sip-daily-all/IWM": {
+      "sha256": "40e600823266b5a54b1418b0aefea20943c62ef6e360fb334634aa1c758f7b0f",
+      "check": {
+        "bars": 2720,
+        "first": "2016-01-04",
+        "last": "2026-10-27",
+        "duplicatesRemoved": 0,
+        "invalidOhlc": 0,
+        "longGaps": []
+      }
+    },
+    "sip-daily-split/DIA": {
+      "sha256": "2559be2e947403c217573d2221269af49b929f3f2a613783d8f0ca1c8e8036b3",
+      "check": {
+        "bars": 2720,
+        "first": "2016-01-04",
+        "last": "2026-10-27",
+        "duplicatesRemoved": 0,
+        "invalidOhlc": 0,
+        "longGaps": []
+      }
+    },
+    "sip-daily-all/DIA": {
+      "sha256": "25270046c4353d07cad202801afd05720893282c53891cb5387a1ea74840e71d",
+      "check": {
+        "bars": 2720,
+        "first": "2016-01-04",
+        "last": "2026-10-27",
+        "duplicatesRemoved": 0,
+        "invalidOhlc": 0,
+        "longGaps": []
+      }
+    },
+    "sip-daily-split/XLF": {
+      "sha256": "45f90d5a10e4269d3887e6dc00a5ed3b5818ea6c2ae23ad3fa9e6a80ff00af3c",
+      "check": {
+        "bars": 2720,
+        "first": "2016-01-04",
+        "last": "2026-10-27",
+        "duplicatesRemoved": 0,
+        "invalidOhlc": 0,
+        "longGaps": []
+      }
+    },
+    "sip-daily-all/XLF": {
+      "sha256": "3cc11583bb4fd1b369e6560afb851307f1af8b0bf555211e9a608873cd6ec571",
+      "check": {
+        "bars": 2720,
+        "first": "2016-01-04",
+        "last": "2026-10-27",
+        "duplicatesRemoved": 0,
+        "invalidOhlc": 0,
+        "longGaps": []
+      }
+    },
+    "sip-daily-split/XLE": {
+      "sha256": "ef91bdedd01933fb84e4891ee805b046f1e0895e47d50a1f2bef16b8e92754ca",
+      "check": {
+        "bars": 2720,
+        "first": "2016-01-04",
+        "last": "2026-10-27",
+        "duplicatesRemoved": 0,
+        "invalidOhlc": 0,
+        "longGaps": []
+      }
+    },
+    "sip-daily-all/XLE": {
+      "sha256": "a266e2c5942d0388f0c61819a2b58cd348aeff18f54da9fccac2eee8497d133b",
+      "check": {
+        "bars": 2720,
+        "first": "2016-01-04",
+        "last": "2026-10-27",
+        "duplicatesRemoved": 0,
+        "invalidOhlc": 0,
+        "longGaps": []
+      }
+    },
+    "sip-daily-split/AAPL": {
+      "sha256": "eb914b10ed0d8a0ec3f1324c7ed95f1ebd6bdcf6a225bdb42b0c1dab9578a857",
+      "check": {
+        "bars": 2720,
+        "first": "2016-01-04",
+        "last": "2026-10-27",
+        "duplicatesRemoved": 0,
+        "invalidOhlc": 0,
+        "longGaps": []
+      }
+    },
+    "sip-daily-all/AAPL": {
+      "sha256": "85bdf5c68afaa85443ceb873ce2dd8a13622978bf265aa28f5b18d788f618fd9",
+      "check": {
+        "bars": 2720,
+        "first": "2016-01-04",
+        "last": "2026-10-27",
+        "duplicatesRemoved": 0,
+        "invalidOhlc": 0,
+        "longGaps": []
+      }
+    },
+    "sip-daily-split/MSFT": {
+      "sha256": "b4ee4b6a5b73390fc63c8ba3d5f8ba96d35bd2dcf357532939601460f5133ad5",
+      "check": {
+        "bars": 2720,
+        "first": "2016-01-04",
+        "last": "2026-10-27",
+        "duplicatesRemoved": 0,
+        "invalidOhlc": 0,
+        "longGaps": []
+      }
+    },
+    "sip-daily-all/MSFT": {
+      "sha256": "f9f4d86caf55c0df418b68f93dbef92b1dfd2e838eec58f860220384831ee50b",
+      "check": {
+        "bars": 2720,
+        "first": "2016-01-04",
+        "last": "2026-10-27",
+        "duplicatesRemoved": 0,
+        "invalidOhlc": 0,
+        "longGaps": []
+      }
+    },
+    "sip-daily-split/JPM": {
+      "sha256": "61ddad4880b9facf6b1d77ae3b80f552ac5b11b297de25e9fb4b06be6908dd70",
+      "check": {
+        "bars": 2720,
+        "first": "2016-01-04",
+        "last": "2026-10-27",
+        "duplicatesRemoved": 0,
+        "invalidOhlc": 0,
+        "longGaps": []
+      }
+    },
+    "sip-daily-all/JPM": {
+      "sha256": "0a903d2b1a3ea179a11926ea26a8b4bf0769b54097c3e39e5233d9b5adcffd9b",
+      "check": {
+        "bars": 2720,
+        "first": "2016-01-04",
+        "last": "2026-10-27",
+        "duplicatesRemoved": 0,
+        "invalidOhlc": 0,
+        "longGaps": []
+      }
+    },
+    "sip-daily-split/KO": {
+      "sha256": "ca88fe4ed9f6442753d845071cdbe625af44566b6c161a4a9038155635d92350",
+      "check": {
+        "bars": 2720,
+        "first": "2016-01-04",
+        "last": "2026-10-27",
+        "duplicatesRemoved": 0,
+        "invalidOhlc": 0,
+        "longGaps": []
+      }
+    },
+    "sip-daily-all/KO": {
+      "sha256": "a1b58c9f3620b3b573b37e107572ab7fa6d7d4bb36653ab98223b39f32e0b6e0",
+      "check": {
+        "bars": 2720,
+        "first": "2016-01-04",
+        "last": "2026-10-27",
+        "duplicatesRemoved": 0,
+        "invalidOhlc": 0,
+        "longGaps": []
+      }
+    },
+    "iex-replication/SPY-1Day": {
+      "sha256": "12af60db059fc16f33c461e652957a7424b22be16e5121b430bfe6484dafcb9f",
+      "check": {
+        "bars": 1500,
+        "first": "2020-11-06",
+        "last": "2026-10-28",
+        "duplicatesRemoved": 0,
+        "invalidOhlc": 0,
+        "longGaps": []
+      }
+    },
+    "iex-replication/SPY-1Hour": {
+      "sha256": "e8c46bed9e2947d0c263a03e113d0c4cf09c804ac208bb5b61e5b550b90189f7",
+      "check": {
+        "bars": 1740,
+        "first": "2025-10-30",
+        "last": "2026-10-28",
+        "duplicatesRemoved": 0,
+        "invalidOhlc": 0,
+        "longGaps": []
+      }
+    },
+    "iex-replication/QQQ-1Day": {
+      "sha256": "4b27b32e0fb12e8abefd67b94c5aea195031b0c8ab765ffbe6e47065d37694a1",
+      "check": {
+        "bars": 1500,
+        "first": "2020-11-06",
+        "last": "2026-10-28",
+        "duplicatesRemoved": 0,
+        "invalidOhlc": 0,
+        "longGaps": []
+      }
+    },
+    "iex-replication/QQQ-1Hour": {
+      "sha256": "d1561b916edff4225d0b2cee795c2eb42741a2094d88ccb7c2d0c0219c4cf671",
+      "check": {
+        "bars": 1704,
+        "first": "2025-11-07",
+        "last": "2026-10-28",
+        "duplicatesRemoved": 0,
+        "invalidOhlc": 0,
+        "longGaps": []
+      }
+    },
+    "iex-replication/AAPL-1Day": {
+      "sha256": "3b9d66ee918696318e3113182303135c635d44229da1394bdaec5321b07dc129",
+      "check": {
+        "bars": 1500,
+        "first": "2020-11-06",
+        "last": "2026-10-28",
+        "duplicatesRemoved": 0,
+        "invalidOhlc": 0,
+        "longGaps": []
+      }
+    },
+    "iex-replication/AAPL-1Hour": {
+      "sha256": "712f81a2c8c2ef4542f4158396a1b135f946d4d18cc1cef9e35044f05cb6cc7d",
+      "check": {
+        "bars": 1775,
+        "first": "2025-10-23",
+        "last": "2026-10-28",
+        "duplicatesRemoved": 0,
+        "invalidOhlc": 0,
+        "longGaps": []
+      }
+    }
+  }
+}

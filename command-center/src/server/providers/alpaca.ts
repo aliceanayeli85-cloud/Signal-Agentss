@@ -82,10 +82,26 @@ export class AlpacaProvider implements MarketDataProvider {
     const daysBack = Math.ceil((raw / perDay[timeframe]) * 1.5) + 10;
     const start = new Date(Date.now() - daysBack * 86_400_000).toISOString();
     const base = `${this.cfg.dataUrl}/v2/stocks/${encodeURIComponent(symbol)}/bars?timeframe=${timeframe}&start=${start}&limit=${raw}&sort=desc&adjustment=split&feed=${this.cfg.feed}`;
-    // Alpaca can return fewer bars than `limit` per page, with a token for the next page.
+    const candles = await this.pagedBars(base, raw, 10);
+    if (!candles.length) throw new DataError('NOT_FOUND', `No ${timeframe} candles were returned for ${symbol}. Check the ticker.`);
+    return candles.reverse();
+  }
+
+  /**
+   * A fixed historical range, oldest first. Used by research, where the range
+   * must be exact and reproducible. `end` must be in the past: the free plan
+   * only allows consolidated (SIP) data older than 15 minutes.
+   */
+  async historicalBars(symbol: string, timeframe: Timeframe, opts: { start: string; end: string; feed: 'iex' | 'sip'; adjustment: 'split' | 'all' }): Promise<Candle[]> {
+    const base = `${this.cfg.dataUrl}/v2/stocks/${encodeURIComponent(symbol)}/bars?timeframe=${timeframe}&start=${opts.start}&end=${opts.end}&limit=10000&sort=asc&adjustment=${opts.adjustment}&feed=${opts.feed}`;
+    return this.pagedBars(base, Infinity, 100);
+  }
+
+  /** Alpaca can return fewer bars than `limit` per page, with a token for the next page. */
+  private async pagedBars(base: string, maxBars: number, maxPages: number): Promise<Candle[]> {
     const candles: Candle[] = [];
     let token: string | null = null;
-    for (let page = 0; page < 10 && candles.length < raw; page++) {
+    for (let page = 0; page < maxPages && candles.length < maxBars; page++) {
       const body = (await this.get(token ? `${base}&page_token=${encodeURIComponent(token)}` : base)) as { bars?: unknown; next_page_token?: unknown } | null;
       if (!body || (body.bars !== null && body.bars !== undefined && !Array.isArray(body.bars))) {
         throw new DataError('MALFORMED', 'Alpaca returned an unexpected bars response.');
@@ -97,8 +113,7 @@ export class AlpacaProvider implements MarketDataProvider {
       token = typeof body.next_page_token === 'string' && body.next_page_token ? body.next_page_token : null;
       if (!token) break;
     }
-    if (!candles.length) throw new DataError('NOT_FOUND', `No ${timeframe} candles were returned for ${symbol}. Check the ticker.`);
-    return candles.reverse();
+    return candles;
   }
 
   async clock(): Promise<MarketClock> {
