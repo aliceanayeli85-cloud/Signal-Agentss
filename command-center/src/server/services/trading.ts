@@ -1,8 +1,9 @@
 import { randomUUID } from 'node:crypto';
-import { applySlippage, sellFees } from '../../engine/costs.js';
+import { applySlippage, estimateRoundTripCosts, sellFees, sizePosition } from '../../engine/costs.js';
 import { assertTransition, paperBuyFill, PREVIEW_TTL_MS, type OrderStatus } from '../../engine/orders.js';
 import { formatShares, type TradePlan } from '../../engine/plan.js';
 import { checkEntry, type Block } from '../../engine/risk.js';
+import { effectiveRiskPerTrade } from '../../engine/settings.js';
 import type { Timeframe } from '../../engine/types.js';
 import { getKillSwitch, getSettings, logRiskEvent, setKv, type Db, type Mode } from '../db.js';
 import { accountState, type PositionRow } from './account.js';
@@ -244,13 +245,16 @@ export async function approveOrder(deps: Deps, id: string, confirm: unknown): Pr
 /** Records a simulated buy and opens the position. Called inside a transaction. */
 export function openPaperPosition(db: Db, order: OrderRow, fillPrice: number, now: number, reason: string): PositionRow {
   const s = getSettings(db);
-  const cash = accountState(db, 'paper', s, now).cash;
-  let qty = order.qty;
-  if (qty * fillPrice > cash) qty = s.allowFractional ? Math.floor((cash / fillPrice) * 1e6) / 1e6 : Math.floor(cash / fillPrice);
-  if (qty <= 0) {
-    setStatus(db, order, 'rejected', 'Not enough simulated cash at fill time.', now);
-    throw new TradingError(409, 'INSUFFICIENT_CASH', 'Not enough simulated cash at fill time.');
+  const state = accountState(db, 'paper', s, now);
+  // Re-size at the actual fill: paying more than planned must not raise the loss above the budget.
+  const atFill = sizePosition(fillPrice, order.stop, effectiveRiskPerTrade(s, state.equity), state.cash, s);
+  const qty = Math.min(order.qty, atFill.shares);
+  if (atFill.problem !== null || qty <= 0) {
+    const why = atFill.problem ?? 'Not enough simulated cash at fill time.';
+    setStatus(db, order, 'rejected', why, now);
+    throw new TradingError(409, 'SIZE_AT_FILL', why);
   }
+  const plannedLoss = qty * (fillPrice - order.stop) + estimateRoundTripCosts(qty, fillPrice, order.stop, s).total;
   const pos: PositionRow = {
     id: randomUUID(),
     mode: 'paper',
@@ -266,7 +270,7 @@ export function openPaperPosition(db: Db, order: OrderRow, fillPrice: number, no
     tp2: order.tp2,
     tp1_done: 0,
     invalidation_price: order.invalidation_price,
-    planned_loss: order.planned_loss,
+    planned_loss: plannedLoss,
     status: 'open',
     realized_pnl: 0,
     exit_reason: null,
@@ -279,7 +283,7 @@ export function openPaperPosition(db: Db, order: OrderRow, fillPrice: number, no
   db.prepare('INSERT INTO fills (mode, position_id, side, qty, price, fees, realized_pnl, reason, at) VALUES (?, ?, ?, ?, ?, ?, 0, ?, ?)').run('paper', pos.id, 'buy', qty, fillPrice, s.commissionPerOrderUsd, reason, now);
   setStatus(db, order, 'filled', reason, now);
   const plan = (JSON.parse(order.plan_json) as StoredPlan).plan;
-  createJournalDraft(db, pos, `${plan.setupLabel ?? 'Setup'} on ${order.timeframe}. Entry ≈ $${fillPrice.toFixed(2)}, stop $${order.stop.toFixed(2)}, TP1 $${order.tp1.toFixed(2)}, TP2 $${order.tp2.toFixed(2)}. Planned max loss $${order.planned_loss.toFixed(2)}.`, now);
+  createJournalDraft(db, pos, `${plan.setupLabel ?? 'Setup'} on ${order.timeframe}. Entry ≈ $${fillPrice.toFixed(2)}, stop $${order.stop.toFixed(2)}, TP1 $${order.tp1.toFixed(2)}, TP2 $${order.tp2.toFixed(2)}. Planned max loss $${plannedLoss.toFixed(2)}.`, now);
   return pos;
 }
 

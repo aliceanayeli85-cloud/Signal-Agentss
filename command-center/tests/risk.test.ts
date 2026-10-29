@@ -46,6 +46,9 @@ describe('position sizing', () => {
     const poor = sizePosition(100, 99.9, 1, 20, S);
     expect(poor.limitedBy).toBe('cash');
     expect(poor.notional).toBeLessThanOrEqual(20.0000001);
+    // Cash actually spent, including entry slippage, also stays within the limits (audit fix).
+    expect(tight.shares * 100 * (1 + S.slippageBps / 10_000)).toBeLessThanOrEqual(50.0000001);
+    expect(poor.shares * 100 * (1 + S.slippageBps / 10_000)).toBeLessThanOrEqual(20.0000001);
   });
   it('rejects stops at or above entry, zero prices and zero budgets', () => {
     expect(sizePosition(50, 50, 1, 100, S).problem).toMatch(/below the entry/);

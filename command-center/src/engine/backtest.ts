@@ -1,5 +1,5 @@
 import { analyze } from './analysis.js';
-import { applySlippage, sellFees } from './costs.js';
+import { applySlippage, estimateRoundTripCosts, limitSellFilled, sellFees, sizePosition } from './costs.js';
 import { buildTradePlan } from './plan.js';
 import { checkEntry, type AccountState } from './risk.js';
 import type { RiskSettings } from './settings.js';
@@ -69,7 +69,8 @@ export const BACKTEST_ASSUMPTIONS = [
   'If a candle opens below the stop (a gap), the exit is at that open, not at the stop.',
   'Slippage is applied to every market fill; regulatory sell fees are charged; commission as configured.',
   'One position at a time. Daily loss, consecutive-loss and trade-count limits are applied as in live trading.',
-  'Targets are treated as limit orders and fill at the target price.',
+  'Targets are limit orders: they fill at the target price only if price trades at least one cent through it.',
+  'Position size is recalculated at the actual fill price, so a worse fill never raises the planned loss above the risk budget.',
 ];
 
 /**
@@ -127,11 +128,17 @@ export function runBacktest(candles: Candle[], p: BacktestParams): BacktestResul
       continue;
     }
     const fill = applySlippage(rawFill, 'buy', s);
-    const shares = Math.min(plan.shares, equity / fill);
+    // Re-size at the price actually paid: a fill above the planned entry must not push the loss past the budget.
+    const atFill = sizePosition(rawFill, plan.stop, guard.riskBudgetUsd, equity, s);
+    if (atFill.problem !== null) {
+      i++;
+      continue;
+    }
+    const shares = Math.min(plan.shares, atFill.shares);
     const sim = simulateExit(candles, i + 1, fill, shares, { stop: plan.stop, tp1: plan.tp1.price, tp2: plan.tp2.price }, s, p.maxHoldBars);
     const { proceeds, exitReason, exitIdx } = sim;
     const pnl = proceeds - shares * fill - s.commissionPerOrderUsd;
-    const plannedRisk = plan.maxPlannedLoss ?? s.riskPerTradeUsd;
+    const plannedRisk = shares * (rawFill - plan.stop) + estimateRoundTripCosts(shares, rawFill, plan.stop, s).total;
     equity += pnl;
     trades.push({
       setupType: plan.setupType ?? 'unknown',
@@ -221,14 +228,14 @@ export function simulateExit(candles: Candle[], fillIdx: number, fill: number, s
       exitReason = tp1Done ? 'breakeven stop' : 'stop';
       break;
     }
-    if (!tp1Done && c.h >= lv.tp1) {
+    if (!tp1Done && limitSellFilled(c.h, lv.tp1)) {
       let half = s.allowFractional ? Math.floor((shares / 2) * 1e6) / 1e6 : Math.floor(shares / 2);
       if (half <= 0) half = qty;
       sell(half, lv.tp1);
       tp1Done = true;
       exitReason = 'take-profit 1';
     }
-    if (qty > 1e-9 && c.h >= lv.tp2) {
+    if (qty > 1e-9 && limitSellFilled(c.h, lv.tp2)) {
       sell(qty, lv.tp2);
       exitReason = 'take-profit 2';
       break;

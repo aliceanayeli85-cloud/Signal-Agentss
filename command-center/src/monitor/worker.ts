@@ -13,7 +13,7 @@ import { ntfyNotifier, startScheduler } from '../server/services/monitor.js';
 
 assertSafeConfig({ ...env, host: '127.0.0.1' });
 const db = openDb(env.databasePath);
-const provider = new AlpacaProvider({ keyId: env.alpacaKeyId, secret: env.alpacaSecret, dataUrl: env.alpacaDataUrl, clockUrl: env.alpacaClockUrl, feed: env.alpacaFeed, timeoutMs: env.httpTimeoutMs });
+const provider = new AlpacaProvider({ keyId: env.alpacaKeyId, secret: env.alpacaSecret, dataUrl: env.alpacaDataUrl, clockUrl: env.alpacaClockUrl, feed: env.alpacaFeed, dailyFeed: env.alpacaDailyFeed, timeoutMs: env.httpTimeoutMs });
 const deps = { db, market: new MarketService(provider, db), now: Date.now };
 const scheduler = startScheduler(deps, { intervalSec: env.monitorIntervalSec, offHoursSec: env.monitorOffHoursIntervalSec, notify: env.ntfyUrl ? ntfyNotifier(env.ntfyUrl) : null, owner: `worker-${process.pid}` });
 logger.info('monitor worker started', { intervalSec: env.monitorIntervalSec, offHoursSec: env.monitorOffHoursIntervalSec, db: env.databasePath });

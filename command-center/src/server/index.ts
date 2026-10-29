@@ -9,7 +9,7 @@ import { ntfyNotifier, startScheduler } from './services/monitor.js';
 assertSafeConfig();
 
 const db = openDb(env.databasePath);
-const provider = new AlpacaProvider({ keyId: env.alpacaKeyId, secret: env.alpacaSecret, dataUrl: env.alpacaDataUrl, clockUrl: env.alpacaClockUrl, feed: env.alpacaFeed, timeoutMs: env.httpTimeoutMs });
+const provider = new AlpacaProvider({ keyId: env.alpacaKeyId, secret: env.alpacaSecret, dataUrl: env.alpacaDataUrl, clockUrl: env.alpacaClockUrl, feed: env.alpacaFeed, dailyFeed: env.alpacaDailyFeed, timeoutMs: env.httpTimeoutMs });
 const deps = { db, market: new MarketService(provider, db), now: Date.now };
 const notify = env.ntfyUrl ? ntfyNotifier(env.ntfyUrl) : null;
 const owner = `server-${process.pid}`;

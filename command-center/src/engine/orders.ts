@@ -1,4 +1,4 @@
-import { applySlippage, sellFees } from './costs.js';
+import { applySlippage, limitSellFilled, sellFees } from './costs.js';
 import type { RiskSettings } from './settings.js';
 
 /**
@@ -97,13 +97,13 @@ export function evaluatePosition(p: PaperPosition, price: number, s: RiskSetting
   }
 
   let remaining = p.qtyOpen;
-  if (!p.tp1Done && price >= p.tp1) {
+  if (!p.tp1Done && limitSellFilled(price, p.tp1)) {
     let half = p.fractional ? Math.floor((p.qtyInitial / 2) * 1e6) / 1e6 : Math.floor(p.qtyInitial / 2);
     if (half <= 0 || half >= remaining) half = remaining;
     actions.push({ kind: 'TP1', qty: half, fillPrice: p.tp1, fees: sellFees(half, p.tp1, s), reason: `Price reached take-profit 1 at $${p.tp1.toFixed(2)}. Sold ${half === remaining ? 'all' : 'half'}; stop moves to breakeven.` });
     remaining -= half;
   }
-  if (remaining > 1e-9 && price >= p.tp2) {
+  if (remaining > 1e-9 && limitSellFilled(price, p.tp2)) {
     actions.push({ kind: 'TP2', qty: remaining, fillPrice: p.tp2, fees: sellFees(remaining, p.tp2, s), reason: `Price reached take-profit 2 at $${p.tp2.toFixed(2)}.` });
   }
   return actions;

@@ -142,7 +142,10 @@ describe('simulated position management', () => {
     expect(acts.reduce((s, a) => s + a.qty, 0)).toBe(2);
   });
   it('a single whole share exits fully at TP1', () => {
-    expect(evaluatePosition({ ...pos, qtyOpen: 1, qtyInitial: 1 }, 52, S)[0]?.qty).toBe(1);
+    expect(evaluatePosition({ ...pos, qtyOpen: 1, qtyInitial: 1 }, 52.01, S)[0]?.qty).toBe(1);
+  });
+  it('a target that is only touched does not count as filled (audit fix)', () => {
+    expect(evaluatePosition(pos, 52, S)).toEqual([]);
   });
   it('flags price near the stop and evaluates alert crossings', () => {
     expect(nearStop(pos, 49.2)).toBe(true);
@@ -171,6 +174,10 @@ describe('backtest exits', () => {
   it('applies the breakeven stop only from the candle after TP1', () => {
     const r = simulateExit([candle(0, 10, 12.5, 9.5, 11), candle(1, 11, 11.2, 9.9, 10)], 0, 10, 2, lv, S, 20);
     expect(r.exitReason).toBe('breakeven stop');
+  });
+  it('a target touched but not traded through does not fill (audit fix)', () => {
+    const r = simulateExit([candle(0, 10, 12, 9.5, 11), candle(1, 11, 11.5, 10.5, 11)], 0, 10, 2, lv, S, 1);
+    expect(r.exitReason).toBe('time exit');
   });
   it('time-exits after the max holding period', () => {
     const flat = Array.from({ length: 10 }, (_, i) => candle(i, 10, 10.5, 9.5, 10));

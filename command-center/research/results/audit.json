@@ -1,0 +1,20 @@
+{
+  "checkedAt": "2026-10-29T01:45:16.188Z",
+  "engine": "audited (resize at fill, trade-through targets)",
+  "counts": {
+    "trades": 178,
+    "gapStops": 13,
+    "worstGapLossR": -2.794597917966887
+  },
+  "violations": {
+    "entryNotAfterSignal": [],
+    "entryPriceOutsideEntryCandle": [],
+    "triggerNotReached": [],
+    "overlappingTrades": [],
+    "nonGapStopOverBudget": [],
+    "positionOverCap": [],
+    "targetFilledWithoutTradeThrough": [],
+    "tradeInMoreThanOnePeriod": [],
+    "lookAheadTruncation": []
+  }
+}

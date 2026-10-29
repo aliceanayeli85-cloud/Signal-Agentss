@@ -118,8 +118,73 @@ async function baseline() {
   );
 }
 
+/**
+ * Checks every baseline trade against the raw candles, using the CURRENT
+ * (audited) engine. Each invariant is something a correct backtester must
+ * never violate; any violation is listed with the offending trade.
+ */
+async function audit() {
+  const settings = { ...DEFAULT_SETTINGS };
+  const bps = settings.slippageBps / 10_000;
+  const violations: Record<string, string[]> = {
+    entryNotAfterSignal: [],
+    entryPriceOutsideEntryCandle: [],
+    triggerNotReached: [],
+    overlappingTrades: [],
+    nonGapStopOverBudget: [],
+    positionOverCap: [],
+    targetFilledWithoutTradeThrough: [],
+    tradeInMoreThanOnePeriod: [],
+    lookAheadTruncation: [],
+  };
+  const counts = { trades: 0, gapStops: 0, worstGapLossR: 0 };
+  for (const sym of RESEARCH_TICKERS) {
+    const candles = loadSeries('sip-daily-split', sym);
+    const byTime = new Map(candles.map((c, i) => [c.t, i]));
+    const res = runBacktest(candles, { timeframe: '1Day', settings, maxHoldBars: 20, warmupBars: 60, outOfSampleFraction: 0.3 });
+    let prevExit = -Infinity;
+    for (const t of res.trades) {
+      counts.trades++;
+      const id = `${sym} ${day(t.entryTime)}`;
+      const e = candles[byTime.get(t.entryTime)!]!;
+      const raw = t.entryPrice / (1 + bps);
+      if (!(t.entryTime > t.signalTime)) violations.entryNotAfterSignal!.push(id);
+      if (raw < e.l - 1e-6 || raw > e.h + 1e-6) violations.entryPriceOutsideEntryCandle!.push(id);
+      if (t.setupType !== 'BREAKOUT' && raw < e.o - 1e-6 && e.h < raw - 1e-6) violations.triggerNotReached!.push(id);
+      if (t.entryTime <= prevExit) violations.overlappingTrades!.push(id);
+      prevExit = t.exitTime;
+      if (t.exitReason === 'stop' && t.pnl < -(settings.riskPerTradeUsd + 0.005)) violations.nonGapStopOverBudget!.push(`${id} pnl ${t.pnl.toFixed(3)}`);
+      if (t.shares * t.entryPrice > settings.maxPositionUsd + 0.01) violations.positionOverCap!.push(id);
+      if (t.exitReason.startsWith('take-profit')) {
+        const x = candles[byTime.get(t.exitTime)!]!;
+        const target = t.exitReason === 'take-profit 2' ? t.tp2 : t.tp1;
+        if (x.h < target + 0.01 - 1e-9) violations.targetFilledWithoutTradeThrough!.push(id);
+      }
+      const periods = PERIODS.filter((pd) => inRange(t.entryTime, pd.start, pd.end)).length;
+      if (periods !== 1) violations.tradeInMoreThanOnePeriod!.push(id);
+      if (t.exitReason.includes('gap') && !t.exitReason.includes('breakeven')) {
+        counts.gapStops++;
+        counts.worstGapLossR = Math.min(counts.worstGapLossR, t.rMultiple);
+      }
+    }
+    // Look-ahead: cutting the data at a date must not change any trade that closed before it.
+    for (const cut of ['2018-06-29', '2021-06-30', '2024-06-28']) {
+      const idx = candles.findIndex((c) => day(c.t) > cut);
+      const cutT = candles[idx]!.t;
+      const truncated = runBacktest(candles.slice(0, idx), { timeframe: '1Day', settings, maxHoldBars: 20, warmupBars: 60, outOfSampleFraction: 0.3 });
+      const a = res.trades.filter((t) => t.exitTime < cutT && !t.exitReason.startsWith('open at end')).map((t) => `${t.entryTime}:${t.pnl.toFixed(6)}`);
+      const b = truncated.trades.filter((t) => t.exitTime < cutT && !t.exitReason.startsWith('open at end')).map((t) => `${t.entryTime}:${t.pnl.toFixed(6)}`);
+      if (JSON.stringify(a) !== JSON.stringify(b)) violations.lookAheadTruncation!.push(`${sym} cut ${cut}`);
+    }
+    console.log(`${sym}: ${res.trades.length} trades checked`);
+  }
+  const out = { checkedAt: new Date().toISOString(), engine: 'audited (resize at fill, trade-through targets)', counts, violations };
+  writeFileSync(resolve(RESULTS, 'audit.json'), JSON.stringify(out, null, 2));
+  console.log(JSON.stringify({ counts, violations: Object.fromEntries(Object.entries(violations).map(([k, v]) => [k, v.length])) }, null, 2));
+}
+
 const cmd = process.argv[2];
-const run = { fetch: fetchAll, baseline } as Record<string, () => Promise<void>>;
+const run = { fetch: fetchAll, baseline, audit } as Record<string, () => Promise<void>>;
 if (!cmd || !run[cmd]) {
   console.error(`Usage: npm run research -- <${Object.keys(run).join('|')}>`);
   process.exit(1);

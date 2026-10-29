@@ -122,6 +122,16 @@ describe('paper order flow', () => {
     ctx.fake.quotes_.set('SPY', { price: 67.78, time: ctx.clock.now - 1000, source: 'fake' });
     expect((await ctx.api(`/api/orders/${pv.body.id}/approve`, { body: { confirm: true } })).status).toBe(410);
   });
+  it('re-sizes at the actual fill so a worse price never raises the loss above $1 (audit fix)', async () => {
+    const pv = await ctx.api('/api/orders/preview', { body: { symbol: 'SPY', timeframe: '1Day', orderType: 'market', idempotencyKey: 'key-resize1' } });
+    // Still inside the allowed zone, but above the price the preview was sized at.
+    ctx.fake.quotes_.set('SPY', { price: 67.95, time: NOW - 1000, source: 'fake' });
+    expect((await ctx.api(`/api/orders/${pv.body.id}/approve`, { body: { confirm: true } })).status).toBe(200);
+    const p = (await ctx.api('/api/positions?mode=paper')).body.positions[0];
+    expect(p.qty_initial).toBeLessThan(pv.body.qty);
+    expect(p.planned_loss).toBeLessThanOrEqual(1.0000001);
+    expect(p.qty_initial * (p.entry_price - p.stop)).toBeLessThanOrEqual(1);
+  });
   it('refuses to fill if price ran away between preview and approval (no chasing)', async () => {
     const pv = await ctx.api('/api/orders/preview', { body: { symbol: 'SPY', timeframe: '1Day', orderType: 'market', idempotencyKey: 'key-chase01' } });
     ctx.fake.quotes_.set('SPY', { price: 69, time: NOW - 1000, source: 'fake' });
@@ -314,6 +324,19 @@ describe('Alpaca provider parsing and failures', () => {
     const b = await new AlpacaProvider({ ...cfg, fetchImpl: paged }).bars('SPY', '1Day', 10);
     expect(urls).toHaveLength(2);
     expect(b.map((c) => c.c)).toEqual([1, 2, 3]);
+  });
+  it('daily candles use the consolidated feed ending 16+ minutes ago, falling back to IEX if refused', async () => {
+    const urls: string[] = [];
+    const deny = (async (url: string) => {
+      urls.push(url);
+      if (url.includes('feed=sip')) return new Response('subscription does not permit', { status: 403 });
+      return new Response(JSON.stringify({ bars: [{ t: '2026-03-10T05:00:00Z', o: 1, h: 2, l: 0.5, c: 1, v: 1 }] }), { status: 200 });
+    }) as typeof fetch;
+    const b = await new AlpacaProvider({ ...cfg, dailyFeed: 'sip', fetchImpl: deny }).bars('SPY', '1Day', 10);
+    expect(b).toHaveLength(1);
+    expect(urls[0]).toMatch(/feed=sip&?.*/);
+    expect(urls[0]).toMatch(/&end=/);
+    expect(urls.at(-1)).toMatch(/feed=iex/);
   });
   it('parses the market clock', async () => {
     const p = new AlpacaProvider({ ...cfg, fetchImpl: respond(200, { is_open: true, timestamp: '2026-03-10T15:00:00Z', next_open: '2026-03-11T13:30:00Z', next_close: '2026-03-10T20:00:00Z' }) as typeof fetch });

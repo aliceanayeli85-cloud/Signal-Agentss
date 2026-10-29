@@ -33,6 +33,18 @@ export function sellFees(shares: number, price: number, s: RiskSettings): number
   return ceilCents((shares * price * s.secFeePerMillion) / 1_000_000) + ceilCents(Math.min(shares * s.tafPerShareUsd, s.tafMaxUsd)) + s.commissionPerOrderUsd;
 }
 
+/** Smallest US stock price increment above $1. */
+export const TICK = 0.01;
+
+/**
+ * A resting limit sell is only counted as filled when price trades at least
+ * one tick THROUGH it. Merely touching the price does not guarantee a fill,
+ * because other orders at that price may be ahead in the queue.
+ */
+export function limitSellFilled(high: number, target: number): boolean {
+  return high >= target + TICK - 1e-9;
+}
+
 export function applySlippage(price: number, side: 'buy' | 'sell', s: RiskSettings): number {
   const bps = s.slippageBps / 10_000;
   return side === 'buy' ? price * (1 + bps) : price * (1 - bps);
@@ -73,12 +85,14 @@ export function sizePosition(entry: number, stop: number, budgetUsd: number, cas
   shares = Math.max(0, (budgetUsd - fees.regulatoryFees - fees.commissions) / lossPerShare);
   let limitedBy: SizeResult['limitedBy'] = 'risk_budget';
 
-  const byPosition = s.maxPositionUsd / entry;
+  // Caps apply to the cash actually spent, which includes entry slippage — otherwise slippage is a few cents of borrowing.
+  const paid = entry * (1 + bps);
+  const byPosition = s.maxPositionUsd / paid;
   if (byPosition < shares) {
     shares = byPosition;
     limitedBy = 'max_position';
   }
-  const byCash = cashUsd / entry;
+  const byCash = cashUsd / paid;
   if (byCash < shares) {
     shares = byCash;
     limitedBy = 'cash';

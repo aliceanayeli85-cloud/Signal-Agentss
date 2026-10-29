@@ -38,6 +38,7 @@ export const env = {
   /** Only the market clock is read from here. No order endpoint is ever called. */
   alpacaClockUrl: str('ALPACA_CLOCK_URL', 'https://paper-api.alpaca.markets')!,
   alpacaFeed: str('ALPACA_FEED', 'iex')!,
+  alpacaDailyFeed: (str('ALPACA_DAILY_FEED', 'sip') === 'iex' ? 'iex' : 'sip') as 'sip' | 'iex',
   httpTimeoutMs: num('HTTP_TIMEOUT_MS', 10_000),
   monitorInProcess: bool('MONITOR_IN_PROCESS', true),
   monitorIntervalSec: num('MONITOR_INTERVAL_SECONDS', 60),

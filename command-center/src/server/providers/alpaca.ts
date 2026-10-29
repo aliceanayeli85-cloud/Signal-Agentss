@@ -33,6 +33,8 @@ export interface AlpacaConfig {
   dataUrl: string;
   clockUrl: string;
   feed: string;
+  /** Feed for daily candles. 'sip' (consolidated, ≥15 min old on the free plan) matches the research data. */
+  dailyFeed?: 'sip' | 'iex';
   timeoutMs: number;
   fetchImpl?: typeof fetch;
 }
@@ -53,7 +55,7 @@ export class AlpacaProvider implements MarketDataProvider {
   }
 
   notes(): string[] {
-    const n = [`Feed: ${this.cfg.feed.toUpperCase()}.`];
+    const n = [`Quotes and intraday candles: ${this.cfg.feed.toUpperCase()} feed.${this.cfg.dailyFeed === 'sip' ? ' Daily candles: consolidated (SIP) feed, up to 15 minutes delayed — the same data the strategy research used.' : ''}`];
     if (this.cfg.feed === 'iex') {
       n.push('The free IEX feed is real-time but covers only trades on the IEX exchange (a small share of all US volume). Volume and VWAP are therefore IEX-only approximations; compare volume to its own average, not to numbers you see elsewhere.');
     }
@@ -81,7 +83,20 @@ export class AlpacaProvider implements MarketDataProvider {
     const perDay: Record<Timeframe, number> = { '1Day': 1, '1Hour': 16, '15Min': 64, '5Min': 192 };
     const daysBack = Math.ceil((raw / perDay[timeframe]) * 1.5) + 10;
     const start = new Date(Date.now() - daysBack * 86_400_000).toISOString();
-    const base = `${this.cfg.dataUrl}/v2/stocks/${encodeURIComponent(symbol)}/bars?timeframe=${timeframe}&start=${start}&limit=${raw}&sort=desc&adjustment=split&feed=${this.cfg.feed}`;
+    const sipDaily = timeframe === '1Day' && this.cfg.dailyFeed === 'sip';
+    // Free plans may only read consolidated (SIP) data older than 15 minutes.
+    const end = sipDaily ? `&end=${new Date(Date.now() - 16 * 60_000).toISOString()}` : '';
+    const url = (feed: string) => `${this.cfg.dataUrl}/v2/stocks/${encodeURIComponent(symbol)}/bars?timeframe=${timeframe}&start=${start}${end}&limit=${raw}&sort=desc&adjustment=split&feed=${feed}`;
+    let base = url(sipDaily ? 'sip' : this.cfg.feed);
+    if (sipDaily) {
+      try {
+        const sip = await this.pagedBars(base, raw, 10);
+        if (sip.length) return sip.reverse();
+      } catch (e) {
+        if (!(e instanceof DataError && e.code === 'AUTH')) throw e;
+      }
+      base = url(this.cfg.feed);
+    }
     const candles = await this.pagedBars(base, raw, 10);
     if (!candles.length) throw new DataError('NOT_FOUND', `No ${timeframe} candles were returned for ${symbol}. Check the ticker.`);
     return candles.reverse();
