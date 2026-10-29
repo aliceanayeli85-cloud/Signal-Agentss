@@ -370,10 +370,66 @@ async function tables() {
   console.log(`wrote research/results/tables-${VERSION}.md`);
 }
 
+/**
+ * Planning estimate for the C1 paper evaluation (does NOT change any rule):
+ * replays 2016–2026 through the live C1 processor as ONE $100 account with
+ * every live risk limit, to see how often 30 trades is reachable. Also checks,
+ * ticker by ticker on real data, that the processor matches the research code.
+ */
+async function c1Feasibility() {
+  setCorporateActionCorrections(true);
+  const { openDb } = await import('../server/db.js');
+  const { processC1 } = await import('../server/services/c1.js');
+  const { runStrategy } = await import('./harness.js');
+  const { TREND_FOLLOW } = await import('./strategies.js');
+  const settings = { ...DEFAULT_SETTINGS };
+  const series: Record<string, Candle[]> = {};
+  for (const sym of RESEARCH_TICKERS) series[sym] = loadSeries('sip-daily-split', sym);
+
+  const mismatches: string[] = [];
+  for (const sym of RESEARCH_TICKERS) {
+    const db = openDb(':memory:');
+    processC1(db, { [sym]: series[sym]! }, settings, { universe: [sym], benchmark: sym, startDate: '2016-01-01', killSwitchOn: false, now: 0, requireWarmup: false });
+    const paper = (db.prepare("SELECT entry_time, pnl FROM c1_trades WHERE status = 'closed' ORDER BY entry_time").all() as { entry_time: number; pnl: number }[]).map((t) => `${day(t.entry_time)}:${t.pnl.toFixed(6)}`);
+    const research = runStrategy(sym, series[sym]!, TREND_FOLLOW, settings).filter((t) => !t.exitReason.startsWith('open at end')).map((t) => `${day(t.entryTime)}:${t.pnl.toFixed(6)}`);
+    if (JSON.stringify(paper) !== JSON.stringify(research)) mismatches.push(`${sym}: paper ${paper.length} vs research ${research.length}`);
+  }
+
+  const db = openDb(':memory:');
+  processC1(db, series, settings, { universe: [...RESEARCH_TICKERS], benchmark: 'SPY', startDate: '2016-01-01', killSwitchOn: false, now: 0, requireWarmup: false });
+  const trades = db.prepare("SELECT entry_date, pnl, r_multiple, regime FROM c1_trades WHERE status = 'closed'").all() as { entry_date: string; pnl: number; r_multiple: number; regime: string }[];
+  const signals = db.prepare("SELECT status, status_reason FROM c1_signals WHERE kind = 'entry' AND status != 'pending'").all() as { status: string; status_reason: string | null }[];
+  const perYear: Record<string, number> = {};
+  for (const t of trades) perYear[t.entry_date.slice(0, 4)] = (perYear[t.entry_date.slice(0, 4)] ?? 0) + 1;
+  const skipReasons: Record<string, number> = {};
+  for (const s of signals.filter((x) => x.status === 'skipped')) {
+    const key = /open risk/i.test(s.status_reason ?? '') ? 'max open risk ($2) reached' : /Cooling-off/i.test(s.status_reason ?? '') ? 'cooldown after a loss' : /daily limit|shut down/i.test(s.status_reason ?? '') ? 'daily shutdown' : /below the stop/i.test(s.status_reason ?? '') ? 'opened below the stop' : 'other';
+    skipReasons[key] = (skipReasons[key] ?? 0) + 1;
+  }
+  const years = Object.values(perYear);
+  const out = {
+    note: 'Planning estimate only. Historical replay of the live C1 processor as one $100 account with all live risk limits. Not a new test of the strategy: these years were already used in research.',
+    processorMatchesResearchPerTicker: mismatches.length === 0,
+    mismatches,
+    portfolio: {
+      trades: trades.length,
+      tradesPerYear: perYear,
+      medianTradesPerYear: years.sort((a, b) => a - b)[Math.floor(years.length / 2)],
+      entrySignals: signals.length,
+      executed: signals.filter((x) => x.status === 'executed').length,
+      skipped: skipReasons,
+      netPnl: trades.reduce((a, t) => a + t.pnl, 0),
+      avgR: trades.reduce((a, t) => a + t.r_multiple, 0) / trades.length,
+    },
+  };
+  writeFileSync(resolve(RESULTS, 'c1-portfolio-feasibility.json'), JSON.stringify(out, null, 2));
+  console.log(JSON.stringify(out, null, 2));
+}
+
 const fmt = (x: number | null) => (x === null ? 'n/a' : `${x >= 0 ? '+' : ''}${x.toFixed(3)}R`);
 
 const cmd = process.argv[2];
-const run = { fetch: fetchAll, baseline, audit, validate, final, diagnose, tables } as Record<string, () => Promise<void>>;
+const run = { fetch: fetchAll, baseline, audit, validate, final, diagnose, tables, 'c1-feasibility': c1Feasibility } as Record<string, () => Promise<void>>;
 if (!cmd || !run[cmd]) {
   console.error(`Usage: npm run research -- <${Object.keys(run).join('|')}>`);
   process.exit(1);

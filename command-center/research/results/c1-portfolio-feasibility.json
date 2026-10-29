@@ -1,0 +1,32 @@
+{
+  "note": "Planning estimate only. Historical replay of the live C1 processor as one $100 account with all live risk limits. Not a new test of the strategy: these years were already used in research.",
+  "processorMatchesResearchPerTicker": true,
+  "mismatches": [],
+  "portfolio": {
+    "trades": 147,
+    "tradesPerYear": {
+      "2016": 8,
+      "2017": 19,
+      "2018": 14,
+      "2019": 11,
+      "2020": 9,
+      "2021": 16,
+      "2022": 12,
+      "2023": 12,
+      "2024": 15,
+      "2025": 15,
+      "2026": 16
+    },
+    "medianTradesPerYear": 14,
+    "entrySignals": 1931,
+    "executed": 149,
+    "skipped": {
+      "max open risk ($2) reached": 1694,
+      "other": 71,
+      "opened below the stop": 2,
+      "cooldown after a loss": 15
+    },
+    "netPnl": 61.055579425491,
+    "avgR": 0.5184467134186659
+  }
+}

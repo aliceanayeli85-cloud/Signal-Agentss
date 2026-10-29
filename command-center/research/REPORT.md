@@ -133,6 +133,11 @@ Why each verdict:
 I can add C1 to the dashboard as a paper-only strategy, but have **not** done so without your
 go-ahead.
 
+> **Update 2026-10-29:** with your go-ahead, C1 was added as a separate paper-only portfolio,
+> labelled EXPERIMENTAL — NOT PROVEN PROFITABLE. Protocol:
+> [C1_PAPER_PROTOCOL.md](C1_PAPER_PROTOCOL.md). The benchmark was set to SPY (a predefined ETF),
+> plus an SPY same-exposure comparison. This report's findings are unchanged.
+
 **For a v2 (future work, to be pre-registered first):** add a timing-skill criterion (a strategy
 must beat same-capital holding) and a random-entry benchmark.
 

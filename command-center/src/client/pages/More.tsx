@@ -2,11 +2,13 @@ import type { Nav } from '../App.js';
 import { Button, Card } from '../components/ui.js';
 import { useApi } from '../lib/useApi.js';
 import { BacktestPage } from './Backtest.js';
+import { C1Page } from './C1.js';
 import { JournalPage } from './Journal.js';
 import { RiskPage } from './Risk.js';
 import { RobinhoodPage } from './Robinhood.js';
 
 const ITEMS = [
+  { id: 'c1', label: 'C1 trend following — EXPERIMENTAL', hint: 'Separate paper-only portfolio. Not proven profitable. Signals, simulated trades, benchmark.' },
   { id: 'journal', label: 'Journal & P&L', hint: 'Write down what happened. Paper and real kept apart.' },
   { id: 'backtest', label: 'Backtest', hint: 'Test the rules on real history, with costs.' },
   { id: 'risk', label: 'Risk, limits & kill switch', hint: 'Your $1-per-trade rules and the emergency stop.' },
@@ -16,6 +18,7 @@ const ITEMS = [
 
 export function MorePage({ nav, onChange }: { nav: Nav; onChange: () => void }) {
   const back = <Button tone="ghost" onClick={() => nav.go('more')}>‹ Back</Button>;
+  if (nav.more === 'c1') return <>{back}<C1Page /></>;
   if (nav.more === 'journal') return <>{back}<JournalPage /></>;
   if (nav.more === 'backtest') return <>{back}<BacktestPage symbol={nav.symbol} /></>;
   if (nav.more === 'risk') return <>{back}<RiskPage onChange={onChange} /></>;

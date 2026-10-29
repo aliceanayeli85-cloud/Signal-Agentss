@@ -16,6 +16,7 @@ import { analyzeSymbol, normalizeSymbol, type Deps } from './services/analysis.j
 import { describeError } from './services/market.js';
 import { monitorStatus, runMonitorCycle, type Notifier } from './services/monitor.js';
 import { ROBINHOOD_FACTS, buildRobinhoodTicket } from './services/robinhood.js';
+import { c1Overview, runC1 } from './services/c1.js';
 import { approveOrder, cancelOrder, closePaperPosition, previewOrder, recordLiveEntry, recordLiveExit, setLiveCapital, TradingError, toPreview, type OrderRow } from './services/trading.js';
 
 export interface AppOptions {
@@ -301,6 +302,13 @@ export function createApp(deps: Deps, opts: AppOptions): express.Express {
   app.post('/api/monitor/run', wrap(async () => {
     const r = await runMonitorCycle(deps, opts.monitorOwner, opts.notify);
     return { ...r, status: monitorStatus(db, deps.now()) };
+  }));
+
+  // --- C1 experimental paper strategy (separate ledger; no real orders) ---
+  app.get('/api/c1', wrap(() => c1Overview(deps, getSettings(db))));
+  app.post('/api/c1/run', wrap(async () => {
+    const r = await runC1(deps, getSettings(db), getKillSwitch(db).on);
+    return { run: r, overview: await c1Overview(deps, getSettings(db)) };
   }));
 
   // --- Robinhood ---

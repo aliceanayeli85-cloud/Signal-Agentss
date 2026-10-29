@@ -135,6 +135,74 @@ const MIGRATIONS: string[] = [
   CREATE TABLE risk_events (id INTEGER PRIMARY KEY AUTOINCREMENT, at INTEGER NOT NULL, code TEXT NOT NULL, message TEXT NOT NULL);
   INSERT INTO watchlist (symbol, added_at) VALUES ('SPY', 0), ('QQQ', 0), ('IWM', 0);
   `,
+  // v2: C1 experimental strategy. Its own tables, so it can never mix with the baseline
+  // paper account ("positions"/"fills") or with real-money records.
+  `
+  CREATE TABLE c1_state (
+    id INTEGER PRIMARY KEY CHECK (id = 1),
+    start_date TEXT NOT NULL,
+    last_processed_date TEXT,
+    last_run_at INTEGER,
+    last_success_at INTEGER,
+    last_error TEXT,
+    last_error_at INTEGER,
+    warnings_json TEXT NOT NULL DEFAULT '[]'
+  );
+  CREATE TABLE c1_signals (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    kind TEXT NOT NULL CHECK (kind IN ('entry','exit')),
+    symbol TEXT NOT NULL,
+    signal_date TEXT NOT NULL,
+    signal_close REAL NOT NULL,
+    level REAL NOT NULL,
+    stop REAL,
+    trade_id TEXT,
+    status TEXT NOT NULL CHECK (status IN ('pending','executed','skipped')),
+    status_reason TEXT,
+    resolved_date TEXT,
+    created_at INTEGER NOT NULL,
+    UNIQUE (kind, symbol, signal_date)
+  );
+  CREATE TABLE c1_trades (
+    id TEXT PRIMARY KEY,
+    symbol TEXT NOT NULL,
+    signal_date TEXT NOT NULL,
+    entry_date TEXT NOT NULL,
+    entry_time INTEGER NOT NULL,
+    entry_raw REAL NOT NULL,
+    entry_fill REAL NOT NULL,
+    shares REAL NOT NULL,
+    stop REAL NOT NULL,
+    planned_risk REAL NOT NULL,
+    entry_slippage REAL NOT NULL,
+    status TEXT NOT NULL CHECK (status IN ('open','closed')),
+    exit_date TEXT,
+    exit_time INTEGER,
+    exit_raw REAL,
+    exit_fill REAL,
+    exit_slippage REAL,
+    fees REAL NOT NULL DEFAULT 0,
+    pnl REAL,
+    r_multiple REAL,
+    exit_reason TEXT,
+    regime TEXT NOT NULL,
+    mae REAL NOT NULL DEFAULT 0,
+    mfe REAL NOT NULL DEFAULT 0,
+    bars_held INTEGER NOT NULL DEFAULT 0,
+    last_close REAL,
+    last_close_date TEXT
+  );
+  CREATE TABLE c1_daily (
+    date TEXT PRIMARY KEY,
+    equity REAL NOT NULL,
+    cash REAL NOT NULL,
+    invested REAL NOT NULL,
+    open_positions INTEGER NOT NULL,
+    bench_full_equity REAL NOT NULL,
+    bench_matched_equity REAL NOT NULL,
+    bench_close REAL NOT NULL
+  );
+  `,
 ];
 
 export function openDb(path: string): Db {

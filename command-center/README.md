@@ -171,6 +171,32 @@ Read [research/REPORT.md](research/REPORT.md) before trusting any plan.
 The research has its own audit trail (immutable baseline, backtester audit, pre-registration,
 chronological validation) under `research/`. It is reproducible with `npm run research -- …`.
 
+## C1 trend following — EXPERIMENTAL, paper only
+
+Open it from **More → C1 trend following**. The full protocol is in
+[research/C1_PAPER_PROTOCOL.md](research/C1_PAPER_PROTOCOL.md).
+
+- **Separate.** It runs as a separate $100 paper portfolio in its own `c1_*` tables. It never
+  touches the baseline paper account or real-money records. The rejected baseline still runs
+  unchanged.
+- **Same rules as the research.** It uses the exact pre-registered research code. Tests prove the
+  paper processor makes the same trades as the research backtest.
+- **Completed candles only.** Daily candles are processed once each, after the close. Simulated
+  fills use the next official open plus slippage, or the stop price. Gaps through a stop fill at
+  the worse open.
+- **Same risk controls.** $1 per trade, the 2% cap, the $50 cap, $2 maximum open risk, the daily
+  limits and the kill switch. Signals that don't fit are skipped, with the reason — never forced.
+- **Benchmarks.** SPY buy-and-hold, and SPY held with the same dollars C1 had invested, compared on
+  return, drawdown, volatility and exposure.
+- **The page shows:**
+  - signals, labelled "not trades";
+  - simulated positions and trades, with MAE/MFE, slippage and fees;
+  - upcoming entry and exit levels;
+  - the latest data update;
+  - data-quality warnings.
+- **Expect about two years to reach 30 trades.** With two positions allowed at once, a historical
+  replay gives about 14 trades a year.
+
 ## Known limitations
 
 - **No earnings or news data.** The app tells you to check earnings dates yourself before every

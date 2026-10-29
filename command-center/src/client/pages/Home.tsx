@@ -81,6 +81,8 @@ export function HomePage({ dash, nav }: { dash: ApiState<any>; nav: Nav }) {
         </Card>
       )}
 
+      <C1Card nav={nav} />
+
       {d && d.live.capitalKnown && (
         <Card title="Real money (recorded by you)" right={<Badge tone="warn">real</Badge>}>
           <div className="grid grid-cols-3 gap-3">
@@ -92,5 +94,26 @@ export function HomePage({ dash, nav }: { dash: ApiState<any>; nav: Nav }) {
         </Card>
       )}
     </>
+  );
+}
+
+function C1Card({ nav }: { nav: Nav }) {
+  const c1 = useApi('/api/c1', 120_000);
+  const d = c1.data;
+  if (!d) return null;
+  return (
+    <Card title="C1 trend following" right={<Badge tone="warn">experimental</Badge>}>
+      <p className="mb-2 text-xs font-semibold text-warn">{d.label} · paper only</p>
+      <div className="grid grid-cols-3 gap-3">
+        <Stat label="Pending signals" value={d.signals.pending.length} sub="not trades" />
+        <Stat label="Open (simulated)" value={d.open.length} />
+        <Stat label="Trades" value={`${d.protocol.closedTrades}/${d.protocol.minTrades}`} />
+      </div>
+      <p className="mt-2 text-[11px] text-dim">
+        Processed through {d.status.lastProcessedDate ?? '—'} · updated {d.status.lastSuccessAt ? timeAgo(d.status.lastSuccessAt) : 'never'}
+        {d.status.warnings.length > 0 && <span className="text-warn"> · {d.status.warnings.length} warning(s)</span>}
+      </p>
+      <Button className="mt-2 w-full" onClick={() => nav.go('more', { more: 'c1' })}>Open C1</Button>
+    </Card>
   );
 }

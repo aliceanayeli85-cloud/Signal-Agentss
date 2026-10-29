@@ -6,6 +6,7 @@ import type { Timeframe } from '../../engine/types.js';
 import { getKillSwitch, getSettings, type Db } from '../db.js';
 import { logger } from '../logger.js';
 import { openPositions, type PositionRow } from './account.js';
+import { runC1 } from './c1.js';
 import type { Deps } from './analysis.js';
 import { describeError } from './market.js';
 import { expireOrders, getOrder, openPaperPosition, recordSell, type OrderRow } from './trading.js';
@@ -215,6 +216,19 @@ export async function runMonitorCycle(deps: Deps, owner: string, notify: Notifie
     if (!q || !alertTriggered(r, q.price)) continue;
     db.prepare("UPDATE alert_rules SET status = 'triggered', triggered_at = ? WHERE id = ? AND status = 'armed'").run(now, r.id);
     emit({ dedupKey: `rule:${r.id}`, category: 'PRICE_ALERT', mode: null, symbol: r.symbol, title: `PRICE ALERT — ${r.symbol} ${r.kind === 'price_above' ? '≥' : '≤'} $${r.price.toFixed(2)}`, reason: `${r.symbol} traded at $${q.price.toFixed(2)}.${r.note ? ` Note: ${r.note}` : ''} This is an alert, not an order.`, price: q.price, priceAt: q.time });
+  }
+
+  // 4) C1 experimental paper portfolio (daily candles; isolated c1_* tables).
+  try {
+    const c1 = await runC1(deps, s, getKillSwitch(db).on);
+    for (const ev of c1.events.filter((e) => e.kind === 'entry' || e.kind === 'exit')) {
+      emit({ dedupKey: `c1:${ev.kind}:${ev.symbol}:${ev.date}`, category: 'SIMULATED_ORDER', mode: 'paper', symbol: ev.symbol, title: `[C1 EXPERIMENTAL] ${ev.title}`, reason: `${ev.detail} Simulated market-on-open/stop fill from completed daily candles. No real money was used.`, price: null, priceAt: null });
+    }
+    const today = nyParts(now).dateKey;
+    for (const w of c1.warnings) emit({ dedupKey: `c1:warn:${today}:${w.slice(0, 80)}`, category: 'SYSTEM', mode: null, symbol: null, title: 'C1 data-quality warning', reason: w, price: null, priceAt: null });
+    if (c1.error) emit({ dedupKey: `c1:error:${today}`, category: 'SYSTEM', mode: null, symbol: null, title: 'C1 could not update', reason: c1.error, price: null, priceAt: null });
+  } catch (e) {
+    logger.warn('C1 processing failed', { error: describeError(e).message });
   }
 
   const end = deps.now();

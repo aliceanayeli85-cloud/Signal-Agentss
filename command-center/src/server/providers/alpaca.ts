@@ -25,6 +25,7 @@ export interface MarketDataProvider {
   quotes(symbols: string[]): Promise<Map<string, Quote>>;
   bars(symbol: string, timeframe: Timeframe, limit: number): Promise<Candle[]>;
   clock(): Promise<MarketClock>;
+  lastDailyFeed?: 'sip' | 'iex' | null;
 }
 
 export interface AlpacaConfig {
@@ -47,6 +48,8 @@ export interface AlpacaConfig {
 export class AlpacaProvider implements MarketDataProvider {
   readonly name = 'Alpaca Market Data';
   readonly docsUrl = 'https://docs.alpaca.markets/docs/about-market-data-api';
+  /** Which feed served the most recent daily-candle request ('sip', or 'iex' after a fallback). */
+  lastDailyFeed: 'sip' | 'iex' | null = null;
 
   constructor(private readonly cfg: AlpacaConfig) {}
 
@@ -91,11 +94,15 @@ export class AlpacaProvider implements MarketDataProvider {
     if (sipDaily) {
       try {
         const sip = await this.pagedBars(base, raw, 10);
-        if (sip.length) return sip.reverse();
+        if (sip.length) {
+          this.lastDailyFeed = 'sip';
+          return sip.reverse();
+        }
       } catch (e) {
         if (!(e instanceof DataError && e.code === 'AUTH')) throw e;
       }
       base = url(this.cfg.feed);
+      this.lastDailyFeed = 'iex';
     }
     const candles = await this.pagedBars(base, raw, 10);
     if (!candles.length) throw new DataError('NOT_FOUND', `No ${timeframe} candles were returned for ${symbol}. Check the ticker.`);

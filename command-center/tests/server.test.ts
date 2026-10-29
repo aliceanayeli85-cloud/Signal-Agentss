@@ -277,6 +277,24 @@ describe('real-money records and Robinhood ticket', () => {
   });
 });
 
+describe('C1 experimental strategy endpoint', () => {
+  it('is clearly labelled, shows its protocol and feasibility, and never reports real-money activity', async () => {
+    const r = await ctx.api('/api/c1');
+    expect(r.status).toBe(200);
+    expect(r.body.label).toBe('EXPERIMENTAL — NOT PROVEN PROFITABLE');
+    expect(r.body.protocol.startDate).toBe('2026-10-28');
+    expect(r.body.protocol.minTrades).toBe(30);
+    expect(r.body.protocol.feasibility.note).toMatch(/about two years/);
+    expect(r.body.benchmark.symbol).toBe('SPY');
+    expect(r.body.watch).toHaveLength(10); // upcoming entry/exit conditions for every ticker
+    // The fake data ends before the start date, so nothing is processed — and the page says so.
+    const run = await ctx.api('/api/c1/run', { body: {} });
+    expect(run.body.run.processed).toEqual([]);
+    expect(run.body.overview.status.lastSuccessAt).not.toBeNull();
+    expect((await ctx.api('/api/positions?mode=paper')).body.positions).toHaveLength(0);
+  });
+});
+
 describe('backtest endpoint and access control', () => {
   it('runs a backtest on the provider history and stores it', async () => {
     const r = await ctx.api('/api/backtest', { body: { symbol: 'SPY', timeframe: '1Day' } });
