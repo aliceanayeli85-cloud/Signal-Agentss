@@ -160,6 +160,17 @@ Results are split into the first 70% (in-sample) and last 30% (out-of-sample). U
 warning says the sample is too small. Metrics: win rate, average gain/loss, profit factor,
 expectancy, average R, max drawdown.
 
+## Strategy research
+
+Read [research/REPORT.md](research/REPORT.md) before trusting any plan.
+
+- **Current dashboard rules:** REJECTED. They lost money out-of-sample in 2020–2022.
+- **Simple trend-following rule:** a candidate for more paper testing only. It showed no evidence
+  of timing skill.
+
+The research has its own audit trail (immutable baseline, backtester audit, pre-registration,
+chronological validation) under `research/`. It is reproducible with `npm run research -- …`.
+
 ## Known limitations
 
 - **No earnings or news data.** The app tells you to check earnings dates yourself before every

@@ -15,7 +15,7 @@ import { AlpacaProvider } from '../server/providers/alpaca.js';
 import { DATA_RANGE, PERIODS, RESEARCH_TICKERS } from './config.js';
 import { readFileSync } from 'node:fs';
 import type { Candle } from '../engine/types.js';
-import { cleanDaily, day, loadSeries, saveSeries, type DataCheck } from './data.js';
+import { cleanDaily, day, loadSeries, saveSeries, setCorporateActionCorrections, type DataCheck } from './data.js';
 import { stage1, stage2, type Stage1 } from './decision.js';
 import { runStrategy } from './harness.js';
 import { buyAndHoldPct, inRange, summarize, type ResearchTrade, type Summary } from './stats.js';
@@ -224,6 +224,10 @@ function benchmarks(r: Range) {
   return Object.fromEntries(RESEARCH_TICKERS.map((sym) => [sym, buyAndHoldPct(loadSeries('sip-daily-all', sym), r.start, r.end)]));
 }
 
+/** v1 = as pre-registered; v1.1 = identical rules and decision rule, with corporate-action corrections. */
+const VERSION = process.argv[3] ?? 'v1';
+if (VERSION !== 'v1') setCorporateActionCorrections(true);
+
 async function validate() {
   const cutoff = Date.parse('2023-01-01T00:00:00Z');
   const train = PERIODS[0];
@@ -254,11 +258,11 @@ async function validate() {
     const v = out.validation;
     console.log(`${id}: train ${out.train.trades}t ${fmt(out.train.expectancyR)} | validation ${v.trades}t ${fmt(v.expectancyR)} PF ${v.profitFactor?.toFixed(2)} | @15bps ${fmt(out.validationStressed.expectancyR)} → ${decisions[id]!.rejected ? 'REJECTED' : decisions[id]!.advance ? 'ADVANCES' : 'does not advance'}`);
   }
-  writeOnce('validation-v1.json', JSON.stringify({ version: 1, recordedAt: new Date().toISOString(), dataCutoff: '2022-12-31', benchmarks: { train: benchmarks(train), validation: benchmarks(val) }, decisions, strategies }, null, 2));
+  writeOnce(`validation-${VERSION}.json`, JSON.stringify({ version: VERSION, corporateActionCorrections: VERSION !== 'v1', recordedAt: new Date().toISOString(), dataCutoff: '2022-12-31', benchmarks: { train: benchmarks(train), validation: benchmarks(val) }, decisions, strategies }, null, 2));
 }
 
 async function final() {
-  const vpath = resolve(RESULTS, 'validation-v1.json');
+  const vpath = resolve(RESULTS, `validation-${VERSION}.json`);
   if (!existsSync(vpath)) throw new Error('Run validate first: the final test may only be evaluated after validation decisions are recorded.');
   const decisions = JSON.parse(readFileSync(vpath, 'utf8')).decisions as Record<string, Stage1>;
   const bars: Record<string, Candle[]> = {};
@@ -294,13 +298,82 @@ async function final() {
     };
     console.log(`${id}: test ${testSum.trades}t ${fmt(testSum.expectancyR)} PF ${testSum.profitFactor?.toFixed(2)} → ${verdict.verdict}`);
   }
-  writeOnce('final-v1.json', JSON.stringify({ version: 1, recordedAt: new Date().toISOString(), benchmarks: { train: benchmarks(train), validation: benchmarks(val), test: benchmarks(test) }, strategies }, null, 2));
+  writeOnce(`final-${VERSION}.json`, JSON.stringify({ version: VERSION, corporateActionCorrections: VERSION !== 'v1', recordedAt: new Date().toISOString(), benchmarks: { train: benchmarks(train), validation: benchmarks(val), test: benchmarks(test) }, strategies }, null, 2));
+}
+
+/**
+ * POST-HOC diagnostic (not part of the pre-registered decision rule):
+ * does a strategy pick better-than-average days, or does it just collect
+ * market drift while it happens to be invested?
+ */
+async function diagnose() {
+  const f = JSON.parse(readFileSync(resolve(RESULTS, `final-${VERSION}.json`), 'utf8')) as { strategies: Record<string, { trades: ResearchTrade[] }> };
+  const out: Record<string, Record<string, unknown>> = {};
+  for (const [id, strat] of Object.entries(f.strategies)) {
+    out[id] = {};
+    for (const pd of PERIODS) {
+      let inSum = 0, inN = 0, allSum = 0, allN = 0, pnl = 0, sameCapitalHold = 0;
+      for (const sym of RESEARCH_TICKERS) {
+        const adj = loadSeries('sip-daily-all', sym);
+        const ts = strat.trades.filter((t) => t.symbol === sym && inRange(t.entryTime, pd.start, pd.end));
+        pnl += ts.reduce((a, t) => a + t.pnl, 0);
+        for (let i = 1; i < adj.length; i++) {
+          const b = adj[i]!;
+          if (!inRange(b.t, pd.start, pd.end)) continue;
+          const ret = b.c / adj[i - 1]!.c - 1;
+          allSum += ret;
+          allN++;
+          const held = ts.find((t) => b.t > t.entryTime && b.t <= t.exitTime);
+          if (held) {
+            inSum += ret;
+            inN++;
+            sameCapitalHold += ret * held.shares * held.entryPrice;
+          }
+        }
+      }
+      out[id]![pd.id] = { inMarketAvgDailyBp: inN ? (inSum / inN) * 1e4 : null, allDaysAvgDailyBp: (allSum / allN) * 1e4, strategyPnl: pnl, sameCapitalSameDaysBuyHoldPnl: sameCapitalHold };
+    }
+  }
+  writeFileSync(resolve(RESULTS, `diagnostics-${VERSION}.json`), JSON.stringify({ note: 'POST-HOC diagnostic, not used to change any rule or verdict. Close-to-close total-return approximation over each holding window.', results: out }, null, 2));
+  console.log(JSON.stringify(out, null, 1));
+}
+
+/** Full result tables as Markdown, regenerated from the recorded JSON (never re-runs anything). */
+async function tables() {
+  const f = JSON.parse(readFileSync(resolve(RESULTS, `final-${VERSION}.json`), 'utf8'));
+  const diag = JSON.parse(readFileSync(resolve(RESULTS, `diagnostics-${VERSION}.json`), 'utf8')).results;
+  const n = (x: number | null | undefined, d = 2) => (x === null || x === undefined ? '—' : x.toFixed(d));
+  const usd = (x: number) => `${x < 0 ? '−' : ''}$${Math.abs(x).toFixed(2)}`;
+  const ci = (c: [number, number] | null) => (c ? `[${n(c[0])}, ${n(c[1])}]` : '—');
+  const L: string[] = [`# Full results (${VERSION})`, '', `Generated from \`results/final-${VERSION}.json\`. Each ticker is a separate $100 account; pooled return is on the combined $${100 * RESEARCH_TICKERS.length}. R = profit ÷ planned risk (≈ $1).`, ''];
+  L.push('## Buy-and-hold benchmarks (total return, 100% invested)', '', `| Ticker | ${PERIODS.map((p) => p.label).join(' | ')} |`, `| --- | ${PERIODS.map(() => '---').join(' | ')} |`);
+  for (const sym of RESEARCH_TICKERS) L.push(`| ${sym} | ${PERIODS.map((p) => `${n(f.benchmarks[p.id][sym], 1)}%`).join(' | ')} |`);
+  L.push('', 'No-trade baseline: $0.00 and 0% in every period.', '');
+  for (const [id, st] of Object.entries<any>(f.strategies)) {
+    L.push(`## ${id} — ${st.name}`, '', `**Verdict: ${st.verdict.verdict}.** ${st.verdict.reasons.join(' ')}`, '');
+    L.push('| Period | Trades | Net | Return | Exp. $ | Avg R | 90% CI (R) | PF | Win % | Avg win | Avg loss | Max DD | Exposure | Avg R @15 bps |', '| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |');
+    for (const p of [...PERIODS.map((x) => x.id), 'all']) {
+      const q = st.periods[p];
+      const sq = st.stressed[p];
+      L.push(`| ${p} | ${q.trades} | ${usd(q.netPnl)} | ${n(q.netReturnPct)}% | ${n(q.expectancy)} | ${n(q.expectancyR)} | ${ci(q.expectancyRci)} | ${n(q.profitFactor)} | ${n((q.winRate ?? 0) * 100, 0)} | ${n(q.avgWin)} | ${n(q.avgLoss)} | ${usd(q.maxDrawdownUsd)} | ${n(q.exposurePct, 0)}% | ${sq ? n(sq.expectancyR) : '—'} |`);
+    }
+    L.push('', '**By calendar year (pooled):** ' + Object.entries<any>(st.years).map(([y, v]) => `${y}: ${v.trades}t ${n(v.expectancyR)}R`).join(' · '), '');
+    const d = diag[id];
+    L.push('**Timing diagnostic (post-hoc):** ' + PERIODS.map((p) => `${p.id}: in-market ${n(d[p.id].inMarketAvgDailyBp, 1)} bp/day vs all days ${n(d[p.id].allDaysAvgDailyBp, 1)}; strategy ${usd(d[p.id].strategyPnl)} vs same-capital hold ${usd(d[p.id].sameCapitalSameDaysBuyHoldPnl)}`).join(' · '), '');
+    L.push('| Ticker | ' + PERIODS.map((p) => `${p.id} trades / net / avg R / PF / DD / exposure`).join(' | ') + ' |', '| --- | ' + PERIODS.map(() => '---').join(' | ') + ' |');
+    for (const sym of RESEARCH_TICKERS) {
+      L.push(`| ${sym} | ` + PERIODS.map((p) => { const q = st.periods[p.id].perTicker[sym]; return `${q.trades} / ${usd(q.netPnl)} / ${n(q.expectancyR)} / ${n(q.profitFactor)} / ${usd(q.maxDrawdownUsd)} / ${n(q.exposurePct, 0)}%`; }).join(' | ') + ' |');
+    }
+    L.push('');
+  }
+  writeFileSync(resolve(RESULTS, `tables-${VERSION}.md`), L.join('\n'));
+  console.log(`wrote research/results/tables-${VERSION}.md`);
 }
 
 const fmt = (x: number | null) => (x === null ? 'n/a' : `${x >= 0 ? '+' : ''}${x.toFixed(3)}R`);
 
 const cmd = process.argv[2];
-const run = { fetch: fetchAll, baseline, audit, validate, final } as Record<string, () => Promise<void>>;
+const run = { fetch: fetchAll, baseline, audit, validate, final, diagnose, tables } as Record<string, () => Promise<void>>;
 if (!cmd || !run[cmd]) {
   console.error(`Usage: npm run research -- <${Object.keys(run).join('|')}>`);
   process.exit(1);

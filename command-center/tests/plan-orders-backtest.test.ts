@@ -40,6 +40,7 @@ describe('trade plan', () => {
     expect(p.costs!.total).toBeGreaterThan(0);
     expect(p.tp1!.potentialProfit).toBeGreaterThan(0);
     expect(p.warnings.join(' ')).toMatch(/not a guarantee/);
+    expect(p.warnings[0]).toMatch(/REJECTED in out-of-sample testing/);
   });
   it('shows NO TRADE and no prices when market data is unavailable', () => {
     const p = buildTradePlan(input({ quote: null }));

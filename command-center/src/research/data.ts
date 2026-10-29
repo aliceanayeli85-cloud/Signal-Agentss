@@ -19,10 +19,41 @@ export function saveSeries(dataset: string, file: string, candles: Candle[]): st
   return sha256(json);
 }
 
+/**
+ * Corporate actions the data vendor does not adjust for. Alpaca's split and
+ * dividend adjustments both miss spin-offs, which then look like crashes.
+ * Found by scanning every overnight gap > 8% (all others were real events).
+ */
+export const CORPORATE_ACTIONS = [
+  { symbol: 'XLF', date: '2016-09-19', what: 'Real-estate holdings spun off into XLRE; holders received XLRE shares, so the −18% open was not a loss.' },
+];
+
+/** Version 1 results were produced before corrections existed; v1.1 applies them. */
+let applyCorrections = false;
+export function setCorporateActionCorrections(on: boolean) {
+  applyCorrections = on;
+}
+
 export function loadSeries(dataset: string, file: string): Candle[] {
   const p = dataPath(dataset, file);
   if (!existsSync(p)) throw new Error(`Missing ${p}. Run: npm run research -- fetch`);
-  return JSON.parse(readFileSync(p, 'utf8')) as Candle[];
+  const candles = JSON.parse(readFileSync(p, 'utf8')) as Candle[];
+  return applyCorrections && dataset.startsWith('sip-daily') ? adjustCorporateActions(file, candles) : candles;
+}
+
+/**
+ * Back-adjusts prices before each action by (open on the action day ÷ previous close),
+ * i.e. assumes no genuine market move overnight. An approximation, documented as such.
+ */
+export function adjustCorporateActions(symbol: string, candles: Candle[]): Candle[] {
+  let out = candles;
+  for (const a of CORPORATE_ACTIONS.filter((x) => x.symbol === symbol)) {
+    const i = out.findIndex((c) => day(c.t) === a.date);
+    if (i <= 0) continue;
+    const f = out[i]!.o / out[i - 1]!.c;
+    out = out.map((c, k) => (k < i ? { ...c, o: c.o * f, h: c.h * f, l: c.l * f, c: c.c * f, v: c.v / f } : c));
+  }
+  return out;
 }
 
 export function sha256(s: string): string {

@@ -1,0 +1,85 @@
+{
+  "note": "POST-HOC diagnostic, not used to change any rule or verdict. Close-to-close total-return approximation over each holding window.",
+  "results": {
+    "C0_BASELINE_AUDITED": {
+      "train": {
+        "inMarketAvgDailyBp": 7.900054454740209,
+        "allDaysAvgDailyBp": 6.968997067459289,
+        "strategyPnl": 18.82120657776695,
+        "sameCapitalSameDaysBuyHoldPnl": 26.873013186104412
+      },
+      "validation": {
+        "inMarketAvgDailyBp": -1.0658177535942799,
+        "allDaysAvgDailyBp": 5.768283035546065,
+        "strategyPnl": -6.577875663941885,
+        "sameCapitalSameDaysBuyHoldPnl": -5.337926064554496
+      },
+      "test": {
+        "inMarketAvgDailyBp": 3.661483696482776,
+        "allDaysAvgDailyBp": 8.35728339553153,
+        "strategyPnl": 9.167665016192892,
+        "sameCapitalSameDaysBuyHoldPnl": 12.695453044872256
+      }
+    },
+    "C1_TREND_FOLLOW": {
+      "train": {
+        "inMarketAvgDailyBp": 4.689850136887168,
+        "allDaysAvgDailyBp": 6.968997067459289,
+        "strategyPnl": 65.0632029337359,
+        "sameCapitalSameDaysBuyHoldPnl": 72.4476702139087
+      },
+      "validation": {
+        "inMarketAvgDailyBp": 6.0314868991950075,
+        "allDaysAvgDailyBp": 5.768283035546065,
+        "strategyPnl": 17.77470871507496,
+        "sameCapitalSameDaysBuyHoldPnl": 34.32134602016657
+      },
+      "test": {
+        "inMarketAvgDailyBp": 5.8345323253593255,
+        "allDaysAvgDailyBp": 8.35728339553153,
+        "strategyPnl": 53.74047247224167,
+        "sameCapitalSameDaysBuyHoldPnl": 63.701197872994115
+      }
+    },
+    "C2_BREAKOUT_CONFIRMED": {
+      "train": {
+        "inMarketAvgDailyBp": 1.936039424507842,
+        "allDaysAvgDailyBp": 6.968997067459289,
+        "strategyPnl": -4.373723788668663,
+        "sameCapitalSameDaysBuyHoldPnl": 2.3548147849041756
+      },
+      "validation": {
+        "inMarketAvgDailyBp": -3.1211983575502504,
+        "allDaysAvgDailyBp": 5.768283035546065,
+        "strategyPnl": -2.210532115534445,
+        "sameCapitalSameDaysBuyHoldPnl": -0.26639006195778536
+      },
+      "test": {
+        "inMarketAvgDailyBp": 10.102710764222879,
+        "allDaysAvgDailyBp": 8.35728339553153,
+        "strategyPnl": 4.9873003706610675,
+        "sameCapitalSameDaysBuyHoldPnl": 6.992458244288473
+      }
+    },
+    "C3_PULLBACK_IN_TREND": {
+      "train": {
+        "inMarketAvgDailyBp": 7.700147581190117,
+        "allDaysAvgDailyBp": 6.968997067459289,
+        "strategyPnl": 38.02851675209801,
+        "sameCapitalSameDaysBuyHoldPnl": 55.88603131659266
+      },
+      "validation": {
+        "inMarketAvgDailyBp": 6.948972770819082,
+        "allDaysAvgDailyBp": 5.768283035546065,
+        "strategyPnl": 7.240410226280102,
+        "sameCapitalSameDaysBuyHoldPnl": 19.89455936217078
+      },
+      "test": {
+        "inMarketAvgDailyBp": 3.8905636072668046,
+        "allDaysAvgDailyBp": 8.35728339553153,
+        "strategyPnl": 6.599064677306732,
+        "sameCapitalSameDaysBuyHoldPnl": 16.695890512762595
+      }
+    }
+  }
+}

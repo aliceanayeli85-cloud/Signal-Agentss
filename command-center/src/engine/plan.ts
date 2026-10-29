@@ -74,7 +74,11 @@ export interface PlanInput {
   marketOpen: boolean | null;
 }
 
+/** Kept in sync with research/REPORT.md. */
+export const RESEARCH_STATUS = 'Research status: the setup rules behind these plans were REJECTED in out-of-sample testing (lost money in 2020–2022). Use them for paper practice only — see research/REPORT.md.';
+
 export const STANDARD_WARNINGS = [
+  RESEARCH_STATUS,
   'A stop-loss is not a guarantee. If price gaps below the stop (for example overnight or on news), the actual loss can be larger than planned.',
   'This is analysis, not a prediction. Patterns and indicators fail regularly.',
   'Nothing has been ordered. A plan is not an order.',

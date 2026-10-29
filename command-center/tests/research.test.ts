@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { DEFAULT_SETTINGS } from '../src/engine/settings.js';
-import { cleanDaily } from '../src/research/data.js';
+import { adjustCorporateActions, cleanDaily } from '../src/research/data.js';
 import { stage1, stage2 } from '../src/research/decision.js';
 import { runStrategy, simulateChannelExit } from '../src/research/harness.js';
 import { bootstrapMeanCI, buyAndHoldPct, exposure, summarize, type Summary } from '../src/research/stats.js';
@@ -87,6 +87,13 @@ describe('research statistics', () => {
     const s = summarize([t(2), t(-1)], bars, 100);
     expect(s.profitFactor).toBe(2);
     expect(s.netReturnPct).toBeCloseTo(1, 10);
+  });
+  it('back-adjusts prices before a known spin-off so it is not mistaken for a crash', () => {
+    const c = [candle(Date.UTC(2016, 8, 16, 4), 23.7, 23.8, 23.5, 23.63), candle(Date.UTC(2016, 8, 19, 4), 19.35, 19.5, 19.2, 19.31)];
+    const a = adjustCorporateActions('XLF', c);
+    expect(a[1]!.o / a[0]!.c).toBeCloseTo(1, 10);
+    expect(a[1]).toEqual(c[1]);
+    expect(adjustCorporateActions('SPY', c)).toEqual(c);
   });
   it('data cleaning cuts the series after an internal gap', () => {
     const c = [candle(Date.UTC(2018, 10, 1, 4), 1, 1, 1, 1), candle(Date.UTC(2020, 6, 27, 4), 2, 2, 2, 2), candle(Date.UTC(2020, 6, 28, 4), 2, 2, 2, 2)];
