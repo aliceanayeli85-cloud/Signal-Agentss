@@ -21,6 +21,8 @@ export interface Candle {
   l: number;
   c: number;
   v: number;
+  /** Session volume-weighted average price, when the data source provides it. */
+  vw?: number;
 }
 
 /** A candle plus whether its interval has finished. Forming candles can still change. */

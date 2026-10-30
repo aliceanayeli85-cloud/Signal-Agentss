@@ -10,6 +10,24 @@ export class DataError extends Error {
   }
 }
 
+export interface NewsItem {
+  id: string;
+  headline: string;
+  summary: string | null;
+  source: string;
+  url: string | null;
+  symbols: string[];
+  time: number;
+}
+
+function parseBar(b: Record<string, unknown>): Candle | null {
+  const c: Candle = { t: Date.parse(String(b.t)), o: Number(b.o), h: Number(b.h), l: Number(b.l), c: Number(b.c), v: Number(b.v) };
+  if (![c.t, c.o, c.h, c.l, c.c, c.v].every(Number.isFinite)) return null;
+  const vw = Number(b.vw);
+  if (Number.isFinite(vw) && vw > 0) c.vw = vw;
+  return c;
+}
+
 export interface MarketClock {
   isOpen: boolean;
   timestamp: number;
@@ -129,13 +147,70 @@ export class AlpacaProvider implements MarketDataProvider {
         throw new DataError('MALFORMED', 'Alpaca returned an unexpected bars response.');
       }
       for (const b of (body.bars ?? []) as Record<string, unknown>[]) {
-        const c = { t: Date.parse(String(b.t)), o: Number(b.o), h: Number(b.h), l: Number(b.l), c: Number(b.c), v: Number(b.v) };
-        if ([c.t, c.o, c.h, c.l, c.c, c.v].every(Number.isFinite)) candles.push(c);
+        const c = parseBar(b);
+        if (c) candles.push(c);
       }
       token = typeof body.next_page_token === 'string' && body.next_page_token ? body.next_page_token : null;
       if (!token) break;
     }
     return candles;
+  }
+
+  /**
+   * Daily candles for many symbols at once (consolidated feed, ending ≥16 minutes
+   * ago as the free plan requires). Oldest first per symbol.
+   */
+  async dailyBarsMulti(symbols: string[], startIso: string, endIso = new Date(Date.now() - 16 * 60_000).toISOString(), feed: 'sip' | 'iex' = 'sip'): Promise<Record<string, Candle[]>> {
+    const out: Record<string, Candle[]> = {};
+    for (let k = 0; k < symbols.length; k += 50) {
+      const chunk = symbols.slice(k, k + 50);
+      const base = `${this.cfg.dataUrl}/v2/stocks/bars?symbols=${encodeURIComponent(chunk.join(','))}&timeframe=1Day&start=${startIso}&end=${endIso}&limit=10000&adjustment=split&feed=${feed}`;
+      let token: string | null = null;
+      for (let page = 0; page < 200; page++) {
+        const body = (await this.get(token ? `${base}&page_token=${encodeURIComponent(token)}` : base)) as { bars?: Record<string, unknown[]> | null; next_page_token?: unknown } | null;
+        if (!body || typeof body !== 'object') throw new DataError('MALFORMED', 'Alpaca returned an unexpected multi-symbol bars response.');
+        for (const [sym, list] of Object.entries(body.bars ?? {})) {
+          const arr = (out[sym] ??= []);
+          for (const b of list as Record<string, unknown>[]) {
+            const c = parseBar(b);
+            if (c) arr.push(c);
+          }
+        }
+        token = typeof body.next_page_token === 'string' && body.next_page_token ? body.next_page_token : null;
+        if (!token) break;
+      }
+    }
+    return out;
+  }
+
+  /** Benzinga news through Alpaca. Returned verbatim; nothing is generated. */
+  async news(opts: { symbols?: string[]; startIso?: string; limit?: number }): Promise<NewsItem[]> {
+    const q = [`limit=${Math.min(50, opts.limit ?? 20)}`, 'sort=desc'];
+    if (opts.symbols?.length) q.push(`symbols=${encodeURIComponent(opts.symbols.join(','))}`);
+    if (opts.startIso) q.push(`start=${opts.startIso}`);
+    const body = (await this.get(`${this.cfg.dataUrl}/v1beta1/news?${q.join('&')}`)) as { news?: Record<string, unknown>[] } | null;
+    if (!body || !Array.isArray(body.news)) throw new DataError('MALFORMED', 'Alpaca returned an unexpected news response.');
+    return body.news.flatMap((n) => {
+      const t = Date.parse(String(n.created_at ?? ''));
+      const headline = String(n.headline ?? '').trim();
+      if (!headline || !Number.isFinite(t)) return [];
+      return [{ id: String(n.id), headline, summary: String(n.summary ?? '').trim() || null, source: String(n.source ?? 'unknown'), url: typeof n.url === 'string' ? n.url : null, symbols: Array.isArray(n.symbols) ? (n.symbols as unknown[]).map(String) : [], time: t }];
+    });
+  }
+
+  /** Market-wide discovery lists. Includes penny stocks and warrants — callers must filter. */
+  async screener(): Promise<{ mostActive: string[]; gainers: string[]; losers: string[]; asOf: number | null }> {
+    const [a, m] = await Promise.all([
+      this.get(`${this.cfg.dataUrl}/v1beta1/screener/stocks/most-actives?by=volume&top=100`) as Promise<{ most_actives?: { symbol: string }[]; last_updated?: string } | null>,
+      this.get(`${this.cfg.dataUrl}/v1beta1/screener/stocks/movers?top=50`) as Promise<{ gainers?: { symbol: string }[]; losers?: { symbol: string }[] } | null>,
+    ]);
+    const asOf = Date.parse(String(a?.last_updated ?? ''));
+    return {
+      mostActive: (a?.most_actives ?? []).map((x) => String(x.symbol)),
+      gainers: (m?.gainers ?? []).map((x) => String(x.symbol)),
+      losers: (m?.losers ?? []).map((x) => String(x.symbol)),
+      asOf: Number.isFinite(asOf) ? asOf : null,
+    };
   }
 
   async clock(): Promise<MarketClock> {
