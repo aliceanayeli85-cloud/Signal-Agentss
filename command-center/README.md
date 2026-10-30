@@ -1,4 +1,53 @@
-# Trading Command Center
+# Trading Intelligence (Trading Command Center)
+
+## The agent
+
+**Trading Intelligence** researches the market on a schedule, ranks opportunities, explains each
+one, watches your real holdings, and prepares trade tickets for **you** to approve and place in
+Robinhood. **It never places an order.**
+
+| Screen | What it shows |
+| --- | --- |
+| **Agent** (home) | Agent status (last and next scan, whether it is really running), daily briefing, market conditions, best opportunities, alerts, portfolio summary |
+| **Ideas** | Ranked opportunities: label, bullish/bearish, risk, P(up) (or INSUFFICIENT EVIDENCE), entry, stop, reward-to-risk, capital fit, and the exact label rules |
+| **Stock analysis** (tap any idea, or More) | The 8-point explanation, forecast, plan and sizing for your account, signals, technical readings, news, interactive chart |
+| **Robinhood** | Your real holdings (entered by you), fractional shares, value, profit/loss, a recommendation per holding, cash |
+| **Trade** | Tickets prepared by the agent, approval workflow (type APPROVE), Robinhood steps and the MCP prompt |
+| **More → AI History** | Model validation record, live forward-test scoring, outcome of each label, winning and losing calls |
+
+### How it works
+- **Scan.** 109 liquid US stocks and ETFs across 13 sector groups, plus most-active and top-mover
+  names from Alpaca's screener. Screener names must pass $5+ price, $20M+ daily dollar volume and
+  220+ days of history, and leveraged/inverse funds are excluded.
+- **Signals.** Unusual volume, relative strength, 20-day breakouts and breakdowns, the engine's
+  pullback/breakout/reversal setups, failed breakouts, golden and death crosses, EMA crossovers,
+  RSI levels and reversals, MACD crosses, Bollinger bands and squeeze, session VWAP,
+  support/resistance and volatility.
+- **Forecasts.** The model in [research/FORECAST_MODEL.md](research/FORECAST_MODEL.md). **No
+  horizon passed validation**, so no probability is shown — only historical base rates.
+- **Labels** (rules in `src/agent/classify.ts`, also shown in the app):
+  - **STRONG BUY SETUP** — requires a validated forecast, so it is currently impossible;
+  - **BUY WATCHLIST**;
+  - **HOLD** and **SELL WATCH** (for things you own);
+  - **AVOID**;
+  - **NO TRADE**.
+- **Small-account sizing.** Risk is 2% of *your* equity (about $0.11 on $5.28), with Robinhood's
+  $1 minimum and estimated spread, slippage and fees. If nothing fits, the agent says **keep your
+  money**.
+- **Schedule.** Weekdays at 08:45 and 16:30 New York time, configurable through
+  `PUT /api/agent/config`. Scans only run while the server and its monitor run. Between scans, the
+  monitor checks your holdings and price alerts periodically, not continuously.
+- **Alerts.** New opportunities, label changes, exit conditions on holdings, a holding trading
+  below its 20-day low, data problems.
+- **Predictions.** Every forecast is logged and scored after its horizon passes (AI History).
+
+### Needs credentials or integrations
+- **Alpaca keys** (free) — required for all data. News and screener come with them.
+- **Earnings dates** — not connected; needs a free Alpha Vantage key (adapter not yet built). The
+  app tells you to check earnings yourself.
+- **Robinhood account access** — only through Robinhood's own MCP sign-in inside an AI app. Until
+  then, holdings and cash are entered manually.
+- **LLM summaries (Claude)** — not used. The briefing is generated from data, so nothing is invented.
 
 A phone-friendly dashboard for **analysing US stocks and ETFs, planning trades, paper trading and
 monitoring**, built for a $100 account with a $1 risk per trade.

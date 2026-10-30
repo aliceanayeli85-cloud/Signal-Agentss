@@ -21,7 +21,7 @@ export function HomePage({ dash, nav }: { dash: ApiState<any>; nav: Nav }) {
         {o?.quoteError && <p className="mb-2 text-sm text-down">{o.quoteError}</p>}
         <div className="grid grid-cols-2 gap-2">
           {(o?.items ?? []).map((i: any) => (
-            <button key={i.symbol} onClick={() => nav.go('analyze', { symbol: i.symbol })} className="rounded-lg border border-line bg-panel2 p-2 text-left">
+            <button key={i.symbol} onClick={() => nav.go('more', { more: 'stock', symbol: i.symbol })} className="rounded-lg border border-line bg-panel2 p-2 text-left">
               <div className="flex items-center justify-between">
                 <span className="font-semibold">{i.symbol}</span>
                 {i.trend && <Badge tone={TREND_TONE[i.trend]}>{i.trend}</Badge>}
@@ -59,7 +59,7 @@ export function HomePage({ dash, nav }: { dash: ApiState<any>; nav: Nav }) {
             )}
           </div>
           <div className="mt-3 flex gap-2">
-            <Button className="flex-1" onClick={() => nav.go('trades')}>Positions</Button>
+            <Button className="flex-1" onClick={() => nav.go('more', { more: 'paper-trades' })}>Positions</Button>
             <Button className="flex-1" onClick={() => nav.go('more', { more: 'risk' })}>Risk & kill switch</Button>
           </div>
         </Card>
@@ -76,7 +76,7 @@ export function HomePage({ dash, nav }: { dash: ApiState<any>; nav: Nav }) {
       )}
 
       {d && (
-        <Card title="Recent alerts" right={<Button tone="ghost" onClick={() => nav.go('alerts')}>All</Button>}>
+        <Card title="Recent alerts" right={<Button tone="ghost" onClick={() => nav.go('more', { more: 'alerts' })}>All</Button>}>
           {d.alerts.length === 0 ? <p className="text-sm text-dim">No alerts yet.</p> : <div className="space-y-2">{d.alerts.slice(0, 4).map((a: any) => <AlertItem key={a.id} a={a} />)}</div>}
         </Card>
       )}

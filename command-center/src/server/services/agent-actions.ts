@@ -102,7 +102,11 @@ export async function createTicket(deps: Deps, symbol: string, side: 'buy' | 'se
     ticket = {
       symbol, name: o.name, side: 'SELL', classification: o.classification, reasons: o.classReasons,
       shares: h.shares, dollarAmount: Math.round(h.shares * px * 100) / 100, orderType: 'Market (fractional shares) or limit', limitPrice: Math.round(px * 100) / 100,
-      costBasis: h.cost_basis, estimatedPnl: h.shares * px - h.cost_basis, warnings: warnings.filter((w) => !w.includes('stop')),
+      costBasis: h.cost_basis, estimatedPnl: h.shares * px - h.cost_basis,
+      warnings: [
+        ...(o.classification === 'SELL WATCH' ? [] : o.held ? [`The agent's view is ${o.classification}: no exit condition is met. Selling is your choice, not a recommendation.`] : [`The latest scan ran before this holding was recorded, so it has no holding-specific view yet. Run a scan first.`]),
+        ...warnings.filter((w) => !w.includes('stop')),
+      ],
     };
   }
   const agentPrompt = [

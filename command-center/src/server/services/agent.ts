@@ -440,7 +440,7 @@ export async function runAgentScan(deps: Deps, trigger: 'schedule' | 'manual'): 
         runId,
       );
     })();
-    const done: NewAlert = { dedupKey: `agent:briefing:${runId}`, category: 'AGENT', mode: null, symbol: null, title: 'Daily briefing ready', reason: briefing.headline, price: null, priceAt: null };
+    const done: NewAlert = { dedupKey: `agent:briefing:${today}`, category: 'AGENT', mode: null, symbol: null, title: 'Daily briefing ready', reason: briefing.headline, price: null, priceAt: null };
     if (recordAlert(db, done, deps.now())) alerts.push(done);
     return { runId, status: 'ok', error: null, scanned: ranked.length, alerts };
   } catch (e) {

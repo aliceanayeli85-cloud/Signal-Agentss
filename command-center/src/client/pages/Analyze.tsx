@@ -46,7 +46,7 @@ export function AnalyzePage({ nav }: { nav: Nav }) {
       await api('/api/watchlist', { body: { symbol: s } });
       setInput('');
       watch.reload();
-      nav.go('analyze', { symbol: s });
+      nav.go('more', { more: nav.more === 'chart' ? 'chart' : 'stock', symbol: s });
     } catch (e) {
       alert((e as ApiError).message);
     }
@@ -62,7 +62,7 @@ export function AnalyzePage({ nav }: { nav: Nav }) {
         {watch.data?.error && <p className="mt-2 text-xs text-down">{watch.data.error}</p>}
         <div className="mt-2 flex gap-2 overflow-x-auto pb-1">
           {(watch.data?.symbols ?? []).map((w: any) => (
-            <button key={w.symbol} onClick={() => nav.go('analyze', { symbol: w.symbol })} className={`shrink-0 rounded-lg border px-3 py-1.5 text-left ${w.symbol === symbol ? 'border-info bg-info/10' : 'border-line bg-panel2'}`}>
+            <button key={w.symbol} onClick={() => nav.go('more', { more: nav.more === 'chart' ? 'chart' : 'stock', symbol: w.symbol })} className={`shrink-0 rounded-lg border px-3 py-1.5 text-left ${w.symbol === symbol ? 'border-info bg-info/10' : 'border-line bg-panel2'}`}>
               <div className="text-sm font-semibold">{w.symbol}</div>
               <div className="num text-xs">{price(w.quote?.price)}</div>
               <div className="text-[10px] text-dim">{w.quote ? timeAgo(w.quote.time) : 'no price'}</div>

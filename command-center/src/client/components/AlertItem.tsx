@@ -5,6 +5,7 @@ const CATEGORY: Record<string, { tone: 'info' | 'paper' | 'warn'; label: string 
   PRICE_ALERT: { tone: 'info', label: 'Price alert — not an order' },
   SIMULATED_ORDER: { tone: 'paper', label: 'Simulated order (paper)' },
   SYSTEM: { tone: 'warn', label: 'System' },
+  AGENT: { tone: 'info', label: 'Agent research — not an order' },
 };
 
 export function AlertItem({ a }: { a: any }) {

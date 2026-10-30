@@ -1,24 +1,43 @@
 import type { Nav } from '../App.js';
 import { Button, Card } from '../components/ui.js';
 import { useApi } from '../lib/useApi.js';
+import type { ApiState } from '../lib/useApi.js';
+import { AlertsPage } from './Alerts.js';
+import { AnalyzePage } from './Analyze.js';
 import { BacktestPage } from './Backtest.js';
+import { HistoryPage } from './History.js';
+import { HomePage } from './Home.js';
+import { StockPage } from './Stock.js';
+import { TradesPage } from './Trades.js';
 import { C1Page } from './C1.js';
 import { JournalPage } from './Journal.js';
 import { RiskPage } from './Risk.js';
 import { RobinhoodPage } from './Robinhood.js';
 
 const ITEMS = [
+  { id: 'history', label: 'AI History', hint: 'Forecast model validation, past predictions, what happened next, calibration.' },
+  { id: 'stock', label: 'Stock analysis', hint: 'Any ticker: agent view, forecast, plan, news and interactive chart.' },
+  { id: 'alerts', label: 'Alerts', hint: 'Opportunity, exit, price and system alerts.' },
+  { id: 'paper', label: 'Paper account (practice)', hint: 'Simulated $100 account, market overview and risk status.' },
+  { id: 'paper-trades', label: 'Paper trades', hint: 'Simulated positions and orders; also recorded real trades.' },
+  { id: 'chart', label: 'Chart & setup analysis', hint: 'The original analysis desk with watchlist and paper orders.' },
   { id: 'c1', label: 'C1 trend following — EXPERIMENTAL', hint: 'Separate paper-only portfolio. Not proven profitable. Signals, simulated trades, benchmark.' },
   { id: 'journal', label: 'Journal & P&L', hint: 'Write down what happened. Paper and real kept apart.' },
   { id: 'backtest', label: 'Backtest', hint: 'Test the rules on real history, with costs.' },
   { id: 'risk', label: 'Risk, limits & kill switch', hint: 'Your $1-per-trade rules and the emergency stop.' },
-  { id: 'robinhood', label: 'Robinhood (real money)', hint: 'What the official integration can do, and order tickets.' },
+  { id: 'robinhood', label: 'Robinhood integration', hint: 'What the official connector can do, setup steps, and strategy tickets.' },
   { id: 'help', label: 'Help & setup', hint: 'Data connection status and plain-English basics.' },
 ];
 
-export function MorePage({ nav, onChange }: { nav: Nav; onChange: () => void }) {
+export function MorePage({ nav, onChange, dash }: { nav: Nav; onChange: () => void; dash: ApiState<any> }) {
   const back = <Button tone="ghost" onClick={() => nav.go('more')}>‹ Back</Button>;
   if (nav.more === 'c1') return <>{back}<C1Page /></>;
+  if (nav.more === 'history') return <>{back}<HistoryPage /></>;
+  if (nav.more === 'stock') return <>{back}<StockPage nav={nav} /></>;
+  if (nav.more === 'alerts') return <>{back}<AlertsPage onChange={onChange} /></>;
+  if (nav.more === 'paper') return <>{back}<HomePage dash={dash} nav={nav} /></>;
+  if (nav.more === 'paper-trades') return <>{back}<TradesPage nav={nav} /></>;
+  if (nav.more === 'chart') return <>{back}<AnalyzePage nav={nav} /></>;
   if (nav.more === 'journal') return <>{back}<JournalPage /></>;
   if (nav.more === 'backtest') return <>{back}<BacktestPage symbol={nav.symbol} /></>;
   if (nav.more === 'risk') return <>{back}<RiskPage onChange={onChange} /></>;
