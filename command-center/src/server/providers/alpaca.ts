@@ -44,6 +44,10 @@ export interface MarketDataProvider {
   bars(symbol: string, timeframe: Timeframe, limit: number): Promise<Candle[]>;
   clock(): Promise<MarketClock>;
   lastDailyFeed?: 'sip' | 'iex' | null;
+  dailyBarsMulti(symbols: string[], startIso: string, endIso?: string, feed?: 'sip' | 'iex'): Promise<Record<string, Candle[]>>;
+  news(opts: { symbols?: string[]; startIso?: string; limit?: number }): Promise<NewsItem[]>;
+  screener(): Promise<{ mostActive: string[]; gainers: string[]; losers: string[]; asOf: number | null }>;
+  assetName(symbol: string): Promise<string | null>;
 }
 
 export interface AlpacaConfig {
@@ -90,10 +94,14 @@ export class AlpacaProvider implements MarketDataProvider {
     const body = await this.get(url);
     if (!body || typeof body !== 'object') throw new DataError('MALFORMED', 'Alpaca returned an unexpected snapshot response.');
     for (const sym of symbols) {
-      const snap = (body as Record<string, unknown>)[sym] as { latestTrade?: { p?: unknown; t?: unknown } } | null | undefined;
+      const snap = (body as Record<string, unknown>)[sym] as { latestTrade?: { p?: unknown; t?: unknown }; latestQuote?: { bp?: unknown; ap?: unknown } } | null | undefined;
       const p = Number(snap?.latestTrade?.p);
       const t = Date.parse(String(snap?.latestTrade?.t ?? ''));
-      if (Number.isFinite(p) && p > 0 && Number.isFinite(t)) out.set(sym, { price: p, time: t, source: `${this.name} (${this.cfg.feed.toUpperCase()} last trade)` });
+      const bid = Number(snap?.latestQuote?.bp);
+      const ask = Number(snap?.latestQuote?.ap);
+      if (Number.isFinite(p) && p > 0 && Number.isFinite(t)) {
+        out.set(sym, { price: p, time: t, source: `${this.name} (${this.cfg.feed.toUpperCase()} last trade)`, ...(bid > 0 && ask >= bid ? { bid, ask } : {}) });
+      }
     }
     return out;
   }
@@ -196,6 +204,16 @@ export class AlpacaProvider implements MarketDataProvider {
       if (!headline || !Number.isFinite(t)) return [];
       return [{ id: String(n.id), headline, summary: String(n.summary ?? '').trim() || null, source: String(n.source ?? 'unknown'), url: typeof n.url === 'string' ? n.url : null, symbols: Array.isArray(n.symbols) ? (n.symbols as unknown[]).map(String) : [], time: t }];
     });
+  }
+
+  /** Company name from Alpaca's asset list (read-only account endpoint; no orders). */
+  async assetName(symbol: string): Promise<string | null> {
+    try {
+      const a = (await this.get(`${this.cfg.clockUrl}/v2/assets/${encodeURIComponent(symbol)}`)) as { name?: unknown } | null;
+      return typeof a?.name === 'string' ? a.name : null;
+    } catch {
+      return null;
+    }
   }
 
   /** Market-wide discovery lists. Includes penny stocks and warrants — callers must filter. */

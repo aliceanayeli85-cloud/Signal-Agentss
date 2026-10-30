@@ -40,3 +40,13 @@ export const LIQUIDITY = { minPrice: 5, minAvgDollarVolume: 20_000_000, minHisto
 export function plausibleCommonTicker(symbol: string): boolean {
   return /^[A-Z]{1,5}$/.test(symbol) && !/(W|WS|U|R)$/.test(symbol.length === 5 ? symbol : '');
 }
+
+/**
+ * Leveraged and inverse funds are excluded: they use derivatives to multiply
+ * or invert daily moves and lose value over time in choppy markets — not
+ * suitable for this account (no leverage, no options).
+ */
+export function isLeveragedOrInverse(name: string | null): boolean {
+  if (!name) return false;
+  return /(\b[23]x\b|-[123]x|ultra|leveraged|inverse|\bbear\b|\bshort\b|daily .*bull|bull .*daily|2x|3x)/i.test(name);
+}

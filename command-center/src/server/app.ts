@@ -17,6 +17,9 @@ import { describeError } from './services/market.js';
 import { monitorStatus, runMonitorCycle, type Notifier } from './services/monitor.js';
 import { ROBINHOOD_FACTS, buildRobinhoodTicket } from './services/robinhood.js';
 import { c1Overview, runC1 } from './services/c1.js';
+import { agentConfig, agentStatus, holdings as listHoldings, latestRun, RANKING_RULE, runAgentScan } from './services/agent.js';
+import { CLASS_RULES, THRESHOLDS } from '../agent/classify.js';
+import { aiHistory, createTicket, decideTicket, listTickets, portfolio, stockOpportunity } from './services/agent-actions.js';
 import { approveOrder, cancelOrder, closePaperPosition, previewOrder, recordLiveEntry, recordLiveExit, setLiveCapital, TradingError, toPreview, type OrderRow } from './services/trading.js';
 
 export interface AppOptions {
@@ -309,6 +312,77 @@ export function createApp(deps: Deps, opts: AppOptions): express.Express {
   app.post('/api/c1/run', wrap(async () => {
     const r = await runC1(deps, getSettings(db), getKillSwitch(db).on);
     return { run: r, overview: await c1Overview(deps, getSettings(db)) };
+  }));
+
+  // --- Trading Intelligence agent (research and recommendations; never places orders) ---
+  app.get('/api/agent', wrap(async () => {
+    const now = deps.now();
+    const latest = latestRun(db);
+    const hold = listHoldings(db);
+    let quotes = new Map();
+    try {
+      if (hold.length) quotes = await deps.market.quotes(hold.map((h) => h.symbol));
+    } catch {
+      /* portfolio shows missing prices */
+    }
+    return {
+      status: agentStatus(db, now),
+      monitor: monitorStatus(db, now),
+      latest: latest ? { run: latest.run, market: latest.market, briefing: latest.briefing, meta: latest.meta, top: latest.opportunities.slice(0, 8), counts: latest.opportunities.reduce<Record<string, number>>((m, o) => ((m[o.classification] = (m[o.classification] ?? 0) + 1), m), {}) } : null,
+      alerts: db.prepare("SELECT * FROM alert_events WHERE category IN ('AGENT','PRICE_ALERT','SYSTEM') ORDER BY created_at DESC, id DESC LIMIT 8").all(),
+      portfolio: portfolio(db, latest?.opportunities ?? null, quotes),
+      killSwitch: getKillSwitch(db),
+      dataConfigured: deps.market.provider.isConfigured(),
+    };
+  }));
+  app.get('/api/agent/opportunities', wrap(() => {
+    const latest = latestRun(db);
+    return { run: latest?.run ?? null, opportunities: latest?.opportunities ?? [], market: latest?.market ?? null, rankingRule: RANKING_RULE, classRules: CLASS_RULES, thresholds: THRESHOLDS };
+  }));
+  app.post('/api/agent/run', wrap(() => runAgentScan(deps, 'manual')));
+  app.get('/api/agent/config', wrap(() => agentConfig(db)));
+  app.put('/api/agent/config', wrap((req) => {
+    const b = parse(z.object({ enabled: z.boolean().optional(), scheduleET: z.array(z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/)).max(6).optional(), extraSymbols: z.array(z.string()).max(50).optional(), removedSymbols: z.array(z.string()).max(200).optional(), useScreener: z.boolean().optional() }), req.body);
+    const clean = (xs?: string[]) => xs?.map((x) => symbolParam(x));
+    const next = { ...agentConfig(db), ...b, ...(b.extraSymbols ? { extraSymbols: clean(b.extraSymbols) } : {}), ...(b.removedSymbols ? { removedSymbols: clean(b.removedSymbols) } : {}) };
+    setKv(db, 'agent_config', next, deps.now());
+    return next;
+  }));
+  app.get('/api/agent/stock/:symbol', wrap((req) => stockOpportunity(deps, symbolParam(req.params.symbol))));
+  app.get('/api/agent/history', wrap(() => aiHistory(db)));
+  app.get('/api/agent/tickets', wrap(() => ({ tickets: listTickets(db, deps.now()) })));
+  app.post('/api/agent/tickets', wrap((req) => {
+    const b = parse(z.object({ symbol: z.string(), side: z.enum(['buy', 'sell']) }), req.body);
+    return createTicket(deps, symbolParam(b.symbol), b.side);
+  }));
+  app.post('/api/agent/tickets/:id/approve', wrap((req) => decideTicket(db, String(req.params.id), 'approve', req.body?.confirm, deps.now())));
+  app.post('/api/agent/tickets/:id/reject', wrap((req) => decideTicket(db, String(req.params.id), 'reject', null, deps.now())));
+
+  // --- My Robinhood: holdings entered by the user (the app cannot read the account) ---
+  app.get('/api/robinhood/portfolio', wrap(async () => {
+    const hold = listHoldings(db);
+    let quotes = new Map();
+    let quoteError: string | null = null;
+    try {
+      if (hold.length) quotes = await deps.market.quotes(hold.map((h) => h.symbol));
+    } catch (e) {
+      quoteError = describeError(e).message;
+    }
+    return { ...portfolio(db, latestRun(db)?.opportunities ?? null, quotes), quoteError };
+  }));
+  app.put('/api/robinhood/holdings', wrap((req) => {
+    const b = parse(z.object({ symbol: z.string(), shares: z.number().positive().max(1e7), costBasis: z.number().min(0).max(1e9), note: z.string().max(200).optional() }), req.body);
+    db.prepare("INSERT INTO holdings (symbol, shares, cost_basis, source, note, updated_at) VALUES (?, ?, ?, 'manual', ?, ?) ON CONFLICT(symbol) DO UPDATE SET shares = excluded.shares, cost_basis = excluded.cost_basis, note = excluded.note, updated_at = excluded.updated_at").run(symbolParam(b.symbol), b.shares, b.costBasis, b.note ?? null, deps.now());
+    return { ok: true };
+  }));
+  app.delete('/api/robinhood/holdings/:symbol', wrap((req) => {
+    db.prepare('DELETE FROM holdings WHERE symbol = ?').run(symbolParam(req.params.symbol));
+    return { ok: true };
+  }));
+  app.put('/api/robinhood/cash', wrap((req) => {
+    const b = parse(z.object({ amount: z.number().min(0).max(1e9).nullable() }), req.body);
+    setKv(db, 'robinhood_cash', b.amount, deps.now());
+    return { ok: true, cash: b.amount };
   }));
 
   // --- Robinhood ---

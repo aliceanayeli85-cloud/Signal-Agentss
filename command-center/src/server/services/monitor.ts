@@ -7,11 +7,12 @@ import { getKillSwitch, getSettings, type Db } from '../db.js';
 import { logger } from '../logger.js';
 import { openPositions, type PositionRow } from './account.js';
 import { runC1 } from './c1.js';
+import { monitorHoldings, runAgentIfDue } from './agent.js';
 import type { Deps } from './analysis.js';
 import { describeError } from './market.js';
 import { expireOrders, getOrder, openPaperPosition, recordSell, type OrderRow } from './trading.js';
 
-export type AlertCategory = 'PRICE_ALERT' | 'SIMULATED_ORDER' | 'SYSTEM';
+export type AlertCategory = 'PRICE_ALERT' | 'SIMULATED_ORDER' | 'SYSTEM' | 'AGENT';
 
 export interface NewAlert {
   dedupKey: string;
@@ -229,6 +230,15 @@ export async function runMonitorCycle(deps: Deps, owner: string, notify: Notifie
     if (c1.error) emit({ dedupKey: `c1:error:${today}`, category: 'SYSTEM', mode: null, symbol: null, title: 'C1 could not update', reason: c1.error, price: null, priceAt: null });
   } catch (e) {
     logger.warn('C1 processing failed', { error: describeError(e).message });
+  }
+
+  // 5) Trading Intelligence agent: scheduled scans and intraday checks of real holdings (alerts only).
+  try {
+    const scan = await runAgentIfDue(deps);
+    if (scan) created.push(...scan.alerts);
+    created.push(...(await monitorHoldings(deps)));
+  } catch (e) {
+    logger.warn('agent cycle failed', { error: describeError(e).message });
   }
 
   const end = deps.now();

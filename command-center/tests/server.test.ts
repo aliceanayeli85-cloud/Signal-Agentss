@@ -1,7 +1,7 @@
 import type { AddressInfo } from 'node:net';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { createApp } from '../src/server/app.js';
-import { openDb, type Db } from '../src/server/db.js';
+import { openDb, setKv, type Db } from '../src/server/db.js';
 import { assertSafeConfig, env } from '../src/server/env.js';
 import { AlpacaProvider, DataError } from '../src/server/providers/alpaca.js';
 import { MarketService } from '../src/server/services/market.js';
@@ -25,6 +25,8 @@ async function start(token: string | null = null): Promise<Ctx> {
   // Inside the entry zone (trigger ≈ 67.75, zone top ≈ 67.82).
   fake.quotes_.set('SPY', { price: 67.78, time: NOW - 2000, source: 'fake' });
   const deps = { db, market: new MarketService(fake, db, () => clock.now), now: () => clock.now };
+  // Scheduled agent scans are tested separately (agent.test.ts); keep these monitor tests focused.
+  setKv(db, 'agent_config', { enabled: false }, NOW);
   const app = createApp(deps, { accessToken: token, notify: null, monitorOwner: 'test' });
   const server = app.listen(0, '127.0.0.1');
   await new Promise((r) => server.once('listening', r));

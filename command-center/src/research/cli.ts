@@ -426,10 +426,67 @@ async function c1Feasibility() {
   console.log(JSON.stringify(out, null, 2));
 }
 
+// ---------------------------------------------------------------------------
+// Forecasting model (Trading Intelligence agent)
+// ---------------------------------------------------------------------------
+
+const FORECAST_DATA = 'universe-daily';
+
+async function forecastFetch() {
+  const { DEFAULT_UNIVERSE } = await import('../agent/universe.js');
+  const p = provider();
+  const end = '2026-10-29T00:00:00Z';
+  const all = await p.dailyBarsMulti(DEFAULT_UNIVERSE, '2015-01-01T00:00:00Z', end, 'sip');
+  const manifest: Record<string, { sha256: string; check: DataCheck }> = {};
+  for (const sym of DEFAULT_UNIVERSE) {
+    const { candles, check } = cleanDaily(all[sym] ?? []);
+    manifest[sym] = { sha256: saveSeries(FORECAST_DATA, sym, candles), check };
+    if (check.longGaps.length || check.invalidOhlc || candles.length < 500) console.log(`note ${sym}: ${check.bars} bars ${check.first}→${check.last} gaps=${check.longGaps.length} invalid=${check.invalidOhlc}`);
+  }
+  writeFileSync(resolve(RESULTS, 'forecast-data-manifest.json'), JSON.stringify({ fetchedAt: new Date().toISOString(), range: { start: '2015-01-01', end }, feed: 'sip', adjustment: 'split', datasets: manifest }, null, 2));
+  console.log(`saved ${Object.keys(manifest).length} symbols`);
+}
+
+async function forecastTrain() {
+  const { DEFAULT_UNIVERSE } = await import('../agent/universe.js');
+  const { computeFeatures, dateKey, label, marketContext } = await import('../agent/features.js');
+  const { applyCorporateActions } = await import('../agent/corporate-actions.js');
+  const { HORIZONS, SPLITS, trainHorizon } = await import('../agent/model.js');
+  type Sample = import('../agent/model.js').Sample;
+  const spy = loadSeries(FORECAST_DATA, 'SPY');
+  const market = marketContext(spy);
+  const series = Object.fromEntries(DEFAULT_UNIVERSE.map((sym) => [sym, applyCorporateActions(sym, loadSeries(FORECAST_DATA, sym))]));
+  const models: Record<string, unknown> = {};
+  for (const h of HORIZONS) {
+    const sets = { train: [] as Sample[], validation: [] as Sample[], test: [] as Sample[] };
+    for (const sym of DEFAULT_UNIVERSE) {
+      const cs = series[sym]!;
+      for (const row of computeFeatures(cs, market)) {
+        const lb = label(cs, row.index, h, row.x[9]! * cs[row.index]!.c);
+        if (!lb) continue;
+        // Embargo: a sample belongs to a period only if its whole forward window is inside it.
+        const endDate = dateKey(cs[row.index + h]!.t);
+        const s: Sample = { symbol: sym, date: row.date, x: row.x, ...lb };
+        if (endDate <= SPLITS.trainEnd) sets.train.push(s);
+        else if (row.date >= SPLITS.validationStart && endDate <= SPLITS.validationEnd) sets.validation.push(s);
+        else if (row.date >= SPLITS.testStart) sets.test.push(s);
+      }
+    }
+    for (const k of ['train', 'validation', 'test'] as const) sets[k].sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : 0));
+    const t0 = Date.now();
+    const m = trainHorizon(sets, h);
+    const r = m.report;
+    console.log(`h=${h}: ${r.status} | n train/val/test ${r.samples.train}/${r.samples.validation}/${r.samples.test} | λ=${m.lambda} | test Brier skill ${(r.test.brierSkill * 100).toFixed(2)}% [${(r.test.brierSkillCi[0] * 100).toFixed(2)}, ${(r.test.brierSkillCi[1] * 100).toFixed(2)}] vs momentum ${(r.test.momentumSkill * 100).toFixed(2)}% | calib err ${(r.calibrationError * 100).toFixed(2)}pp | spread ${r.spread === null ? 'n/a' : (r.spread * 100).toFixed(2) + '%'} | ${((Date.now() - t0) / 1000).toFixed(0)}s`);
+    for (const reason of r.reasons) console.log(`   - ${reason}`);
+    models[h] = m;
+  }
+  writeOnce(`forecast-model-${VERSION}.json`, JSON.stringify({ version: VERSION, trainedAt: new Date().toISOString(), data: 'research/results/forecast-data-manifest.json', universe: DEFAULT_UNIVERSE, splits: SPLITS, models }, null, 1));
+}
+
 const fmt = (x: number | null) => (x === null ? 'n/a' : `${x >= 0 ? '+' : ''}${x.toFixed(3)}R`);
 
 const cmd = process.argv[2];
-const run = { fetch: fetchAll, baseline, audit, validate, final, diagnose, tables, 'c1-feasibility': c1Feasibility } as Record<string, () => Promise<void>>;
+const run = { fetch: fetchAll, baseline, audit, validate, final, diagnose, tables, 'c1-feasibility': c1Feasibility, 'forecast-fetch': forecastFetch, 'forecast-train': forecastTrain } as Record<string, () => Promise<void>>;
 if (!cmd || !run[cmd]) {
   console.error(`Usage: npm run research -- <${Object.keys(run).join('|')}>`);
   process.exit(1);

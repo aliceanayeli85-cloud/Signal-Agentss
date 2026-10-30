@@ -1,0 +1,1210 @@
+{
+  "fetchedAt": "2026-10-30T01:03:42.079Z",
+  "range": {
+    "start": "2015-01-01",
+    "end": "2026-10-29T00:00:00Z"
+  },
+  "feed": "sip",
+  "adjustment": "split",
+  "datasets": {
+    "SPY": {
+      "sha256": "bc4afe98d74415991d0af3ee6ff49de249d31087d87d136e55f888b86bcdf343",
+      "check": {
+        "bars": 2721,
+        "first": "2016-01-04",
+        "last": "2026-10-28",
+        "duplicatesRemoved": 0,
+        "invalidOhlc": 0,
+        "longGaps": []
+      }
+    },
+    "QQQ": {
+      "sha256": "86e9f3b2c050d493165fed87f4cc3a09d8ad479fc8e22eda71c97d3d0b26f4c0",
+      "check": {
+        "bars": 2721,
+        "first": "2016-01-04",
+        "last": "2026-10-28",
+        "duplicatesRemoved": 0,
+        "invalidOhlc": 0,
+        "longGaps": []
+      }
+    },
+    "IWM": {
+      "sha256": "15a810ac46c00ef6c1c71cc0ed602ee953ac2023d88f473bc89f99242a9a7666",
+      "check": {
+        "bars": 2721,
+        "first": "2016-01-04",
+        "last": "2026-10-28",
+        "duplicatesRemoved": 0,
+        "invalidOhlc": 0,
+        "longGaps": []
+      }
+    },
+    "DIA": {
+      "sha256": "151f754fe169772693cb23d27a456d082051070ba1251801cffb882fe20843ec",
+      "check": {
+        "bars": 2721,
+        "first": "2016-01-04",
+        "last": "2026-10-28",
+        "duplicatesRemoved": 0,
+        "invalidOhlc": 0,
+        "longGaps": []
+      }
+    },
+    "MDY": {
+      "sha256": "f290c8195faa0e6d86dde1f03260eb502443d19f1e8216b6118a2572e29bab36",
+      "check": {
+        "bars": 2721,
+        "first": "2016-01-04",
+        "last": "2026-10-28",
+        "duplicatesRemoved": 0,
+        "invalidOhlc": 0,
+        "longGaps": []
+      }
+    },
+    "EFA": {
+      "sha256": "4e3022c45aea2a6c3280c472e99fd28ffe4c5d625edb57bb080df120f63c5b70",
+      "check": {
+        "bars": 2721,
+        "first": "2016-01-04",
+        "last": "2026-10-28",
+        "duplicatesRemoved": 0,
+        "invalidOhlc": 0,
+        "longGaps": []
+      }
+    },
+    "EEM": {
+      "sha256": "e709c3a53bc47229d5c830802176f22b9f8b9e86b0ddb289cca43885daa6714e",
+      "check": {
+        "bars": 2721,
+        "first": "2016-01-04",
+        "last": "2026-10-28",
+        "duplicatesRemoved": 0,
+        "invalidOhlc": 0,
+        "longGaps": []
+      }
+    },
+    "XLF": {
+      "sha256": "c99551b37502b29015e2b61566608596d58a50febe1c401e5cc021f76d8300d3",
+      "check": {
+        "bars": 2721,
+        "first": "2016-01-04",
+        "last": "2026-10-28",
+        "duplicatesRemoved": 0,
+        "invalidOhlc": 0,
+        "longGaps": []
+      }
+    },
+    "XLE": {
+      "sha256": "808c3a8c93a64e8fe1247abdd5edb9324ac6981358d9a527da887615afefb3d3",
+      "check": {
+        "bars": 2721,
+        "first": "2016-01-04",
+        "last": "2026-10-28",
+        "duplicatesRemoved": 0,
+        "invalidOhlc": 0,
+        "longGaps": []
+      }
+    },
+    "XLK": {
+      "sha256": "33c8920fc46ab6c39010cfe6ee293df86838ec4cb15dc6dc3c65ee0b0d5413ad",
+      "check": {
+        "bars": 2721,
+        "first": "2016-01-04",
+        "last": "2026-10-28",
+        "duplicatesRemoved": 0,
+        "invalidOhlc": 0,
+        "longGaps": []
+      }
+    },
+    "XLV": {
+      "sha256": "5597a09a6479f639c34693e1aa37b3175446528274044211ae5c3536cfd366d7",
+      "check": {
+        "bars": 2721,
+        "first": "2016-01-04",
+        "last": "2026-10-28",
+        "duplicatesRemoved": 0,
+        "invalidOhlc": 0,
+        "longGaps": []
+      }
+    },
+    "XLI": {
+      "sha256": "a7e44337dbc9ea524fead0a5b7d65abf8f062d58abb9cb9cf50d8d288edf2674",
+      "check": {
+        "bars": 2721,
+        "first": "2016-01-04",
+        "last": "2026-10-28",
+        "duplicatesRemoved": 0,
+        "invalidOhlc": 0,
+        "longGaps": []
+      }
+    },
+    "XLY": {
+      "sha256": "53bb97b0212ba7c072e47f7c489e5d92e16ce3a9f3b14cc66850a1aa17d79834",
+      "check": {
+        "bars": 2721,
+        "first": "2016-01-04",
+        "last": "2026-10-28",
+        "duplicatesRemoved": 0,
+        "invalidOhlc": 0,
+        "longGaps": []
+      }
+    },
+    "XLP": {
+      "sha256": "d33d356a4202227995f64bfa2919565ba7b0149ac6d47dc1bdb8d6b8370bb411",
+      "check": {
+        "bars": 2721,
+        "first": "2016-01-04",
+        "last": "2026-10-28",
+        "duplicatesRemoved": 0,
+        "invalidOhlc": 0,
+        "longGaps": []
+      }
+    },
+    "XLU": {
+      "sha256": "5ac4b1f0af153eaaa3eee65e632e411236e12c42cbff73dd87d33f77f60f41ca",
+      "check": {
+        "bars": 2721,
+        "first": "2016-01-04",
+        "last": "2026-10-28",
+        "duplicatesRemoved": 0,
+        "invalidOhlc": 0,
+        "longGaps": []
+      }
+    },
+    "XLB": {
+      "sha256": "bb599fb40f0c303a095287f52c89c34bd6b62111e67bcbbb2e031b894165d047",
+      "check": {
+        "bars": 2721,
+        "first": "2016-01-04",
+        "last": "2026-10-28",
+        "duplicatesRemoved": 0,
+        "invalidOhlc": 0,
+        "longGaps": []
+      }
+    },
+    "XLRE": {
+      "sha256": "01a5c5b6934d455025167c07d4d199daa7fc98555157b1dfb6fa44ac971eb772",
+      "check": {
+        "bars": 2721,
+        "first": "2016-01-04",
+        "last": "2026-10-28",
+        "duplicatesRemoved": 0,
+        "invalidOhlc": 0,
+        "longGaps": []
+      }
+    },
+    "XLC": {
+      "sha256": "7409ae4bf21625faf4b25c89b9fdd2a74174445461f2716c006ace4b3d9ad0cd",
+      "check": {
+        "bars": 2102,
+        "first": "2018-06-19",
+        "last": "2026-10-28",
+        "duplicatesRemoved": 0,
+        "invalidOhlc": 0,
+        "longGaps": []
+      }
+    },
+    "SMH": {
+      "sha256": "ebfdedebb47178d414ef4e2c8d753fb27765c5650dc33cac7ab772f0dab7d45c",
+      "check": {
+        "bars": 2721,
+        "first": "2016-01-04",
+        "last": "2026-10-28",
+        "duplicatesRemoved": 0,
+        "invalidOhlc": 0,
+        "longGaps": []
+      }
+    },
+    "GLD": {
+      "sha256": "d71c3ce7e178176bfa70f111d491c0c6b329773028f6cc1419095135ceebdedf",
+      "check": {
+        "bars": 2721,
+        "first": "2016-01-04",
+        "last": "2026-10-28",
+        "duplicatesRemoved": 0,
+        "invalidOhlc": 0,
+        "longGaps": []
+      }
+    },
+    "TLT": {
+      "sha256": "0200d5e54438aa68ed1be1f7072b11b54114f1010227c62f5f0feb6eb850a702",
+      "check": {
+        "bars": 2721,
+        "first": "2016-01-04",
+        "last": "2026-10-28",
+        "duplicatesRemoved": 0,
+        "invalidOhlc": 0,
+        "longGaps": []
+      }
+    },
+    "HYG": {
+      "sha256": "a13bc5b9d8777f3853ed18a94e3bef0f14d46e46827b151564207f57b8175303",
+      "check": {
+        "bars": 2721,
+        "first": "2016-01-04",
+        "last": "2026-10-28",
+        "duplicatesRemoved": 0,
+        "invalidOhlc": 0,
+        "longGaps": []
+      }
+    },
+    "AAPL": {
+      "sha256": "156c56ef9415806d851e251b41473681af9da3ce58650db1a00558da4c039ceb",
+      "check": {
+        "bars": 2721,
+        "first": "2016-01-04",
+        "last": "2026-10-28",
+        "duplicatesRemoved": 0,
+        "invalidOhlc": 0,
+        "longGaps": []
+      }
+    },
+    "MSFT": {
+      "sha256": "fe232792bc886c55b8832dac6f5d9fcbf3ba6c03b4eae469b35eead4032dfb1d",
+      "check": {
+        "bars": 2721,
+        "first": "2016-01-04",
+        "last": "2026-10-28",
+        "duplicatesRemoved": 0,
+        "invalidOhlc": 0,
+        "longGaps": []
+      }
+    },
+    "NVDA": {
+      "sha256": "5eb23d76541e4b1a478e2759890d439e8325b8352832c3e55fbf00218f05d797",
+      "check": {
+        "bars": 2721,
+        "first": "2016-01-04",
+        "last": "2026-10-28",
+        "duplicatesRemoved": 0,
+        "invalidOhlc": 0,
+        "longGaps": []
+      }
+    },
+    "AMD": {
+      "sha256": "73f23fc957c779f19e4b30f26529e1f2893e1a9dbf13f1fd66c47b41a1f42079",
+      "check": {
+        "bars": 2721,
+        "first": "2016-01-04",
+        "last": "2026-10-28",
+        "duplicatesRemoved": 0,
+        "invalidOhlc": 0,
+        "longGaps": []
+      }
+    },
+    "AVGO": {
+      "sha256": "020bec8dfa6f0916a21e452caf599ac642785a8f0be922bb460fafeb6d9b854d",
+      "check": {
+        "bars": 2721,
+        "first": "2016-01-04",
+        "last": "2026-10-28",
+        "duplicatesRemoved": 0,
+        "invalidOhlc": 0,
+        "longGaps": []
+      }
+    },
+    "ORCL": {
+      "sha256": "ea9c7dac150c595925a71e1c827d1153c7d7c066a672ffde1e93dc716e6eeb9a",
+      "check": {
+        "bars": 2721,
+        "first": "2016-01-04",
+        "last": "2026-10-28",
+        "duplicatesRemoved": 0,
+        "invalidOhlc": 0,
+        "longGaps": []
+      }
+    },
+    "CRM": {
+      "sha256": "f6e63407d83fd407015ee6dab7f587cc73496be6b767535dce8617aa7e5bcc81",
+      "check": {
+        "bars": 2721,
+        "first": "2016-01-04",
+        "last": "2026-10-28",
+        "duplicatesRemoved": 0,
+        "invalidOhlc": 0,
+        "longGaps": []
+      }
+    },
+    "ADBE": {
+      "sha256": "20b2584501fb9e1521f86599077653edb99c8d2a21076e1506dae7cd9ad1c64a",
+      "check": {
+        "bars": 2721,
+        "first": "2016-01-04",
+        "last": "2026-10-28",
+        "duplicatesRemoved": 0,
+        "invalidOhlc": 0,
+        "longGaps": []
+      }
+    },
+    "INTC": {
+      "sha256": "8aa2654b35251cbd2843e61691bb36bda769f9a8cc2733c728a0565697ac381e",
+      "check": {
+        "bars": 2721,
+        "first": "2016-01-04",
+        "last": "2026-10-28",
+        "duplicatesRemoved": 0,
+        "invalidOhlc": 0,
+        "longGaps": []
+      }
+    },
+    "CSCO": {
+      "sha256": "582d4f785127cfd82b85014b1dd688b2c4c0972857cd434734b289e8b31efcb8",
+      "check": {
+        "bars": 2721,
+        "first": "2016-01-04",
+        "last": "2026-10-28",
+        "duplicatesRemoved": 0,
+        "invalidOhlc": 0,
+        "longGaps": []
+      }
+    },
+    "QCOM": {
+      "sha256": "0832aa2b832efdfb17fb1d03fa91ac618e2f9e95b4986131adde4c1d42e3153d",
+      "check": {
+        "bars": 2721,
+        "first": "2016-01-04",
+        "last": "2026-10-28",
+        "duplicatesRemoved": 0,
+        "invalidOhlc": 0,
+        "longGaps": []
+      }
+    },
+    "TXN": {
+      "sha256": "d91e7a070e5cc645e3c8b3e23833e7b33f6b0a81fc1fa100f1f21f407b3a9bc9",
+      "check": {
+        "bars": 2721,
+        "first": "2016-01-04",
+        "last": "2026-10-28",
+        "duplicatesRemoved": 0,
+        "invalidOhlc": 0,
+        "longGaps": []
+      }
+    },
+    "MU": {
+      "sha256": "487a5b39123d05559f5f5ad0523318c51340343e4fb4289f77aa02ce5d85b436",
+      "check": {
+        "bars": 2721,
+        "first": "2016-01-04",
+        "last": "2026-10-28",
+        "duplicatesRemoved": 0,
+        "invalidOhlc": 0,
+        "longGaps": []
+      }
+    },
+    "PLTR": {
+      "sha256": "34efa7cf5896b0eaaaf6d988a35f87a4bfccf09ee7e2003341f5d021098a42f3",
+      "check": {
+        "bars": 1527,
+        "first": "2020-09-30",
+        "last": "2026-10-28",
+        "duplicatesRemoved": 0,
+        "invalidOhlc": 0,
+        "longGaps": []
+      }
+    },
+    "GOOGL": {
+      "sha256": "565fcacb2d95a1d5e2f68358d207f6a705f5ee17c583b22f94fdc0d95f53ddd4",
+      "check": {
+        "bars": 2721,
+        "first": "2016-01-04",
+        "last": "2026-10-28",
+        "duplicatesRemoved": 0,
+        "invalidOhlc": 0,
+        "longGaps": []
+      }
+    },
+    "META": {
+      "sha256": "7660245de642b9bcecf672db23b55181598d539ff62602212090ca880914da1c",
+      "check": {
+        "bars": 2721,
+        "first": "2016-01-04",
+        "last": "2026-10-28",
+        "duplicatesRemoved": 0,
+        "invalidOhlc": 0,
+        "longGaps": []
+      }
+    },
+    "NFLX": {
+      "sha256": "eabca8fc386b5e57f2b37741c6b37e35b870a20dd8cbe837880757a2dfe44f8e",
+      "check": {
+        "bars": 2721,
+        "first": "2016-01-04",
+        "last": "2026-10-28",
+        "duplicatesRemoved": 0,
+        "invalidOhlc": 0,
+        "longGaps": []
+      }
+    },
+    "DIS": {
+      "sha256": "bcc7b791b293956d469cfb0e9c4817d33b934151a9f64743e3e93128f964da9c",
+      "check": {
+        "bars": 2721,
+        "first": "2016-01-04",
+        "last": "2026-10-28",
+        "duplicatesRemoved": 0,
+        "invalidOhlc": 0,
+        "longGaps": []
+      }
+    },
+    "T": {
+      "sha256": "a89b0580506a550dbaa6cde4c14deb57043a0738d1d2d8d262c596e5a3ab118d",
+      "check": {
+        "bars": 2721,
+        "first": "2016-01-04",
+        "last": "2026-10-28",
+        "duplicatesRemoved": 0,
+        "invalidOhlc": 0,
+        "longGaps": []
+      }
+    },
+    "VZ": {
+      "sha256": "d6b66404c7d00c9bddd905deddcea01088b52e8c8a9b9aa7b0579986116646b2",
+      "check": {
+        "bars": 2721,
+        "first": "2016-01-04",
+        "last": "2026-10-28",
+        "duplicatesRemoved": 0,
+        "invalidOhlc": 0,
+        "longGaps": []
+      }
+    },
+    "CMCSA": {
+      "sha256": "f93a300613b31ff6ce1e9a240c24433f2ba973e4f8e212ef0e9e88b0944aabf8",
+      "check": {
+        "bars": 2721,
+        "first": "2016-01-04",
+        "last": "2026-10-28",
+        "duplicatesRemoved": 0,
+        "invalidOhlc": 0,
+        "longGaps": []
+      }
+    },
+    "AMZN": {
+      "sha256": "3aef406fd4ea263e8922cfb427bf3e6cf3dc42374462a6732c9e4b412058c4a7",
+      "check": {
+        "bars": 2721,
+        "first": "2016-01-04",
+        "last": "2026-10-28",
+        "duplicatesRemoved": 0,
+        "invalidOhlc": 0,
+        "longGaps": []
+      }
+    },
+    "TSLA": {
+      "sha256": "13effe1399fe6b13bfdaa3e1f9b796e34546edffa18e11046ab1df1e5d7d5d63",
+      "check": {
+        "bars": 2721,
+        "first": "2016-01-04",
+        "last": "2026-10-28",
+        "duplicatesRemoved": 0,
+        "invalidOhlc": 0,
+        "longGaps": []
+      }
+    },
+    "HD": {
+      "sha256": "cdb70d9efa5fd8de0d10b4ad252b6729534eb5ec0a0a5de62913cd73420becda",
+      "check": {
+        "bars": 2721,
+        "first": "2016-01-04",
+        "last": "2026-10-28",
+        "duplicatesRemoved": 0,
+        "invalidOhlc": 0,
+        "longGaps": []
+      }
+    },
+    "LOW": {
+      "sha256": "e960b1a9026aa25d56ae57613c1f451e60b3c131e67b3c70a82ef799b003f4d8",
+      "check": {
+        "bars": 2721,
+        "first": "2016-01-04",
+        "last": "2026-10-28",
+        "duplicatesRemoved": 0,
+        "invalidOhlc": 0,
+        "longGaps": []
+      }
+    },
+    "MCD": {
+      "sha256": "687f430a48538252a3ff8b19ebf57d2006ba3cebfb08d987d3882898435d42cb",
+      "check": {
+        "bars": 2721,
+        "first": "2016-01-04",
+        "last": "2026-10-28",
+        "duplicatesRemoved": 0,
+        "invalidOhlc": 0,
+        "longGaps": []
+      }
+    },
+    "NKE": {
+      "sha256": "375d0947f058baeb3fe616a6fffa5cd4b81fbea64a68f373f493d84906eefeb0",
+      "check": {
+        "bars": 2721,
+        "first": "2016-01-04",
+        "last": "2026-10-28",
+        "duplicatesRemoved": 0,
+        "invalidOhlc": 0,
+        "longGaps": []
+      }
+    },
+    "SBUX": {
+      "sha256": "b930bd5cc1da10eeeb6eaf20ea18e4fc89498da2bcfe68177b3bc8efb99d3d3b",
+      "check": {
+        "bars": 2721,
+        "first": "2016-01-04",
+        "last": "2026-10-28",
+        "duplicatesRemoved": 0,
+        "invalidOhlc": 0,
+        "longGaps": []
+      }
+    },
+    "TGT": {
+      "sha256": "1c025452035a7c3867d0df3894b8f0ae29cdb7d9f443ff4a863ac7148bf9550b",
+      "check": {
+        "bars": 2721,
+        "first": "2016-01-04",
+        "last": "2026-10-28",
+        "duplicatesRemoved": 0,
+        "invalidOhlc": 0,
+        "longGaps": []
+      }
+    },
+    "BKNG": {
+      "sha256": "4b17d0463965a2aa70ed578734b6f841146230e5ae09fea190aa7252708a0b4b",
+      "check": {
+        "bars": 2721,
+        "first": "2016-01-04",
+        "last": "2026-10-28",
+        "duplicatesRemoved": 0,
+        "invalidOhlc": 0,
+        "longGaps": []
+      }
+    },
+    "GM": {
+      "sha256": "cf4611c60ffda97cd9c285f12385af5382d1c6cf4608a2f8e78c6dbb86c4ddd5",
+      "check": {
+        "bars": 2721,
+        "first": "2016-01-04",
+        "last": "2026-10-28",
+        "duplicatesRemoved": 0,
+        "invalidOhlc": 0,
+        "longGaps": []
+      }
+    },
+    "F": {
+      "sha256": "1c9a56dfbeeda01185517097bb8c0f8992e73619df45fe8811ee2f9a99a1973e",
+      "check": {
+        "bars": 2721,
+        "first": "2016-01-04",
+        "last": "2026-10-28",
+        "duplicatesRemoved": 0,
+        "invalidOhlc": 0,
+        "longGaps": []
+      }
+    },
+    "UBER": {
+      "sha256": "d374938fef61bd813b18e28094000beb1bb60f3629892ff67a290a9358d0735e",
+      "check": {
+        "bars": 1878,
+        "first": "2019-05-10",
+        "last": "2026-10-28",
+        "duplicatesRemoved": 0,
+        "invalidOhlc": 0,
+        "longGaps": []
+      }
+    },
+    "KO": {
+      "sha256": "7bad19277013136b5d6c7b884899dfc17124401c39e75307cd436480a4f1e7e6",
+      "check": {
+        "bars": 2721,
+        "first": "2016-01-04",
+        "last": "2026-10-28",
+        "duplicatesRemoved": 0,
+        "invalidOhlc": 0,
+        "longGaps": []
+      }
+    },
+    "PEP": {
+      "sha256": "0abf4bc23694d05d592239daf943aff56a0e0c7eec64e95535aac23836137ab5",
+      "check": {
+        "bars": 2721,
+        "first": "2016-01-04",
+        "last": "2026-10-28",
+        "duplicatesRemoved": 0,
+        "invalidOhlc": 0,
+        "longGaps": []
+      }
+    },
+    "PG": {
+      "sha256": "9b83aa2961abbc4acd17e6d1c40f1f8d2ba6a6aa1c4b0a95ae9fe4f3599b5817",
+      "check": {
+        "bars": 2721,
+        "first": "2016-01-04",
+        "last": "2026-10-28",
+        "duplicatesRemoved": 0,
+        "invalidOhlc": 0,
+        "longGaps": []
+      }
+    },
+    "WMT": {
+      "sha256": "18c4d242b167b67d264c0a45567f54f72cebbea1d2a32f327a4714d11df6910d",
+      "check": {
+        "bars": 2721,
+        "first": "2016-01-04",
+        "last": "2026-10-28",
+        "duplicatesRemoved": 0,
+        "invalidOhlc": 0,
+        "longGaps": []
+      }
+    },
+    "COST": {
+      "sha256": "12ba19e85d16e1361f5ed2558d2ff681bde084361dbd52b05dfccef67bfab1b7",
+      "check": {
+        "bars": 2721,
+        "first": "2016-01-04",
+        "last": "2026-10-28",
+        "duplicatesRemoved": 0,
+        "invalidOhlc": 0,
+        "longGaps": []
+      }
+    },
+    "CL": {
+      "sha256": "b858a2de5cc7ed259d14fada233f00c437eae69f77e4124ef06a46623c707215",
+      "check": {
+        "bars": 2721,
+        "first": "2016-01-04",
+        "last": "2026-10-28",
+        "duplicatesRemoved": 0,
+        "invalidOhlc": 0,
+        "longGaps": []
+      }
+    },
+    "MDLZ": {
+      "sha256": "fb68d9941d90bb739f065648d62f321ec42c715c180ee3b5ee6413314422a231",
+      "check": {
+        "bars": 2721,
+        "first": "2016-01-04",
+        "last": "2026-10-28",
+        "duplicatesRemoved": 0,
+        "invalidOhlc": 0,
+        "longGaps": []
+      }
+    },
+    "UNH": {
+      "sha256": "5b8cce3d2382cc867122f4f14c85e5fd173fdd983c94ec8aace79292053ad5ea",
+      "check": {
+        "bars": 2721,
+        "first": "2016-01-04",
+        "last": "2026-10-28",
+        "duplicatesRemoved": 0,
+        "invalidOhlc": 0,
+        "longGaps": []
+      }
+    },
+    "JNJ": {
+      "sha256": "7b637e018eab2681ee500cc9c6c26c8be8569fdee251c15ccbe0ad66a51c045b",
+      "check": {
+        "bars": 2721,
+        "first": "2016-01-04",
+        "last": "2026-10-28",
+        "duplicatesRemoved": 0,
+        "invalidOhlc": 0,
+        "longGaps": []
+      }
+    },
+    "LLY": {
+      "sha256": "f83fbb7fb67680d7c673dbcc7166d7b6f4849bdafee8d3d10bb1477025804c28",
+      "check": {
+        "bars": 2721,
+        "first": "2016-01-04",
+        "last": "2026-10-28",
+        "duplicatesRemoved": 0,
+        "invalidOhlc": 0,
+        "longGaps": []
+      }
+    },
+    "PFE": {
+      "sha256": "f6a82ebc085896e6021c9823c317a07d1b5a78d0cf0a52a4b90fe3cf8eff08cf",
+      "check": {
+        "bars": 2721,
+        "first": "2016-01-04",
+        "last": "2026-10-28",
+        "duplicatesRemoved": 0,
+        "invalidOhlc": 0,
+        "longGaps": []
+      }
+    },
+    "MRK": {
+      "sha256": "85bb7d74bd3b116731517fce4a2195f517b0709222cf464f7bcc4c902b6b13bf",
+      "check": {
+        "bars": 2721,
+        "first": "2016-01-04",
+        "last": "2026-10-28",
+        "duplicatesRemoved": 0,
+        "invalidOhlc": 0,
+        "longGaps": []
+      }
+    },
+    "ABBV": {
+      "sha256": "7ffc0baee037d12c310e04a10f2d32c0bdc439508df1743d543eb1cfe5e3412c",
+      "check": {
+        "bars": 2721,
+        "first": "2016-01-04",
+        "last": "2026-10-28",
+        "duplicatesRemoved": 0,
+        "invalidOhlc": 0,
+        "longGaps": []
+      }
+    },
+    "TMO": {
+      "sha256": "0ef0bfc36d5d561adafaec183c5d875b80631d499503a95172f7f83de67be355",
+      "check": {
+        "bars": 2721,
+        "first": "2016-01-04",
+        "last": "2026-10-28",
+        "duplicatesRemoved": 0,
+        "invalidOhlc": 0,
+        "longGaps": []
+      }
+    },
+    "ABT": {
+      "sha256": "d0b8b1b5ecfc8ba97a831324920c26773dee2ee3a763866acf5973ce5196ab6b",
+      "check": {
+        "bars": 2721,
+        "first": "2016-01-04",
+        "last": "2026-10-28",
+        "duplicatesRemoved": 0,
+        "invalidOhlc": 0,
+        "longGaps": []
+      }
+    },
+    "CVS": {
+      "sha256": "81fe0effa77907f6426e4ec93fd615ad557b6498c013f68c64ed8d2fb9a3d311",
+      "check": {
+        "bars": 2721,
+        "first": "2016-01-04",
+        "last": "2026-10-28",
+        "duplicatesRemoved": 0,
+        "invalidOhlc": 0,
+        "longGaps": []
+      }
+    },
+    "AMGN": {
+      "sha256": "f44170bbded30e1f146b34290f0d99a2152f8d10fa881d96bc96faa86f1424db",
+      "check": {
+        "bars": 2721,
+        "first": "2016-01-04",
+        "last": "2026-10-28",
+        "duplicatesRemoved": 0,
+        "invalidOhlc": 0,
+        "longGaps": []
+      }
+    },
+    "JPM": {
+      "sha256": "452edc3013e28f3a1e7d4f50308b404bcbee81c64c80ba6020e97ca6c2ef3d66",
+      "check": {
+        "bars": 2721,
+        "first": "2016-01-04",
+        "last": "2026-10-28",
+        "duplicatesRemoved": 0,
+        "invalidOhlc": 0,
+        "longGaps": []
+      }
+    },
+    "BAC": {
+      "sha256": "f6a94883eda62cfc21f6cb3a95b23545c001293a67f63e95563d0fe0b46b20b7",
+      "check": {
+        "bars": 2721,
+        "first": "2016-01-04",
+        "last": "2026-10-28",
+        "duplicatesRemoved": 0,
+        "invalidOhlc": 0,
+        "longGaps": []
+      }
+    },
+    "WFC": {
+      "sha256": "4f35e31603b4bd10d23dde3dd96c0b43bf1917722bd61647a105e029f8f8681b",
+      "check": {
+        "bars": 2721,
+        "first": "2016-01-04",
+        "last": "2026-10-28",
+        "duplicatesRemoved": 0,
+        "invalidOhlc": 0,
+        "longGaps": []
+      }
+    },
+    "GS": {
+      "sha256": "d7ef08d02e492aa8e7c646ea4e433c8f32b9315d55fe5db49c36da692df635f4",
+      "check": {
+        "bars": 2721,
+        "first": "2016-01-04",
+        "last": "2026-10-28",
+        "duplicatesRemoved": 0,
+        "invalidOhlc": 0,
+        "longGaps": []
+      }
+    },
+    "MS": {
+      "sha256": "1817e461db4d02e57e536d6b11d3051931112305c939f37380e3e6485182a2be",
+      "check": {
+        "bars": 2721,
+        "first": "2016-01-04",
+        "last": "2026-10-28",
+        "duplicatesRemoved": 0,
+        "invalidOhlc": 0,
+        "longGaps": []
+      }
+    },
+    "C": {
+      "sha256": "be5ee9a3a5eb2479bce27c864853361f5704b4c5ef82fe8f4d358b6c5b7e1477",
+      "check": {
+        "bars": 2721,
+        "first": "2016-01-04",
+        "last": "2026-10-28",
+        "duplicatesRemoved": 0,
+        "invalidOhlc": 0,
+        "longGaps": []
+      }
+    },
+    "SCHW": {
+      "sha256": "127f98ccc0b370677be4b8074f17842e665d6ee7dc39309504a6c83a4f75d276",
+      "check": {
+        "bars": 2721,
+        "first": "2016-01-04",
+        "last": "2026-10-28",
+        "duplicatesRemoved": 0,
+        "invalidOhlc": 0,
+        "longGaps": []
+      }
+    },
+    "V": {
+      "sha256": "f9ded4eafa3dfc8fe42e1c191aa09cbad4f29acc6ce9b4a4eea6672c21def3e5",
+      "check": {
+        "bars": 2721,
+        "first": "2016-01-04",
+        "last": "2026-10-28",
+        "duplicatesRemoved": 0,
+        "invalidOhlc": 0,
+        "longGaps": []
+      }
+    },
+    "MA": {
+      "sha256": "0ff85c543027350d7cacdf3c9218c6168b44b7cdcb1cc009e49a38ec017c6a5c",
+      "check": {
+        "bars": 2721,
+        "first": "2016-01-04",
+        "last": "2026-10-28",
+        "duplicatesRemoved": 0,
+        "invalidOhlc": 0,
+        "longGaps": []
+      }
+    },
+    "AXP": {
+      "sha256": "7c43712d4df5eb7a89c72ea5fefeab5e3f1aa00d7874dcd1508a30144ea7063f",
+      "check": {
+        "bars": 2721,
+        "first": "2016-01-04",
+        "last": "2026-10-28",
+        "duplicatesRemoved": 0,
+        "invalidOhlc": 0,
+        "longGaps": []
+      }
+    },
+    "BLK": {
+      "sha256": "8557cd5127f1b722894066e32f55ca456663ea91031dd68fbb6402fdcd0bda28",
+      "check": {
+        "bars": 2721,
+        "first": "2016-01-04",
+        "last": "2026-10-28",
+        "duplicatesRemoved": 0,
+        "invalidOhlc": 0,
+        "longGaps": []
+      }
+    },
+    "SOFI": {
+      "sha256": "8e891ceae781077e4c848b10c79cc8cf0c6b33518e981d303da9acca5091d5a0",
+      "check": {
+        "bars": 1485,
+        "first": "2020-11-30",
+        "last": "2026-10-28",
+        "duplicatesRemoved": 0,
+        "invalidOhlc": 0,
+        "longGaps": []
+      }
+    },
+    "HOOD": {
+      "sha256": "ad9d7522734ab3463791da7fd29883081219c3a11a82424902352627470f1e1c",
+      "check": {
+        "bars": 1319,
+        "first": "2021-07-29",
+        "last": "2026-10-28",
+        "duplicatesRemoved": 0,
+        "invalidOhlc": 0,
+        "longGaps": []
+      }
+    },
+    "XOM": {
+      "sha256": "028f9409e6e9c41d2c6d51f4ef3c68f0211223376661cd9b548f87bcc4be1aa6",
+      "check": {
+        "bars": 2721,
+        "first": "2016-01-04",
+        "last": "2026-10-28",
+        "duplicatesRemoved": 0,
+        "invalidOhlc": 0,
+        "longGaps": []
+      }
+    },
+    "CVX": {
+      "sha256": "abaf13428202af94ab9621d13ea2cfb58eefc07d7c24cbabfb4c52875a719899",
+      "check": {
+        "bars": 2721,
+        "first": "2016-01-04",
+        "last": "2026-10-28",
+        "duplicatesRemoved": 0,
+        "invalidOhlc": 0,
+        "longGaps": []
+      }
+    },
+    "COP": {
+      "sha256": "e9aa122a51246f71e266079d590e2d75023a6f620b52515dfd817f26c2d2882b",
+      "check": {
+        "bars": 2721,
+        "first": "2016-01-04",
+        "last": "2026-10-28",
+        "duplicatesRemoved": 0,
+        "invalidOhlc": 0,
+        "longGaps": []
+      }
+    },
+    "SLB": {
+      "sha256": "f9748d65b5d33503ce14e927f1e34bc89ba319182dfacf2932950f61a29600c9",
+      "check": {
+        "bars": 2721,
+        "first": "2016-01-04",
+        "last": "2026-10-28",
+        "duplicatesRemoved": 0,
+        "invalidOhlc": 0,
+        "longGaps": []
+      }
+    },
+    "OXY": {
+      "sha256": "a02eb10ed11090590c375cca385aa25b5a00eb860fae338df38c72933e3681d1",
+      "check": {
+        "bars": 2721,
+        "first": "2016-01-04",
+        "last": "2026-10-28",
+        "duplicatesRemoved": 0,
+        "invalidOhlc": 0,
+        "longGaps": []
+      }
+    },
+    "CAT": {
+      "sha256": "05e8e3ad24942effb70e18a245a5ae8eeaf6a80d5ec663000dc37f9d38f1f7cd",
+      "check": {
+        "bars": 2721,
+        "first": "2016-01-04",
+        "last": "2026-10-28",
+        "duplicatesRemoved": 0,
+        "invalidOhlc": 0,
+        "longGaps": []
+      }
+    },
+    "DE": {
+      "sha256": "4746e9e73d3ce50c6074421330d7a9b0587bd6191a66eb0b8d881ccfcefc25a2",
+      "check": {
+        "bars": 2721,
+        "first": "2016-01-04",
+        "last": "2026-10-28",
+        "duplicatesRemoved": 0,
+        "invalidOhlc": 0,
+        "longGaps": []
+      }
+    },
+    "BA": {
+      "sha256": "4affcf10761976296d57870b3c77a52559e0f2b88fc585ead3e0a7be1d01480d",
+      "check": {
+        "bars": 2721,
+        "first": "2016-01-04",
+        "last": "2026-10-28",
+        "duplicatesRemoved": 0,
+        "invalidOhlc": 0,
+        "longGaps": []
+      }
+    },
+    "GE": {
+      "sha256": "4b503e572152a76f9a83f6fa059acf0b6202f221d2de873c8028e759d0966fd8",
+      "check": {
+        "bars": 2721,
+        "first": "2016-01-04",
+        "last": "2026-10-28",
+        "duplicatesRemoved": 0,
+        "invalidOhlc": 0,
+        "longGaps": []
+      }
+    },
+    "HON": {
+      "sha256": "f4f6b85459e92bbd52145edc18256541ac2be595fd208cb27e7c6d04225a4dc2",
+      "check": {
+        "bars": 2721,
+        "first": "2016-01-04",
+        "last": "2026-10-28",
+        "duplicatesRemoved": 0,
+        "invalidOhlc": 0,
+        "longGaps": []
+      }
+    },
+    "UPS": {
+      "sha256": "46188ad9bc8475cc69f0fecd4b7f844f34ba9dd1acee69a78b1f4569e81997d7",
+      "check": {
+        "bars": 2721,
+        "first": "2016-01-04",
+        "last": "2026-10-28",
+        "duplicatesRemoved": 0,
+        "invalidOhlc": 0,
+        "longGaps": []
+      }
+    },
+    "UNP": {
+      "sha256": "19c48533d174a62f0ee432231cada8fce30b99a7aee9bdcd2b103fd397aa2fa9",
+      "check": {
+        "bars": 2721,
+        "first": "2016-01-04",
+        "last": "2026-10-28",
+        "duplicatesRemoved": 0,
+        "invalidOhlc": 0,
+        "longGaps": []
+      }
+    },
+    "LMT": {
+      "sha256": "627b79c23e090fc6aa7cb3b3d8f179d5688ad0c897cb25dc9b6153abdf65dade",
+      "check": {
+        "bars": 2721,
+        "first": "2016-01-04",
+        "last": "2026-10-28",
+        "duplicatesRemoved": 0,
+        "invalidOhlc": 0,
+        "longGaps": []
+      }
+    },
+    "RTX": {
+      "sha256": "5fd78e9f30894dfa00e7da3721078b76bfbf2306665bbe696eb7af2bb143cd7f",
+      "check": {
+        "bars": 2721,
+        "first": "2016-01-04",
+        "last": "2026-10-28",
+        "duplicatesRemoved": 0,
+        "invalidOhlc": 0,
+        "longGaps": []
+      }
+    },
+    "LIN": {
+      "sha256": "539b80c5707ff47bf2ae5e640d8ca77f3801ea65e8f237bd6b9ecb8ee1845d8d",
+      "check": {
+        "bars": 2008,
+        "first": "2018-10-31",
+        "last": "2026-10-28",
+        "duplicatesRemoved": 0,
+        "invalidOhlc": 0,
+        "longGaps": []
+      }
+    },
+    "FCX": {
+      "sha256": "aac29e91fe5b964b329b1f7dfedf8fe257255110e01574fcd427b108a5a9e805",
+      "check": {
+        "bars": 2721,
+        "first": "2016-01-04",
+        "last": "2026-10-28",
+        "duplicatesRemoved": 0,
+        "invalidOhlc": 0,
+        "longGaps": []
+      }
+    },
+    "NEM": {
+      "sha256": "7c72bd762ffaadfc4aab595ffa07dbf2390d1062cfe31fafe83fc39fb5e68681",
+      "check": {
+        "bars": 2721,
+        "first": "2016-01-04",
+        "last": "2026-10-28",
+        "duplicatesRemoved": 0,
+        "invalidOhlc": 0,
+        "longGaps": []
+      }
+    },
+    "DOW": {
+      "sha256": "fb033d5e270b17c86c1dd17511c44e465235e94698102dd160251356efd92159",
+      "check": {
+        "bars": 2721,
+        "first": "2016-01-04",
+        "last": "2026-10-28",
+        "duplicatesRemoved": 0,
+        "invalidOhlc": 0,
+        "longGaps": []
+      }
+    },
+    "NEE": {
+      "sha256": "77fe155a745e15eac2d5b23fd384ed9398c734cfcf32f88670adfd9e0da85523",
+      "check": {
+        "bars": 2721,
+        "first": "2016-01-04",
+        "last": "2026-10-28",
+        "duplicatesRemoved": 0,
+        "invalidOhlc": 0,
+        "longGaps": []
+      }
+    },
+    "DUK": {
+      "sha256": "b16e93994895be11b682a885ae2a2ff0aa2809fef27142bc04da8927abde68c7",
+      "check": {
+        "bars": 2721,
+        "first": "2016-01-04",
+        "last": "2026-10-28",
+        "duplicatesRemoved": 0,
+        "invalidOhlc": 0,
+        "longGaps": []
+      }
+    },
+    "SO": {
+      "sha256": "874590c8d5d29cbac42928a4adc2d7a1518912b0eda7d4f901c1bd058fdddcde",
+      "check": {
+        "bars": 2721,
+        "first": "2016-01-04",
+        "last": "2026-10-28",
+        "duplicatesRemoved": 0,
+        "invalidOhlc": 0,
+        "longGaps": []
+      }
+    },
+    "AMT": {
+      "sha256": "d108d46b1bd3202dad405c3ef86c5a88f7ac6cc690780fecc45727f52b3c1ceb",
+      "check": {
+        "bars": 2721,
+        "first": "2016-01-04",
+        "last": "2026-10-28",
+        "duplicatesRemoved": 0,
+        "invalidOhlc": 0,
+        "longGaps": []
+      }
+    },
+    "PLD": {
+      "sha256": "696ecc9cef6160295612d11458ed125c6cbb56a4ad2ca883c88f3d05e3707412",
+      "check": {
+        "bars": 2721,
+        "first": "2016-01-04",
+        "last": "2026-10-28",
+        "duplicatesRemoved": 0,
+        "invalidOhlc": 0,
+        "longGaps": []
+      }
+    },
+    "O": {
+      "sha256": "121ac3b150b95267f9a805b66406e885f6fbb8c7c574521b1ed9888a9d84a73a",
+      "check": {
+        "bars": 2721,
+        "first": "2016-01-04",
+        "last": "2026-10-28",
+        "duplicatesRemoved": 0,
+        "invalidOhlc": 0,
+        "longGaps": []
+      }
+    }
+  }
+}

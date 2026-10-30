@@ -29,6 +29,27 @@ export class FakeProvider implements MarketDataProvider {
     if (!b) throw new DataError('NOT_FOUND', `no ${tf} bars in fake`);
     return b;
   }
+  news_: import('../src/server/providers/alpaca.js').NewsItem[] = [];
+  screener_ = { mostActive: [] as string[], gainers: [] as string[], losers: [] as string[], asOf: null as number | null };
+  async dailyBarsMulti(symbols: string[]) {
+    if (this.failWith) throw this.failWith;
+    const out: Record<string, Candle[]> = {};
+    for (const s of symbols) {
+      const b = this.multi_[s] ?? this.bars_['1Day'];
+      if (b) out[s] = b;
+    }
+    return out;
+  }
+  multi_: Record<string, Candle[]> = {};
+  async news() {
+    return this.news_;
+  }
+  async screener() {
+    return this.screener_;
+  }
+  async assetName(symbol: string) {
+    return `${symbol} Test Corp`;
+  }
   async clock() {
     if (this.failWith) throw this.failWith;
     return this.clock_;

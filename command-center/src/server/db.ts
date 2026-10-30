@@ -203,6 +203,84 @@ const MIGRATIONS: string[] = [
     bench_close REAL NOT NULL
   );
   `,
+  // v3: Trading Intelligence agent. Real holdings are entered by the user; nothing here can place an order.
+  `
+  CREATE TABLE holdings (
+    symbol TEXT PRIMARY KEY,
+    shares REAL NOT NULL CHECK (shares > 0),
+    cost_basis REAL NOT NULL CHECK (cost_basis >= 0),
+    source TEXT NOT NULL DEFAULT 'manual',
+    note TEXT,
+    updated_at INTEGER NOT NULL
+  );
+  CREATE TABLE agent_runs (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    trigger TEXT NOT NULL,
+    status TEXT NOT NULL CHECK (status IN ('running','ok','error')),
+    started_at INTEGER NOT NULL,
+    finished_at INTEGER,
+    error TEXT,
+    data_through TEXT,
+    scanned INTEGER NOT NULL DEFAULT 0,
+    model_version TEXT,
+    market_json TEXT,
+    briefing_json TEXT,
+    meta_json TEXT
+  );
+  CREATE TABLE agent_opportunities (
+    run_id INTEGER NOT NULL REFERENCES agent_runs(id),
+    symbol TEXT NOT NULL,
+    rank INTEGER NOT NULL,
+    classification TEXT NOT NULL,
+    json TEXT NOT NULL,
+    PRIMARY KEY (run_id, symbol)
+  );
+  CREATE TABLE agent_predictions (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    run_id INTEGER NOT NULL,
+    symbol TEXT NOT NULL,
+    asof_date TEXT NOT NULL,
+    horizon INTEGER NOT NULL,
+    status TEXT NOT NULL,
+    p_up REAL,
+    base_rate REAL NOT NULL,
+    shadow_p REAL,
+    shadow_bucket INTEGER,
+    classification TEXT NOT NULL,
+    price REAL NOT NULL,
+    resolved INTEGER NOT NULL DEFAULT 0,
+    outcome_date TEXT,
+    actual_return REAL,
+    UNIQUE (symbol, asof_date, horizon)
+  );
+  CREATE TABLE agent_tickets (
+    id TEXT PRIMARY KEY,
+    run_id INTEGER,
+    symbol TEXT NOT NULL,
+    side TEXT NOT NULL CHECK (side IN ('buy','sell')),
+    status TEXT NOT NULL CHECK (status IN ('proposed','approved','rejected','expired')),
+    json TEXT NOT NULL,
+    created_at INTEGER NOT NULL,
+    expires_at INTEGER NOT NULL,
+    decided_at INTEGER
+  );
+  CREATE TABLE alert_events_v3 (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    dedup_key TEXT NOT NULL UNIQUE,
+    category TEXT NOT NULL CHECK (category IN ('PRICE_ALERT','SIMULATED_ORDER','SYSTEM','AGENT')),
+    mode TEXT,
+    symbol TEXT,
+    title TEXT NOT NULL,
+    reason TEXT NOT NULL,
+    price REAL,
+    price_at INTEGER,
+    created_at INTEGER NOT NULL,
+    read_at INTEGER
+  );
+  INSERT INTO alert_events_v3 SELECT * FROM alert_events;
+  DROP TABLE alert_events;
+  ALTER TABLE alert_events_v3 RENAME TO alert_events;
+  `,
 ];
 
 export function openDb(path: string): Db {

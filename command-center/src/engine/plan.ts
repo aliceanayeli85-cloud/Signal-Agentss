@@ -11,6 +11,9 @@ export interface Quote {
   price: number;
   time: number;
   source: string;
+  /** Latest bid/ask when the feed provides them (IEX quotes can be wider than the national best). */
+  bid?: number;
+  ask?: number;
 }
 
 export interface PlanCheck {

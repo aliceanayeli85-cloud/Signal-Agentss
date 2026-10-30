@@ -106,3 +106,15 @@ describe('validation gate', () => {
     expect(forecast(model, null).status).toBe('INSUFFICIENT DATA');
   });
 });
+
+import { applyCorporateActions } from '../src/agent/corporate-actions.js';
+describe('corporate actions', () => {
+  it('removes a spin-off gap and drops pre-listing prints', () => {
+    const hon = [candle(Date.UTC(2026, 5, 26, 4), 200, 201, 199, 200), candle(Date.UTC(2026, 5, 29, 4), 104, 106, 103, 105)];
+    const a = applyCorporateActions('HON', hon);
+    expect(a[1]!.o / a[0]!.c).toBeCloseTo(1, 10);
+    const dow = [candle(Date.UTC(2019, 2, 20, 4), 60, 60, 60, 60), candle(Date.UTC(2019, 3, 2, 4), 50, 51, 49, 50)];
+    expect(applyCorporateActions('DOW', dow)).toHaveLength(1);
+    expect(applyCorporateActions('SPY', hon)).toEqual(hon);
+  });
+});
